@@ -1,0 +1,174 @@
+{{/*
+ * Copyright (C) 2018 Google Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */}}
+
+{{/* ---- Includes ---- */}}
+{{Include "layer.cc.tmpl"}}
+
+{{Global "LayerName" "VK_LAYER_GOOGLE_graphics_flight_recorder"}}
+{{Global "LayerDescription" "Graphics Flight Recorder is a crash/hang debugging tool that helps determines GPU progress in a Vulkan application"}}
+{{Global "LayerPrefix" "GFR"}}    {{/* Entry point prefix for exported symbols */}}
+{{Global "LayerType" "Implicit"}}  {{/* "Implicit" or "Explicit" */}}
+
+{{/* ---- Layer Generation Customization ---- */}}
+{{Global "LayerSourceFile" "gfr_layer.cc"}}
+{{Global "LayerHeaderFile" "gfr_layer.h"}}
+{{Global "BaseInterceptorSourceFile" "gfr_base_interceptor.cc"}}
+{{Global "BaseInterceptorHeaderFile" "gfr_base_interceptor.h"}}
+
+{{/* Does the layer insert pre and post printf? */}}
+{{Global "LayerPrePostPrint" ""}}
+
+{{/* Does the base interceptor insert pre and post printf? */}}
+{{Global "BaseInterceptorPrint" ""}}
+
+{{/*
+  List of device extensions implemented by this layer
+*/}}
+{{define "ImplementedDeviceExtensions"}}
+VK_EXT_debug_marker
+{{end}}
+
+{{/*
+  List of instance extensions implemented by this layer
+*/}}
+{{define "ImplementedInstanceExtensions"}}
+VK_EXT_debug_report
+VK_EXT_debug_utils
+{{end}}
+
+{{/*
+  List of entry functions that will be manually implemented
+  Custom entry functions are often needed when wrapping certain Vulkan objects
+*/}}
+{{define "CustomEntryFunctions"}}
+vkCmdExecuteCommands
+vkFreeCommandBuffers
+vkQueueSubmit
+vkQueueBindSparse
+{{end}}
+
+{{/*
+  List of commands that this layer intercepts pre & post
+*/}}
+{{define "PrePostInterceptedCommandsList"}}
+vkAllocateCommandBuffers
+vkBeginCommandBuffer
+vkCreateCommandPool
+vkCreateComputePipelines
+vkCreateDevice
+vkCreateGraphicsPipelines
+vkCreateInstance
+vkCreateShaderModule
+vkDebugMarkerSetObjectNameEXT
+vkDestroyBuffer
+vkDestroyCommandPool
+vkDestroyDevice
+vkDestroyInstance
+vkDestroyPipeline
+vkDestroyShaderModule
+vkEndCommandBuffer
+vkFreeCommandBuffers
+vkQueueSubmit
+vkResetCommandBuffer
+vkResetCommandPool
+vkSetDebugUtilsObjectNameEXT
+vkUpdateDescriptorSets
+vkWaitSemaphoresKHR
+{{end}}
+
+{{/*
+  List of commands that this layer intercepts only pre
+*/}}
+{{define "PreInterceptedCommandsList"}}
+{{end}}
+
+{{/*
+  List of commands that this layer intercepts only post
+*/}}
+{{define "PostInterceptedCommandsList"}}
+vkAcquireNextImageKHR
+vkCreateSemaphore
+vkDestroySemaphore
+vkDeviceWaitIdle
+vkGetDeviceQueue
+vkGetFenceStatus
+vkGetQueryPoolResults
+vkGetSemaphoreCounterValueKHR
+vkQueueBindSparse
+vkQueuePresentKHR
+vkQueueWaitIdle
+vkSignalSemaphoreKHR
+vkWaitForFences
+{{end}}
+
+{{/*
+  List of Vulkan objects that will be wrapped
+  Each object should be defined in WrappedObjectTypes
+*/}}
+{{define "WrappedObjects"}}
+VkCommandBuffer
+{{end}}
+
+{{/*
+  Definition of wrapped Vulkan objects
+*/}}
+{{define "WrappedObjectTypes"}}
+namespace gfr { class CommandBuffer; }
+struct WrappedVkCommandBuffer {
+  void *dispatch_table;
+  VkCommandBuffer wrapped_object;
+  gfr::CommandBuffer *custom_data;
+};
+{{end}}
+
+{{/* TODO: Make excluded extension list come from outside? */}}
+{{/* TODO: Call this ExcludedPlatformExtensions? */}}
+{{define "ExcludedExtensions"}}
+VK_KHR_xlib_surface
+VK_KHR_xcb_surface
+VK_KHR_wayland_surface
+VK_KHR_mir_surface
+VK_KHR_android_surface
+VK_KHR_win32_surface
+VK_KHR_android_surface
+VK_ANDROID_native_buffer
+VK_GGP_stream_descriptor_surface
+VK_GGP_frame_token
+VK_GOOGLE_yeti_surface
+VK_MVK_macos_surface
+{{end}}
+
+{{/*
+-------------------------------------------------------------------------------
+Layer manifest information
+-------------------------------------------------------------------------------
+*/}}
+
+{{Global "LayerSpanType" "GLOBAL"}}  {{/* "INSTANCE", "DEVICE" or "GLOBAL" */}}
+{{Global "LayerLibraryPath" "libVkLayer_gfr.so"}}
+{{Global "LayerAPIVersion" "1.1.73"}}
+{{Global "LayerImplementationVersion" "1"}}
+
+{{/*
+-------------------------------------------------------------------------------
+Generate the various layer files
+-------------------------------------------------------------------------------
+*/}}
+{{$ | Macro "BaseLayer" | Reflow 2 | Write (Global "LayerSourceFile")}}
+{{$ | Macro "BaseLayerHeader" | Reflow 2 | Write (Global "LayerHeaderFile")}}
+{{$ | Macro "InterceptorImplementation" | Reflow 2 | Write (Global "BaseInterceptorSourceFile")}}
+{{$ | Macro "InterceptorHeader" | Reflow 2 | Write (Global "BaseInterceptorHeaderFile")}}
+{{$ | Macro "GenerateManifest" | Reflow 2 | Write "gfr.json.inc"}}

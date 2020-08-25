@@ -1,0 +1,1297 @@
+{{/*
+ * Copyright (C) 2018 Google Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */}}
+
+{{/* ---- Includes ---- */}}
+{{Include "cpp_common.tmpl"}}
+
+{{Global "LayerFileFormatVersion" "1.1.0"}}
+
+{{/*
+  List of extensions to ignore, most platform specific extension fit here
+*/}}
+{{/* TODO: Allow custom extensions to be ignored */}}
+{{define "ExcludedExtensions"}}
+VK_KHR_xlib_surface
+VK_KHR_xcb_surface
+VK_KHR_wayland_surface
+VK_KHR_mir_surface
+VK_KHR_android_surface
+VK_KHR_win32_surface
+VK_KHR_android_surface
+VK_ANDROID_native_buffer
+VK_GGP_stream_descriptor_surface
+VK_GGP_frame_token
+VK_GOOGLE_yeti_surface
+VK_MVK_macos_surface
+{{end}}
+
+{{/*
+------------------------------------------------------------------------------
+  Emits a list of extensions not intercepted (platform not supported, etc.)
+------------------------------------------------------------------------------
+*/}}
+{{define "IsExtensionExcluded"}}
+  {{$ext_name := index $.Arguments 0}}
+  {{$filters := Strings (Macro "ExcludedExtensions") | SplitEOL}}
+  {{range $f := $filters}}
+    {{if eq $ext_name $f}}true{{end}}
+  {{end}}
+{{end}}
+
+{{/*
+-------------------------------------------------------------------------------
+  Returns true if the given function is a vkCmd command
+-------------------------------------------------------------------------------
+*/}}
+{{define "IsVkCmdCommand"}}
+  {{if (HasPrefix (print $.Name) "vkCmd")}}true{{end}}
+{{end}}
+
+{{/*
+-------------------------------------------------------------------------------
+  Returns true if the given command is on PrePostInterceptedCommandsList
+-------------------------------------------------------------------------------
+*/}}
+{{define "IsOnPrePostInterceptedCommandsList"}}
+  {{$filters := Strings (Macro "PrePostInterceptedCommandsList") | SplitEOL}}
+  {{range $f := $filters}}
+    {{if eq $.Name $f}}true{{end}}
+  {{end}}
+{{end}}
+
+{{/*
+-------------------------------------------------------------------------------
+  Returns true if the given command is on PreInterceptedCommandsList
+-------------------------------------------------------------------------------
+*/}}
+{{define "IsOnPreInterceptedCommandsList"}}
+  {{$filters := Strings (Macro "PreInterceptedCommandsList") | SplitEOL}}
+  {{range $f := $filters}}
+    {{if eq $.Name $f}}true{{end}}
+  {{end}}
+{{end}}
+
+{{/*
+-------------------------------------------------------------------------------
+  Returns true if the given command is on PostInterceptedCommandsList
+-------------------------------------------------------------------------------
+*/}}
+{{define "IsOnPostInterceptedCommandsList"}}
+  {{$filters := Strings (Macro "PostInterceptedCommandsList") | SplitEOL}}
+  {{range $f := $filters}}
+    {{if eq $.Name $f}}true{{end}}
+  {{end}}
+{{end}}
+
+{{/*
+-------------------------------------------------------------------------------
+  Returns true if layer needs to intercept the pre command
+-------------------------------------------------------------------------------
+*/}}
+{{define "IsPreInterceptedCommand"}}
+  {{AssertType $ "Function"}}
+  {{if (or (Macro "IsVkCmdCommand" $) (Macro "IsOnPrePostInterceptedCommandsList" $) (Macro "IsOnPreInterceptedCommandsList" $))}}true{{end}}
+{{end}}
+
+{{/*
+-------------------------------------------------------------------------------
+  Returns true if layer needs to intercept the post command
+-------------------------------------------------------------------------------
+*/}}
+{{define "IsPostInterceptedCommand"}}
+  {{AssertType $ "Function"}}
+  {{if (or (Macro "IsVkCmdCommand" $) (Macro "IsOnPrePostInterceptedCommandsList" $) (Macro "IsOnPostInterceptedCommandsList" $))}}true{{end}}
+{{end}}
+
+{{/*
+  List of functions to ignore due to different versions of Vulkan headers
+  in yeti and gapid
+*/}}
+{{define "ExcludedCommands"}}
+vkSignalSemaphore
+vkWaitSemaphores
+vkGetSemaphoreCounterValue
+{{end}}
+
+
+{{/*
+-------------------------------------------------------------------------------
+  Returns true if the command is excluded
+-------------------------------------------------------------------------------
+*/}}
+{{define "IsExcludedCommand"}}
+  {{AssertType $ "Function"}}
+  {{$filters := Strings (Macro "ExcludedCommands") | SplitEOL}}
+  {{range $f := $filters}}
+    {{if eq $.Name $f}}true{{end}}
+  {{end}}
+{{end}}
+
+{{/*
+-------------------------------------------------------------------------------
+  Returns true if the command is a custom one
+-------------------------------------------------------------------------------
+*/}}
+{{define "IsCustomEntry"}}
+  {{AssertType $ "Function"}}
+  {{$filters := Strings (Macro "CustomEntryFunctions") | SplitEOL}}
+  {{range $f := $filters}}
+    {{if eq $.Name $f}}true{{end}}
+  {{end}}
+{{end}}
+
+
+
+{{/* TODO: Make custom command list come from outside?  Or extend it? */}}
+{{/*
+-------------------------------------------------------------------------------
+  Commands that need a custom implementation by the layer
+-------------------------------------------------------------------------------
+*/}}
+{{define "CustomCommands"}}
+vkCreateInstance
+vkDestroyInstance
+vkCreateDevice
+vkDestroyDevice
+vkGetInstanceProcAddr
+vkGetDeviceProcAddr
+vkEnumerateInstanceLayerProperties
+vkEnumerateDeviceLayerProperties
+vkEnumerateInstanceExtensionProperties
+vkEnumerateDeviceExtensionProperties
+{{end}}
+
+{{/*
+-------------------------------------------------------------------------------
+  Returns true if the command is a custom one
+-------------------------------------------------------------------------------
+*/}}
+{{define "IsCustomCommand"}}
+  {{AssertType $ "Function"}}
+  {{$filters := Strings (Macro "CustomCommands") | SplitEOL}}
+  {{range $f := $filters}}
+    {{if eq $.Name $f}}true{{end}}
+  {{end}}
+{{end}}
+
+{{/*
+-------------------------------------------------------------------------------
+  Commands that get auto-wrapped (pre and post)
+-------------------------------------------------------------------------------
+*/}}
+{{define "IsEntryCommand"}}
+  {{AssertType $ "Function"}}
+  {{$ext := GetAnnotation $ "extension"}}
+  {{if not (or (GetAnnotation $ "pfn") (GetAnnotation $ "synthetic") )}}
+    {{if and (not (Macro "IsCustomCommand" $)) (not (Macro "IsExcludedCommand" $))}}
+      {{if $ext}}
+        {{if not (Macro "IsExtensionExcluded" $ext)}}true{{end}}
+      {{else}}
+        true
+      {{end}}
+    {{end}}
+  {{end}}
+{{end}}
+
+{{/*
+-------------------------------------------------------------------------------
+  Commands that forwarded to the Interceptor
+-------------------------------------------------------------------------------
+*/}}
+{{define "IsCommandIntercepted"}}
+  {{AssertType $ "Function"}}
+  {{$ext := GetAnnotation $ "extension"}}
+  {{if not (or (GetAnnotation $ "pfn") (GetAnnotation $ "synthetic") (Macro "IsExcludedCommand" $) )}}
+    {{if $ext}}
+      {{if not (Macro "IsExtensionExcluded" $ext)}}true{{end}}
+    {{else}}
+      true
+    {{end}}
+  {{end}}
+{{end}}
+
+
+{{/*
+-------------------------------------------------------------------------------
+  Emits the base interceptor class's header file
+-------------------------------------------------------------------------------
+*/}}
+{{define "InterceptorHeader"}}
+  {{AssertType $ "API"}}
+  {{Template "C++.Copyright"}}
+// clang-format off
+#ifndef INTERCEPTOR_HEADER
+#define INTERCEPTOR_HEADER
+¶
+#include "{{Global "LayerHeaderFile"}}"
+¶
+{{Template "WrappedObjectTypes"}}
+¶
+  namespace intercept
+  {
+  class BaseInterceptor
+  {
+   public:
+    virtual const VkInstanceCreateInfo* GetModifiedInstanceCreateInfo(const VkInstanceCreateInfo* pCreateInfo) {
+      return pCreateInfo;
+    }
+
+    virtual const VkDeviceCreateInfo* GetModifiedDeviceCreateInfo(VkPhysicalDevice physicalDevice, const VkDeviceCreateInfo* pCreateInfo) {
+      return pCreateInfo;
+    }
+
+  {{range $c := AllCommands $}}
+    {{if (Macro "IsCommandIntercepted" $c)}}
+      {{if (Macro "IsPreInterceptedCommand" $c)}}
+        {{Template "DeclarePreInterceptFunction" $c}}
+      {{end}}
+      {{if (Macro "IsPostInterceptedCommand" $c)}}
+        {{Template "DeclarePostInterceptFunction" $c}}
+      {{end}}
+    {{end}}
+  {{end}}
+  };
+  } // end namespace intercept
+#endif // INTERCEPTOR_HEADER
+{{end}}
+
+{{/*
+-------------------------------------------------------------------------------
+  Emits the implementation of the base interceptor class
+-------------------------------------------------------------------------------
+*/}}
+{{define "InterceptorImplementation"}}
+  {{AssertType $ "API"}}
+  {{Template "C++.Copyright"}}
+  // clang-format off
+  #include <vulkan/vulkan.h>
+  #include <stdio.h> // printf
+¶
+  #include "{{Global "LayerHeaderFile"}}"
+  #include "{{Global "BaseInterceptorHeaderFile"}}"
+¶
+  namespace intercept
+  {
+  {{range $c := AllCommands $}}
+    {{if (Macro "IsCommandIntercepted" $c)}}
+      {{if (Macro "IsPreInterceptedCommand" $c)}}
+        {{Template "DefinePreInterceptFunction" $c}}
+      {{end}}
+      {{if (Macro "IsPostInterceptedCommand" $c)}}
+        {{Template "DefinePostInterceptFunction" $c}}
+      {{end}}
+    {{end}}
+  {{end}}
+  } // end namespace intercept
+{{end}}
+
+
+{{/*
+-------------------------------------------------------------------------------
+  Emits the base layer's header file
+-------------------------------------------------------------------------------
+*/}}
+{{define "BaseLayerHeader"}}
+  {{AssertType $ "API"}}
+  {{Template "C++.Copyright"}}
+// clang-format off
+#ifndef LAYER_HEADER
+#define LAYER_HEADER
+¶
+#include <cassert>
+#include <mutex>
+¶
+#include "vk_dispatch_table_helper.h"
+¶
+// GAPID API spec workarounds
+// typedef const VkAllocationCallbacks* AllocationCallbacks;
+typedef size_t size_val;
+#define AllocationCallbacks const VkAllocationCallbacks *
+#define PRIsize "zu"
+¶
+namespace intercept
+{
+¶
+  std::mutex &GetGlobalLayerLock();
+¶
+  VkResult SetInstanceLoaderData(VkInstance instance, void *obj);
+  VkResult SetDeviceLoaderData(VkDevice device, void *obj);
+¶
+  VkLayerInstanceDispatchTable *GetInstanceDispatchTableByKey(void *key);
+  template <typename T> VkLayerInstanceDispatchTable *GetInstanceDispatchTable(T key) { return GetInstanceDispatchTableByKey((void *)key); }
+  VkLayerDispatchTable *GetDeviceDispatchTableByKey(void *key);
+  template <typename T> VkLayerDispatchTable *GetDeviceDispatchTable(T key) { return GetDeviceDispatchTableByKey((void *)key); }
+¶
+  {{range $c := AllCommands $}}
+    {{if (Macro "IsCommandIntercepted" $c)}}
+      {{Template "DeclareEntryFunction" $c}}
+    {{end}}
+  {{end}}
+} // namespace intercept
+¶
+#endif // LAYER_HEADER
+{{end}}
+
+
+
+{{/*
+-------------------------------------------------------------------------------
+  Emits the base layer code and custom function implementation
+-------------------------------------------------------------------------------
+*/}}
+{{define "BaseLayer"}}
+  {{AssertType $ "API"}}
+  {{Template "C++.Copyright"}}
+// clang-format off
+#include <array>
+#include <cassert>
+#include <list>
+#include <memory>
+#include <mutex>
+#include <unordered_map>
+#include <vector>
+¶
+#define  API_NAME "Vulkan"
+#include "vk_dispatch_table_helper.h"
+#include "vk_layer_utils.h"
+¶
+#include "{{Global "LayerHeaderFile"}}"
+#include "{{Global "BaseInterceptorHeaderFile"}}"
+¶
+std::mutex g_lock;
+¶
+// global Interceptor accessor
+intercept::BaseInterceptor *GetInterceptor();
+¶
+{{/* TODO: Make VkLayerProperties come from Globals */}}
+constexpr VkLayerProperties g_layer_properties = { "{{Global "LayerName"}}", VK_LAYER_API_VERSION, 1, "{{Global "LayerDescription"}}" };
+
+static constexpr std::array<VkExtensionProperties, 2> g_instance_extensions
+{
+{
+{{$extensions := Strings (Macro "ImplementedInstanceExtensions") | SplitEOL}}
+{{range $ext := $extensions}}
+  { {{Upper $ext}}_EXTENSION_NAME, {{Upper $ext}}_SPEC_VERSION },
+{{end}}
+}
+};
+¶
+static constexpr std::array<VkExtensionProperties, 1> g_device_extensions
+{
+{
+{{$extensions := Strings (Macro "ImplementedDeviceExtensions") | SplitEOL}}
+{{range $ext := $extensions}}
+  { {{Upper $ext}}_EXTENSION_NAME, {{Upper $ext}}_SPEC_VERSION },
+{{end}}
+}
+};
+¶
+typedef VkResult (VKAPI_PTR *PFN_vkSetInstanceLoaderData)(VkInstance instance, void* object);
+typedef VkResult (VKAPI_PTR *PFN_vkSetDeviceLoaderData)(VkDevice device, void* object);
+¶
+struct InstanceLayerData {
+  InstanceLayerData(dispatch_key key_) : key(key_) {};
+  const dispatch_key key;
+  VkInstance instance = VK_NULL_HANDLE;
+  VkLayerInstanceDispatchTable dispatch_table;
+¶
+  PFN_vkSetInstanceLoaderData SetInstanceLoaderData = nullptr;
+};
+¶
+struct DeviceLayerData {
+  DeviceLayerData(dispatch_key key_) : key(key_) {};
+  const dispatch_key key;
+  VkDevice device = VK_NULL_HANDLE;
+  VkLayerDispatchTable dispatch_table;
+  VkPhysicalDevice physical_device = VK_NULL_HANDLE;
+  InstanceLayerData* instance_data = nullptr;
+¶
+  PFN_vkSetDeviceLoaderData SetDeviceLoaderData = nullptr;
+¶
+  // extensions implemented by our layer, don't pass them down
+  std::vector<std::string> added_extensions;
+};
+¶
+// custom command declaration
+{{range $c := AllCommands $}}
+  {{if (Macro "IsCustomCommand" $c)}}
+    {{Template "DeclareCustomFunction" $c}}
+  {{end}}
+{{end}}
+¶
+namespace {
+// generally we expect to get the same device and instance, so we keep them handy
+static thread_local DeviceLayerData* last_used_device_layer_data = nullptr;
+static thread_local InstanceLayerData* last_used_instance_layer_data = nullptr;
+// but we also support multiple devices / instances
+static std::mutex device_layer_data_mutex;
+static std::vector<DeviceLayerData *> device_layer_data_list;
+static std::mutex instance_layer_data_mutex;
+static std::vector<InstanceLayerData *> instance_layer_data_list;
+}
+¶
+namespace intercept {«
+¶
+struct VkStruct {
+    VkStructureType sType;
+    const void*     pNext;
+};
+¶
+VkStruct *FindOnChain(VkStruct *s, VkStructureType type) {
+  VkStruct *n = (VkStruct *)s->pNext;
+  while (n && n->sType != type) {
+    n = (VkStruct *)n->pNext;
+  }
+  return n;
+}
+¶
+VkLayerInstanceCreateInfo *GetLoaderInstanceInfo(const VkInstanceCreateInfo *create_info, VkLayerFunction func_type) {
+  VkStruct *n = (VkStruct *)create_info;
+  while ((n = FindOnChain(n, VK_STRUCTURE_TYPE_LOADER_INSTANCE_CREATE_INFO))) {
+    VkLayerInstanceCreateInfo *vci = (VkLayerInstanceCreateInfo *)n;
+    if (vci->function == func_type) {
+      return vci;
+    }
+  }
+
+  return nullptr;
+}
+¶
+VkLayerDeviceCreateInfo *GetLoaderDeviceInfo(const VkDeviceCreateInfo *create_info, VkLayerFunction func_type) {
+  VkStruct *n = (VkStruct *)create_info;
+  while ((n = FindOnChain(n, VK_STRUCTURE_TYPE_LOADER_DEVICE_CREATE_INFO))) {
+    VkLayerDeviceCreateInfo *vdi = (VkLayerDeviceCreateInfo *)n;
+    if (vdi->function == func_type) {
+      return vdi;
+    }
+  }
+
+  return nullptr;
+}
+¶
+DeviceLayerData* GetDeviceLayerData(dispatch_key key) {
+  if (!last_used_device_layer_data || last_used_device_layer_data->key != key) {
+    std::lock_guard<std::mutex> lock(device_layer_data_mutex);
+    auto it = std::find_if(std::begin(device_layer_data_list), std::end(device_layer_data_list),
+    [&] (DeviceLayerData const* p) { return p->key == key; });
+    if (it != device_layer_data_list.end()) {
+      last_used_device_layer_data = *it;
+      return last_used_device_layer_data;
+    }
+    device_layer_data_list.push_back(new DeviceLayerData(key));
+    last_used_device_layer_data = device_layer_data_list.back();
+  }
+  return last_used_device_layer_data;
+}
+¶
+void FreeDeviceLayerData(dispatch_key key) {
+  std::lock_guard<std::mutex> lock(device_layer_data_mutex);
+  auto it = std::find_if(std::begin(device_layer_data_list), std::end(device_layer_data_list),
+  [&] (DeviceLayerData const* p) { return p->key == key; });
+  if (it != device_layer_data_list.end()) {
+    device_layer_data_list.erase(it);
+    last_used_device_layer_data = nullptr;
+  }
+}
+¶
+InstanceLayerData* GetInstanceLayerData(dispatch_key key) {
+  if (!last_used_instance_layer_data || last_used_instance_layer_data->key != key) {
+    std::lock_guard<std::mutex> lock(instance_layer_data_mutex);
+    auto it = std::find_if(std::begin(instance_layer_data_list), std::end(instance_layer_data_list),
+    [&] (InstanceLayerData const* p) { return p->key == key; });
+    if (it != instance_layer_data_list.end()) {
+      last_used_instance_layer_data = *it;
+      return last_used_instance_layer_data;
+    }
+    instance_layer_data_list.push_back(new InstanceLayerData(key));
+    last_used_instance_layer_data = instance_layer_data_list.back();
+  }
+  return last_used_instance_layer_data;
+}
+¶
+void FreeInstanceLayerData(dispatch_key key) {
+  std::lock_guard<std::mutex> lock(instance_layer_data_mutex);
+  auto it = std::find_if(std::begin(instance_layer_data_list), std::end(instance_layer_data_list),
+  [&] (InstanceLayerData const* p) { return p->key == key; });
+  if (it != instance_layer_data_list.end()) {
+    instance_layer_data_list.erase(it);
+    last_used_instance_layer_data = nullptr;
+  }
+}
+¶
+std::mutex &GetGlobalLayerLock() { return g_lock; }
+¶
+VkResult SetInstanceLoaderData(VkInstance instance, void *obj)
+{
+  InstanceLayerData *instance_data = GetInstanceLayerData(get_dispatch_key(instance));
+  return instance_data->SetInstanceLoaderData(instance, obj);
+}
+¶
+VkResult SetDeviceLoaderData(VkDevice device, void *obj)
+{
+  DeviceLayerData *device_data = GetDeviceLayerData(get_dispatch_key(device));
+  return device_data->SetDeviceLoaderData(device, obj);
+}
+VkResult SetDeviceLoaderData(VkDevice device, void *obj);
+¶
+VkLayerInstanceDispatchTable *GetInstanceDispatchTableByKey(void *key)
+{
+  InstanceLayerData *instance_data = GetInstanceLayerData(get_dispatch_key(key));
+  return &instance_data->dispatch_table;
+}
+¶
+VkLayerDispatchTable *GetDeviceDispatchTableByKey(void* key)
+{
+  DeviceLayerData *device_data = GetDeviceLayerData(get_dispatch_key(key));
+  return &device_data->dispatch_table;
+}
+¶
+{{range $c := AllCommands $}}
+  {{if (Macro "IsEntryCommand" $c)}}
+    {{if not (Macro "IsCustomEntry" $c)}}
+      {{Template "DefineEntryFunction" $c}}
+    {{else}}
+      {{Template "DeclareEntryFunction" $c}}
+    {{end}}
+  {{end}}
+{{end}}
+¶
+  // Vulkan function to intercepted function table
+  const std::unordered_map<std::string, void *> name_to_funcptr_map {
+  {{range $c := AllCommands $}}
+    {{if (Macro "IsCustomCommand" $c)}}
+      {{Template "DeclareFunctionMapping" $c}}
+    {{end}}
+  {{end}}
+  {{range $c := AllCommands $}}
+    {{if (Macro "IsEntryCommand" $c)}}
+      {{Template "DeclareFunctionMapping" $c}}
+    {{end}}
+  {{end}}
+  };
+
+¶
+// Manually written functions, generated as part of template
+¶
+{{/* TODO these 4 functions are very similar, use 2 macros to generate? */}}
+{{/* TODO how do we decide if we're an instance or device layer? do we care? */}}
+VKAPI_ATTR VkResult VKAPI_CALL EnumerateInstanceLayerProperties(uint32_t* pPropertyCount, VkLayerProperties* pProperties)
+{
+  if (nullptr == pProperties) {
+    *pPropertyCount = 1;
+    return VK_SUCCESS;
+  }
+
+  if (*pPropertyCount < 1) {
+    return VK_INCOMPLETE;
+  }
+
+  *pProperties = g_layer_properties;
+  return VK_SUCCESS;
+}
+¶
+VKAPI_ATTR VkResult VKAPI_CALL EnumerateInstanceExtensionProperties(char const* pLayerName, uint32_t* pPropertyCount, VkExtensionProperties* pProperties)
+{
+  {{if eq (Global "LayerType") "Implicit"}}
+  bool layer_requested = (nullptr == pLayerName || strcmp(pLayerName, g_layer_properties.layerName));
+  {{else}}
+  bool layer_requested = (pLayerName && !strcmp(pLayerName, g_layer_properties.layerName));
+  {{end}}
+
+  if (!layer_requested) {
+    return VK_ERROR_LAYER_NOT_PRESENT;
+  }
+
+  if (nullptr == pProperties) {
+    *pPropertyCount += (uint32_t)g_instance_extensions.size();
+    return VK_SUCCESS;
+  }
+  else if (*pPropertyCount > 0)
+  {
+    *pPropertyCount = (uint32_t)g_instance_extensions.size();
+    memcpy(pProperties, g_instance_extensions.data(), g_instance_extensions.size() * sizeof(VkExtensionProperties) );
+  }
+
+  return VK_SUCCESS;
+}
+¶
+VKAPI_ATTR VkResult VKAPI_CALL EnumerateDeviceLayerProperties(VkPhysicalDevice physicalDevice, uint32_t* pPropertyCount, VkLayerProperties* pProperties)
+{
+  if (nullptr == pProperties) {
+    *pPropertyCount = 1;
+    return VK_SUCCESS;
+  }
+
+  if (*pPropertyCount < 1) {
+    return VK_INCOMPLETE;
+  }
+
+  *pProperties = g_layer_properties;
+  return VK_SUCCESS;
+}
+¶
+VKAPI_ATTR VkResult VKAPI_CALL EnumerateDeviceExtensionProperties(VkPhysicalDevice physicalDevice, char const* pLayerName, uint32_t* pPropertyCount, VkExtensionProperties* pProperties)
+{
+  {{if eq (Global "LayerType") "Implicit"}}
+  bool layer_requested = (nullptr == pLayerName || strcmp(pLayerName, g_layer_properties.layerName));
+  {{else}}
+  bool layer_requested = (pLayerName && !strcmp(pLayerName, g_layer_properties.layerName));
+  {{end}}
+
+  // not just our layer, we expose all our extensions
+  uint32_t max_extensions = *pPropertyCount;
+
+  // we want to append our extensions, removing duplicates
+  InstanceLayerData* instance_data = GetInstanceLayerData(
+      get_dispatch_key(physicalDevice));
+
+  uint32_t num_other_extensions = 0;
+  VkResult result =
+      instance_data->dispatch_table.EnumerateDeviceExtensionProperties(
+          physicalDevice, nullptr, &num_other_extensions, nullptr);
+  if (result != VK_SUCCESS) {
+    return result;
+  }
+
+  // call down to get other device properties
+  std::vector<VkExtensionProperties> extensions(num_other_extensions);
+  result = instance_data->dispatch_table.EnumerateDeviceExtensionProperties(
+      physicalDevice, pLayerName, &num_other_extensions, &extensions[0]);
+
+  // add our extensions if requested
+  if (result == VK_SUCCESS && layer_requested) {
+    // set and copy base extensions
+    *pPropertyCount = num_other_extensions;
+    if (pProperties != nullptr) {
+      memcpy(pProperties, &extensions[0],
+            num_other_extensions * sizeof(VkExtensionProperties));
+    }
+
+    // find our unique extensions that need to be added
+    uint32_t num_additional_extensions = 0;
+    auto num_device_extensions = g_device_extensions.size();
+    std::vector<const VkExtensionProperties*> additional_extensions(num_device_extensions);
+
+    for (size_t i = 0; i < num_device_extensions; ++i) {
+      bool is_unique_extension = true;
+
+      for (size_t j = 0; j < num_other_extensions; ++j) {
+        if (0 == strcmp(extensions[j].extensionName,
+                        g_device_extensions[i].extensionName)) {
+          is_unique_extension = false;
+          break;
+        }
+      }
+
+      if (is_unique_extension) {
+        additional_extensions[num_additional_extensions++] = &g_device_extensions[i];
+      }
+    }
+
+    // null properties, just count total extensions
+    if (nullptr == pProperties) {
+      *pPropertyCount += num_additional_extensions;
+
+    } else {
+      uint32_t numExtensions = num_other_extensions;
+      for (size_t i = 0; i < num_additional_extensions && numExtensions < max_extensions; ++i) {
+        pProperties[numExtensions++] = *additional_extensions[i];
+    }
+
+      *pPropertyCount = numExtensions;
+
+      // not enough space for all extensions
+      if (num_other_extensions + num_additional_extensions > max_extensions) {
+        return VK_INCOMPLETE;
+      }
+    }
+  }
+
+  return result;
+}
+¶
+VKAPI_ATTR VkResult VKAPI_CALL CreateInstance(const VkInstanceCreateInfo *pCreateInfo, const VkAllocationCallbacks *pAllocator,
+                                              VkInstance *pInstance) {
+    VkLayerInstanceCreateInfo *chain_info = GetLoaderInstanceInfo(pCreateInfo, VK_LAYER_LINK_INFO);
+¶
+    assert(chain_info->u.pLayerInfo);
+    PFN_vkGetInstanceProcAddr fpGetInstanceProcAddr = chain_info->u.pLayerInfo->pfnNextGetInstanceProcAddr;
+    PFN_vkCreateInstance fpCreateInstance = (PFN_vkCreateInstance)fpGetInstanceProcAddr(NULL, "vkCreateInstance");
+    if (fpCreateInstance == NULL) return VK_ERROR_INITIALIZATION_FAILED;
+    chain_info->u.pLayerInfo = chain_info->u.pLayerInfo->pNext;
+¶
+    // Init dispatch array and call registration functions
+    GetInterceptor()->PreCreateInstance(pCreateInfo, pAllocator, pInstance);
+¶
+    const VkInstanceCreateInfo* instance_create_info = GetInterceptor()->GetModifiedInstanceCreateInfo(pCreateInfo);
+    VkResult result = fpCreateInstance(instance_create_info, pAllocator, pInstance);
+¶
+    InstanceLayerData *instance_data = GetInstanceLayerData(get_dispatch_key(*pInstance));
+    instance_data->instance = *pInstance;
+¶
+    chain_info = GetLoaderInstanceInfo(instance_create_info, VK_LOADER_DATA_CALLBACK);
+    instance_data->SetInstanceLoaderData = chain_info->u.pfnSetInstanceLoaderData;
+¶
+    layer_init_instance_dispatch_table(*pInstance, &instance_data->dispatch_table, fpGetInstanceProcAddr);
+¶
+    GetInterceptor()->PostCreateInstance(instance_create_info, pAllocator, pInstance, result);
+¶
+    return result;
+}
+¶
+VKAPI_ATTR void VKAPI_CALL DestroyInstance(VkInstance instance, const VkAllocationCallbacks *pAllocator) {
+    dispatch_key key = get_dispatch_key(instance);
+    InstanceLayerData *instance_data = GetInstanceLayerData(key);
+¶
+    GetInterceptor()->PreDestroyInstance(instance, pAllocator);
+¶
+    instance_data->dispatch_table.DestroyInstance(instance, pAllocator);
+¶
+    std::unique_lock<std::mutex> lock(g_lock);
+    GetInterceptor()->PostDestroyInstance(instance, pAllocator);
+    FreeInstanceLayerData(key);
+}
+¶
+VKAPI_ATTR VkResult VKAPI_CALL CreateDevice(VkPhysicalDevice gpu, const VkDeviceCreateInfo *pCreateInfo,
+                                            const VkAllocationCallbacks *pAllocator, VkDevice *pDevice) {
+    InstanceLayerData *instance_data = GetInstanceLayerData(get_dispatch_key(gpu));
+¶
+    std::unique_lock<std::mutex> lock(g_lock);
+    VkLayerDeviceCreateInfo *chain_info = GetLoaderDeviceInfo(pCreateInfo, VK_LAYER_LINK_INFO);
+    PFN_vkGetInstanceProcAddr fpGetInstanceProcAddr = chain_info->u.pLayerInfo->pfnNextGetInstanceProcAddr;
+    PFN_vkGetDeviceProcAddr fpGetDeviceProcAddr = chain_info->u.pLayerInfo->pfnNextGetDeviceProcAddr;
+    PFN_vkCreateDevice fpCreateDevice = (PFN_vkCreateDevice)fpGetInstanceProcAddr(instance_data->instance, "vkCreateDevice");
+
+    chain_info->u.pLayerInfo = chain_info->u.pLayerInfo->pNext;
+¶
+    GetInterceptor()->PreCreateDevice(gpu, pCreateInfo, pAllocator, pDevice);
+    const VkDeviceCreateInfo* device_create_info = GetInterceptor()->GetModifiedDeviceCreateInfo(gpu, pCreateInfo);
+    lock.unlock();
+
+  // Force coherent memory
+  VkDeviceCreateInfo local_create_info = *device_create_info;
+¶
+  VkPhysicalDeviceCoherentMemoryFeaturesAMD enableDeviceCoherentMemoryFeature{};
+  enableDeviceCoherentMemoryFeature.deviceCoherentMemory = true;
+  enableDeviceCoherentMemoryFeature.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_COHERENT_MEMORY_FEATURES_AMD;
+  enableDeviceCoherentMemoryFeature.pNext = (void *)device_create_info->pNext;
+  local_create_info.pNext = &enableDeviceCoherentMemoryFeature;
+¶
+    VkResult result = fpCreateDevice(gpu, &local_create_info, pAllocator, pDevice);
+¶
+    lock.lock();
+    DeviceLayerData *device_data = GetDeviceLayerData(get_dispatch_key(*pDevice));
+¶
+    chain_info = GetLoaderDeviceInfo(device_create_info, VK_LOADER_DATA_CALLBACK);
+    device_data->SetDeviceLoaderData = chain_info->u.pfnSetDeviceLoaderData;
+¶
+    device_data->instance_data = instance_data;
+    layer_init_device_dispatch_table(*pDevice, &device_data->dispatch_table, fpGetDeviceProcAddr);
+    device_data->device = *pDevice;
+    device_data->physical_device = gpu;
+¶
+    GetInterceptor()->PostCreateDevice(gpu, device_create_info, pAllocator, pDevice, result);
+    lock.unlock();
+¶
+    return result;
+}
+¶
+VKAPI_ATTR void VKAPI_CALL DestroyDevice(VkDevice device, const VkAllocationCallbacks *pAllocator) {
+    dispatch_key key = get_dispatch_key(device);
+    DeviceLayerData *device_data = GetDeviceLayerData(key);
+
+    std::unique_lock<std::mutex> lock(g_lock);
+    GetInterceptor()->PreDestroyDevice(device, pAllocator);
+    lock.unlock();
+
+    device_data->dispatch_table.DestroyDevice(device, pAllocator);
+
+    lock.lock();
+    GetInterceptor()->PostDestroyDevice(device, pAllocator);
+
+    FreeDeviceLayerData(key);
+    lock.unlock();
+}
+¶
+VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL GetInstanceProcAddr(VkInstance instance, const char *funcName) {
+  InstanceLayerData *instance_data;
+  const auto &item = name_to_funcptr_map.find(funcName);
+  if (item != name_to_funcptr_map.end()) {
+    return reinterpret_cast<PFN_vkVoidFunction>(item->second);
+  }
+  instance_data =
+      GetInstanceLayerData(get_dispatch_key(instance));
+  auto &table = instance_data->dispatch_table;
+  if (!table.GetInstanceProcAddr) {
+    return nullptr;
+  }
+  return table.GetInstanceProcAddr(instance, funcName);
+}
+¶
+VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL GetDeviceProcAddr(VkDevice device, const char *funcName) {
+  assert(device);
+  DeviceLayerData *device_data =
+      GetDeviceLayerData(get_dispatch_key(device));
+  const auto &item = name_to_funcptr_map.find(funcName);
+  if (item != name_to_funcptr_map.end()) {
+    return reinterpret_cast<PFN_vkVoidFunction>(item->second);
+  }
+  auto &table = device_data->dispatch_table;
+  if (!table.GetDeviceProcAddr) {
+    return nullptr;
+  }
+  return table.GetDeviceProcAddr(device, funcName);
+}
+¶
+} // namespace intercept
+¶
+// Main entry points, layer specific
+¶
+#ifdef WIN32
+#define DLL_EXPORT __declspec(dllexport)
+#else
+#define DLL_EXPORT
+#endif
+¶
+extern "C" DLL_EXPORT VK_LAYER_EXPORT VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL
+{{Global "LayerPrefix"}}_GetInstanceProcAddr(VkInstance instance, const char *funcName) {
+  return intercept::GetInstanceProcAddr(instance, funcName);
+}
+¶
+extern "C" DLL_EXPORT VK_LAYER_EXPORT VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL
+{{Global "LayerPrefix"}}_GetDeviceProcAddr(VkDevice device, const char *funcName) {
+  return intercept::GetDeviceProcAddr(device, funcName);
+}
+¶
+extern "C" DLL_EXPORT VK_LAYER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL
+{{Global "LayerPrefix"}}_NegotiateLoaderLayerInterfaceVersion(
+    VkNegotiateLayerInterface *pVersionStruct) {
+  assert(pVersionStruct != NULL);
+  assert(pVersionStruct->sType == LAYER_NEGOTIATE_INTERFACE_STRUCT);
+  // Fill in the function pointers if our version is at least capable of having
+  // the structure contain them.
+  if (pVersionStruct->loaderLayerInterfaceVersion >= 2) {
+    pVersionStruct->pfnGetInstanceProcAddr = &{{Global "LayerPrefix"}}_GetInstanceProcAddr;
+    pVersionStruct->pfnGetDeviceProcAddr = &{{Global "LayerPrefix"}}_GetDeviceProcAddr;
+    pVersionStruct->pfnGetPhysicalDeviceProcAddr = nullptr;
+  }
+  if (pVersionStruct->loaderLayerInterfaceVersion > CURRENT_LOADER_LAYER_INTERFACE_VERSION) {
+    pVersionStruct->loaderLayerInterfaceVersion = CURRENT_LOADER_LAYER_INTERFACE_VERSION;
+  }
+  return VK_SUCCESS;
+}
+{{end}}
+
+
+{{/*
+-------------------------------------------------------------------------------
+  Emits the name of the specified command with out the "vk" prefix
+  "vkCmdDraw" -> "CmdDraw"
+-------------------------------------------------------------------------------
+*/}}
+{{define "CmdNameNoVk"}}
+  {{AssertType $ "Function"}}
+  {{TrimPrefix "vk" (CommandName $) }}
+{{end}}
+
+
+{{/*
+-------------------------------------------------------------------------------
+  Emits function declaration for a custom function
+-------------------------------------------------------------------------------
+*/}}
+{{define "DeclareCustomFunction"}}
+  {{$nameNoVk := Macro "CmdNameNoVk" $}}
+  VKAPI_ATTR {{$.Return.Type}} VKAPI_CALL {{$nameNoVk}}({{Template "C++.CallParameters" $}});
+{{end}}
+
+
+{{/*
+-------------------------------------------------------------------------------
+  Checks if parameter is a wrapped type
+-------------------------------------------------------------------------------
+*/}}
+{{define "IsWrappedType"}}
+  {{$wrappedObjs := Strings (Macro "WrappedObjects") | SplitEOL}}
+  {{$typeName := Macro "C++.ParameterTypeNoSuffix" $}}
+  {{range $wo := $wrappedObjs}}
+    {{if eq $typeName $wo}}true{{end}}
+  {{end}}
+{{end}}}}
+
+
+{{/*
+-------------------------------------------------------------------------------
+  Emits the C++ type, name and suffix for a single parameter, emitting wrapped
+  types when needed
+-------------------------------------------------------------------------------
+*/}}
+{{define "WrappedParameter"}}
+  {{AssertType $ "Type" "Parameter"}}
+  {{$typeName := Macro "C++.ParameterTypeNoSuffix" $}}
+  {{if (Macro "IsWrappedType" $)}}Wrapped{{end}}{{$typeName}}{{if (Macro "IsWrappedType" $)}}*{{end}} {{$.Name}}{{Template "C++.StaticArraySuffix" $}}
+{{end}}
+
+
+{{/*
+-------------------------------------------------------------------------------
+  Emits the comma-separated list of type-name paired parameters for given
+  function, with the appropriate types replaced by wrapped types
+-------------------------------------------------------------------------------
+*/}}
+{{define "WrappedCallParameters"}}
+  {{AssertType $ "Function"}}
+
+  {{$prevCallFunction := Global "CallFunction"}}
+  {{Global "CallFunction" $}}
+  {{ForEach $.CallParameters "WrappedParameter" | JoinWith ", "}}
+  {{Global "CallFunction" $prevCallFunction}}
+{{end}}
+
+
+{{/*
+-------------------------------------------------------------------------------
+  Emits member function declaration for the interceptor
+-------------------------------------------------------------------------------
+*/}}
+{{define "DeclarePreInterceptFunction"}}
+  {{$nameNoVk := Macro "CmdNameNoVk" $}}
+  virtual {{$.Return.Type}} Pre{{$nameNoVk}}({{Template "WrappedCallParameters" $}});
+{{end}}
+
+{{define "DeclarePostInterceptFunction"}}
+  {{$nameNoVk := Macro "CmdNameNoVk" $}}
+  {{if not (IsVoid $.Return.Type)}}
+  virtual {{$.Return.Type}} Post{{$nameNoVk}}({{Template "WrappedCallParameters" $ | Strings (Macro "ReturnParameter" $) | JoinWith ", " }});
+  {{else}}
+  virtual {{$.Return.Type}} Post{{$nameNoVk}}({{Template "WrappedCallParameters" $ }});
+  {{end}}
+{{end}}
+
+{{/*
+-------------------------------------------------------------------------------
+  Emits a return value as a parameter
+  Used to pass the results of a PreXXX call to the PostXXX call
+-------------------------------------------------------------------------------
+*/}}
+{{define "ReturnParameter"}}
+  {{AssertType $ "Function"}}
+  {{if not (IsVoid $.Return.Type)}}
+    , {{$.Return.Type}} result
+  {{end}}
+{{end}}
+
+{{/*
+-------------------------------------------------------------------------------
+  Emits the return value of a Vulkan function, if any
+-------------------------------------------------------------------------------
+*/}}
+{{define "DefaultVulkanReturnValue"}}
+  {{AssertType $ "Function"}}
+  {{if not (IsVoid $.Return.Type)}}
+    {{if (IsPointer $.Return.Type)}}
+      {{Macro "C++.Null" $.Return.Type}};
+    {{else}}
+      {{if (HasPrefix (print $.Return.Type) "PFN_") }}
+        {{Macro "C++.Null" $.Return.Type}}
+      {{else}}
+      VK_SUCCESS
+      {{end}}
+    {{end}}
+  {{end}}
+{{end}}
+
+{{/*
+-------------------------------------------------------------------------------
+  Emits the default implementation of pre call to the interceptor
+-------------------------------------------------------------------------------
+*/}}
+{{define "DefinePreInterceptFunction"}}
+  {{$name := Macro "CmdName" $}}
+  {{$nameNoVk := Macro "CmdNameNoVk" $}}
+¶
+  {{$.Return.Type}} BaseInterceptor::Pre{{$nameNoVk}}({{Template "WrappedCallParameters" $}})
+  {
+    {{if (Global "BaseInterceptorPrint")}}printf("Pre{{$nameNoVk}}\n");{{end}}
+    {{if not (IsVoid $.Return.Type)}}
+    return {{Macro "DefaultVulkanReturnValue" $}};
+    {{end}}
+  }
+{{end}}
+
+{{/*
+-------------------------------------------------------------------------------
+  Emits the default implementation of post call to the interceptor
+-------------------------------------------------------------------------------
+*/}}
+{{define "DefinePostInterceptFunction"}}
+  {{$name := Macro "CmdName" $}}
+  {{$nameNoVk := Macro "CmdNameNoVk" $}}
+¶
+  {{if not (IsVoid $.Return.Type)}}
+  {{$.Return.Type}} BaseInterceptor::Post{{$nameNoVk}}({{Template "WrappedCallParameters" $ | Strings (Macro "ReturnParameter" $) | JoinWith ", " }})
+  {{else}}
+  {{$.Return.Type}} BaseInterceptor::Post{{$nameNoVk}}({{Template "WrappedCallParameters" $}})
+  {{end}}
+  {
+    {{if (Global "BaseInterceptorPrint")}}printf("Post{{$nameNoVk}}\n");{{end}}
+  {{if not (IsVoid $.Return.Type)}}
+    return result;
+  {{end}}
+  }
+{{end}}
+
+{{/*
+-------------------------------------------------------------------------------
+  Inserts the header to fetch the device table, based on the function type
+-------------------------------------------------------------------------------
+*/}}
+{{define "DispatchTableFromCommand"}}
+  {{AssertType $ "Function"}}
+  {{$key_indirection := Title (Macro "InitialIndirection" $)}}
+  {{$keyName := (index $.CallParameters 0).Name}}
+
+  {{$layer_indirection := print Title (Macro "FinalIndirection" $)}}
+
+  {{if eq $layer_indirection "VkDevice"}}
+    auto &dispatch_table = *GetDeviceDispatchTable({{$keyName}});
+  {{else}}
+    auto &dispatch_table = *GetInstanceDispatchTable({{$keyName}});
+  {{end}}
+{{end}}
+
+
+{{/*
+-------------------------------------------------------------------------------
+  Emits the C++ type, name and suffix for a single parameter, emitting wrapped
+  types when needed
+-------------------------------------------------------------------------------
+*/}}
+{{define "UnwrappedArgument"}}
+  {{AssertType $ "Type" "Parameter"}}
+  {{if (Macro "IsWrappedType" $)}}unwrapped{{end}}{{$.Name}}
+{{end}}
+
+
+{{/*
+-------------------------------------------------------------------------------
+  Emits the comma-separated list of type-name paired parameters for given
+  function, with the appropriate types replaced by unwrapped types
+-------------------------------------------------------------------------------
+*/}}
+{{define "UnwrappedCallArguments"}}
+  {{AssertType $ "Function"}}
+  {{ForEach $.CallParameters "UnwrappedArgument" | JoinWith ", "}}
+{{end}}
+
+
+
+{{/*
+-------------------------------------------------------------------------------
+  Emits the C++ type, name and suffix for a single parameter, emitting wrapped
+  types when needed
+-------------------------------------------------------------------------------
+*/}}
+{{define "WrappedArgument"}}
+  {{AssertType $ "Type" "Parameter"}}
+  {{if (Macro "IsWrappedType" $)}}wrapped{{end}}{{$.Name}}
+{{end}}
+
+
+{{/*
+-------------------------------------------------------------------------------
+  Emits the comma-separated list of type-name paired parameters for given
+  function, with the appropriate types replaced by wrapped types
+-------------------------------------------------------------------------------
+*/}}
+{{define "WrappedCallArguments"}}
+  {{AssertType $ "Function"}}
+  {{ForEach $.CallParameters "WrappedArgument" | JoinWith ", "}}
+{{end}}
+
+
+{{/*
+-------------------------------------------------------------------------------
+  Emits code to unwrap a wrapped object before dispatch
+-------------------------------------------------------------------------------
+*/}}
+{{define "UnwrapObject"}}
+  {{AssertType $ "Type" "Parameter"}}
+  {{if (Macro "IsWrappedType" $)}}
+    Wrapped{{$.Type}} *wrapped{{$.Name}} = reinterpret_cast<Wrapped{{$.Type}} *>({{$.Name}});
+    {{$.Type}} unwrapped{{$.Name}} = wrapped{{$.Name}}->wrapped_object;
+  {{end}}
+{{end}}
+
+
+{{/*
+-------------------------------------------------------------------------------
+  Emits code to unwrap
+-------------------------------------------------------------------------------
+*/}}
+{{define "UnwrapObjects"}}
+  {{AssertType $ "Function"}}
+  {{Global "UnwrappedFunction" ($.Name)}}
+  {{ForEach $.CallParameters "UnwrapObject"}}
+{{end}}
+
+
+{{/*
+-------------------------------------------------------------------------------
+  Emits a wrapped Vulkan function with pre & post calls to the interceptor
+-------------------------------------------------------------------------------
+*/}}
+{{define "DeclareEntryFunction"}}
+  {{AssertType $ "Function"}}
+  {{$name := Macro "CmdName" $}}
+  {{$nameNoVk := Macro "CmdNameNoVk" $}}
+  VKAPI_ATTR {{$.Return.Type}} VKAPI_CALL {{$nameNoVk}}({{Template "C++.CallParameters" $}});
+{{end}}
+
+
+{{/*
+-------------------------------------------------------------------------------
+  Emits a wrapped Vulkan function with pre & post calls to the interceptor
+-------------------------------------------------------------------------------
+*/}}
+{{define "DefineEntryFunction"}}
+  {{AssertType $ "Function"}}
+  {{$name := Macro "CmdName" $}}
+  {{$nameNoVk := Macro "CmdNameNoVk" $}}
+¶
+  VKAPI_ATTR {{$.Return.Type}} VKAPI_CALL {{$nameNoVk}}({{Template "C++.CallParameters" $}})
+  {
+    {{Template "DispatchTableFromCommand" $}}
+    {{Template "UnwrapObjects" $}}
+    {{if not (IsVoid $.Return.Type)}} VkResult result = VkResult::VK_SUCCESS; {{end}}
+
+    {{if (Macro "IsPreInterceptedCommand" $)}}
+¶
+      {{if (Global "LayerPrePostPrint")}}fprintf(stderr, "Pre{{$nameNoVk}}\n");{{end}}
+      {{if not (IsVoid $.Return.Type)}} result = {{end}}GetInterceptor()->Pre{{$nameNoVk}}({{Macro "WrappedCallArguments" $ }});
+    {{end}}
+¶
+    if (dispatch_table.{{$nameNoVk}}) {
+      {{if not (IsVoid $.Return.Type)}} result = §{{end}}
+      dispatch_table.{{$nameNoVk}}({{Macro "UnwrappedCallArguments" $ }});
+    }
+
+    {{if (Macro "IsPostInterceptedCommand" $)}}
+¶
+      {{if (Global "LayerPrePostPrint")}}fprintf(stderr, "Post{{$nameNoVk}}\n");{{end}}
+      {{if not (IsVoid $.Return.Type)}}
+      GetInterceptor()->Post{{$nameNoVk}}({{Macro "WrappedCallArguments" $}}, result);
+      {{else}}
+      GetInterceptor()->Post{{$nameNoVk}}({{Macro "WrappedCallArguments" $ }});
+      {{end}}
+    {{end}}
+    {{if not (IsVoid $.Return.Type)}} return result; {{end}}
+  }
+{{end}}
+
+
+{{/*
+-------------------------------------------------------------------------------
+  Emits a Vulkan function name to intercepted function map entry
+-------------------------------------------------------------------------------
+*/}}
+{{define "DeclareFunctionMapping"}}
+  {{$name := Macro "CmdName" $}}
+  {{$nameNoVk := Macro "CmdNameNoVk" $}}
+  {"{{$name}}", (void *){{$nameNoVk}} },
+{{end}}
+
+{{/*
+-------------------------------------------------------------------------------
+  Emits a spec version for the given extension name
+-------------------------------------------------------------------------------
+*/}}
+{{define "PrintExtensionSpecVersion"}}
+  {{$pattern := print (index (Upper $.ext) 0) "_SPEC_VERSION"}}
+  {{range $c := $.apiSpec.Definitions}}
+    {{if eq $c.Name $pattern}}
+      {{$c.Expression}}§
+    {{end}}
+  {{end}}
+{{end}}
+
+{{/*
+-------------------------------------------------------------------------------
+  Emits layer manifest
+-------------------------------------------------------------------------------
+*/}}
+{{define "GenerateManifest"}}
+{
+  "file_format_version": "{{Global "LayerFileFormatVersion"}}",
+  "layer": {
+    "name": "{{Global "LayerName"}}",
+    "type": "{{Global "LayerSpanType"}}",
+    "library_path": "{{Global "LayerLibraryPath"}}",
+    "api_version": "{{Global "LayerAPIVersion"}}",
+    "implementation_version": "{{Global "LayerImplementationVersion"}}",
+    "description": "{{Global "LayerDescription"}}",
+    "functions": {
+      "vkNegotiateLoaderLayerInterfaceVersion": "{{Global "LayerPrefix"}}_NegotiateLoaderLayerInterfaceVersion",
+      "vkGetInstanceProcAddr": "{{Global "LayerPrefix"}}_GetInstanceProcAddr",
+      "vkGetDeviceProcAddr": "{{Global "LayerPrefix"}}_GetDeviceProcAddr"
+    },
+    "enable_environment": {
+      "{{Global "LayerPrefix"}}_ENABLE": "1"
+    },
+    "disable_environment": {
+      "{{Global "LayerPrefix"}}_DISABLE_1": "1"
+    },
+    "instance_extensions": [
+    {{$instanceExtensions := Strings (Macro "ImplementedInstanceExtensions") | SplitEOL}}
+    {{range $i, $l := $instanceExtensions}}
+      {
+        "name": "{{$l}}",
+        "spec_version": "{{Template "PrintExtensionSpecVersion" (Args "ext" $l "apiSpec" $)}}"
+      }{{if HasMore $i $instanceExtensions}},{{end}}
+    {{end}}
+    ],
+    {{$firstDeviceExtension := 1}}
+    "device_extensions": [
+    {{$deviceExtensions := Strings (Macro "ImplementedDeviceExtensions") | SplitEOL}}
+    {{$extName := ""}}
+    {{range $l := $deviceExtensions}}
+      {{if eq $firstDeviceExtension 1}}
+        {{$firstDeviceExtension = 0}}
+      {{else}},{{end}}
+      {
+        "name": "{{$l}}",
+        "spec_version": "{{Template "PrintExtensionSpecVersion" (Args "ext" $l "apiSpec" $)}}",
+        {{$firstEntryPoint := 1}}
+        "entrypoints": [
+        {{range $c := AllCommands $}}
+        {{$ext := GetAnnotation $c "extension"}}
+        {{if $ext}}
+          {{if eq $l (index ($ext.Arguments) 0)}}
+            {{if eq $firstEntryPoint 1}}
+              {{$firstEntryPoint = 0}}
+            {{else}}§{{printf ","}}{{end}}
+            {{printf "\"%v\"" $c.Name}}
+          {{end}}
+        {{end}}
+        {{end}}
+        ]
+      }
+    {{end}}
+    ]
+  }
+}
+¶
+{{end}}

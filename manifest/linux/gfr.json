@@ -1,0 +1,45 @@
+{
+  "file_format_version": "1.1.0",
+  "layer": {
+    "name": "VK_LAYER_GOOGLE_graphics_flight_recorder",
+    "type": "GLOBAL",
+    "library_path": "libVkLayer_gfr.so",
+    "api_version": "1.1.73",
+    "implementation_version": "1",
+    "description": "Graphics Flight Recorder is a crash/hang debugging tool that helps determines GPU progress in a Vulkan application",
+    "functions": {
+      "vkNegotiateLoaderLayerInterfaceVersion": "GFR_NegotiateLoaderLayerInterfaceVersion",
+      "vkGetInstanceProcAddr": "GFR_GetInstanceProcAddr",
+      "vkGetDeviceProcAddr": "GFR_GetDeviceProcAddr"
+    },
+    "enable_environment": {
+      "GFR_ENABLE": "1"
+    },
+    "disable_environment": {
+      "GFR_DISABLE_1": "1"
+    },
+    "instance_extensions": [
+      {
+        "name": "VK_EXT_debug_report",
+        "spec_version": "1"
+      },
+      {
+        "name": "VK_EXT_debug_utils",
+        "spec_version": "1"
+      }
+    ],
+    "device_extensions": [
+      {
+        "name": "VK_EXT_debug_marker",
+        "spec_version": "4",
+        "entrypoints": [
+          "vkDebugMarkerSetObjectTagEXT",
+          "vkDebugMarkerSetObjectNameEXT",
+          "vkCmdDebugMarkerBeginEXT",
+          "vkCmdDebugMarkerEndEXT",
+          "vkCmdDebugMarkerInsertEXT"
+        ]
+      }
+    ]
+  }
+}
