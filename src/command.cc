@@ -336,7 +336,7 @@ class CommandBufferInternalState {
 
  private:
   static constexpr int kNumBindPoints =
-      VK_PIPELINE_BIND_POINT_RANGE_SIZE;  // graphics, compute
+      /*VK_PIPELINE_BIND_POINT_RANGE_SIZE=*/2;  // graphics, compute
 
   Device* device_;
   std::array<const Pipeline*, kNumBindPoints> bound_pipelines_;
