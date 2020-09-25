@@ -404,6 +404,9 @@ const VkDeviceCreateInfo* GfrContext::GetModifiedDeviceCreateInfo(
                           pCreateInfo->ppEnabledExtensionNames +
                               pCreateInfo->enabledExtensionCount);
 
+  UniqueCStringArray original_extension_names = std::make_unique<CStringArray>();
+  *original_extension_names = *extension_names;
+
   if (!requested_buffer_marker) {
     // Get available extensions and add buffer marker if possible
     bool has_buffer_marker = false;
@@ -470,6 +473,10 @@ const VkDeviceCreateInfo* GfrContext::GetModifiedDeviceCreateInfo(
 
   auto device_create_info = std::make_unique<DeviceCreateInfo>();
   device_create_info->original_create_info = *pCreateInfo;
+  device_create_info->original_create_info.enabledExtensionCount =
+      static_cast<uint32_t>(original_extension_names->size());
+  device_create_info->original_create_info.ppEnabledExtensionNames =
+      original_extension_names->data();
   device_create_info->modified_create_info = *pCreateInfo;
   device_create_info->modified_create_info.enabledExtensionCount =
       static_cast<uint32_t>(extension_names->size());
@@ -484,6 +491,7 @@ const VkDeviceCreateInfo* GfrContext::GetModifiedDeviceCreateInfo(
 
   // Store the extension names
   device_extension_names_.push_back(std::move(extension_names));
+  device_extension_names_.push_back(std::move(original_extension_names));
 
   return p_modified_create_info;
 }
