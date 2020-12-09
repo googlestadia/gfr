@@ -104,10 +104,10 @@ class Device {
                                      std::ostream& os);
   void DeleteCommandBuffers(const VkCommandBuffer* vk_cmds, uint32_t cb_count);
 
-  void DumpWrappedCommandBuffer(VkCommandBuffer vk_command_buffer,
-                                std::ostream& os,
-                                CommandBufferDumpOptions options,
-                                const std::string& indent);
+  void DumpSecondaryCommandBuffer(VkCommandBuffer vk_command_buffer,
+                                  uint64_t submit_info_id, std::ostream& os,
+                                  CommandBufferDumpOptions options,
+                                  const std::string& indent);
   void DumpCommandBuffers(std::ostream& os, CommandBufferDumpOptions options,
                           bool dump_all_command_buffers) const;
   void DumpAllCommandBuffers(std::ostream& os,

@@ -81,7 +81,8 @@ class CommandBuffer {
   void QueueSubmit(VkQueue queue, VkFence fence);
 
   void DumpContents(std::ostream& os, CommandBufferDumpOptions options,
-                    const std::string& indent = gfr::Indent(2));
+                    const std::string& indent = gfr::Indent(2),
+                    uint64_t secondary_cb_submit_info_id = 0);
 
   bool DumpCmdExecuteCommands(const Command& command, std::ostream& os,
                               CommandBufferDumpOptions options,

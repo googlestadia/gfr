@@ -111,6 +111,10 @@ void PreCmdDrawIndirectCountAMD(VkCommandBuffer wrappedCommandBuffer, VkCommandB
 void PostCmdDrawIndirectCountAMD(VkCommandBuffer wrappedCommandBuffer, VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset, VkBuffer countBuffer, VkDeviceSize countOffset, uint32_t maxDrawCount, uint32_t stride);
 void PreCmdDrawIndexedIndirectCountAMD(VkCommandBuffer wrappedCommandBuffer, VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset, VkBuffer countBuffer, VkDeviceSize countOffset, uint32_t maxDrawCount, uint32_t stride);
 void PostCmdDrawIndexedIndirectCountAMD(VkCommandBuffer wrappedCommandBuffer, VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset, VkBuffer countBuffer, VkDeviceSize countOffset, uint32_t maxDrawCount, uint32_t stride);
+void PreCmdBeginConditionalRenderingEXT(VkCommandBuffer wrappedCommandBuffer, VkCommandBuffer commandBuffer, VkConditionalRenderingBeginInfoEXT const* pConditinalRenderingBegin);
+void PostCmdBeginConditionalRenderingEXT(VkCommandBuffer wrappedCommandBuffer, VkCommandBuffer commandBuffer, VkConditionalRenderingBeginInfoEXT const* pConditinalRenderingBegin);
+void PreCmdEndConditionalRenderingEXT(VkCommandBuffer wrappedCommandBuffer, VkCommandBuffer commandBuffer);
+void PostCmdEndConditionalRenderingEXT(VkCommandBuffer wrappedCommandBuffer, VkCommandBuffer commandBuffer);
 void PreCmdDebugMarkerBeginEXT(VkCommandBuffer wrappedCommandBuffer, VkCommandBuffer commandBuffer, VkDebugMarkerMarkerInfoEXT const* pMarkerInfo);
 void PostCmdDebugMarkerBeginEXT(VkCommandBuffer wrappedCommandBuffer, VkCommandBuffer commandBuffer, VkDebugMarkerMarkerInfoEXT const* pMarkerInfo);
 void PreCmdDebugMarkerEndEXT(VkCommandBuffer wrappedCommandBuffer, VkCommandBuffer commandBuffer);

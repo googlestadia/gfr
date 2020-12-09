@@ -192,6 +192,12 @@ void CommandTracker::PrintCommandParameters(std::ostream &os, const Command &cmd
     case Command::Type::kDrawIndexedIndirectCountAMD:
     PrintCmdDrawIndexedIndirectCountAMD(os, cmd, indent);
     break;
+    case Command::Type::kBeginConditionalRenderingEXT:
+    PrintCmdBeginConditionalRenderingEXT(os, cmd, indent);
+    break;
+    case Command::Type::kEndConditionalRenderingEXT:
+    PrintCmdEndConditionalRenderingEXT(os, cmd, indent);
+    break;
     case Command::Type::kDebugMarkerBeginEXT:
     PrintCmdDebugMarkerBeginEXT(os, cmd, indent);
     break;
@@ -1328,6 +1334,50 @@ void CommandTracker::PrintCmdDrawIndexedIndirectCountAMD(std::ostream &os, const
   if (cmd.parameters) {
     auto args = reinterpret_cast<CmdDrawIndexedIndirectCountAMDArgs *>(cmd.parameters);
     recorder_.PrintCmdDrawIndexedIndirectCountAMDArgs(os, *args, indent);
+  }
+}
+
+void CommandTracker::TrackPreCmdBeginConditionalRenderingEXT(VkCommandBuffer commandBuffer, VkConditionalRenderingBeginInfoEXT const* pConditinalRenderingBegin)
+{
+  Command cmd;
+  cmd.type = Command::Type::kBeginConditionalRenderingEXT;
+  cmd.id = static_cast<uint32_t>(commands_.size()) + 1;
+  cmd.parameters = recorder_.RecordCmdBeginConditionalRenderingEXT(commandBuffer, pConditinalRenderingBegin);
+  commands_.push_back(cmd);
+}
+
+void CommandTracker::TrackPostCmdBeginConditionalRenderingEXT(VkCommandBuffer commandBuffer, VkConditionalRenderingBeginInfoEXT const* pConditinalRenderingBegin)
+{
+  assert(commands_.back().type == Command::Type::kBeginConditionalRenderingEXT);
+}
+
+void CommandTracker::PrintCmdBeginConditionalRenderingEXT(std::ostream &os, const Command &cmd, const std::string& indent)
+{
+  if (cmd.parameters) {
+    auto args = reinterpret_cast<CmdBeginConditionalRenderingEXTArgs *>(cmd.parameters);
+    recorder_.PrintCmdBeginConditionalRenderingEXTArgs(os, *args, indent);
+  }
+}
+
+void CommandTracker::TrackPreCmdEndConditionalRenderingEXT(VkCommandBuffer commandBuffer)
+{
+  Command cmd;
+  cmd.type = Command::Type::kEndConditionalRenderingEXT;
+  cmd.id = static_cast<uint32_t>(commands_.size()) + 1;
+  cmd.parameters = recorder_.RecordCmdEndConditionalRenderingEXT(commandBuffer);
+  commands_.push_back(cmd);
+}
+
+void CommandTracker::TrackPostCmdEndConditionalRenderingEXT(VkCommandBuffer commandBuffer)
+{
+  assert(commands_.back().type == Command::Type::kEndConditionalRenderingEXT);
+}
+
+void CommandTracker::PrintCmdEndConditionalRenderingEXT(std::ostream &os, const Command &cmd, const std::string& indent)
+{
+  if (cmd.parameters) {
+    auto args = reinterpret_cast<CmdEndConditionalRenderingEXTArgs *>(cmd.parameters);
+    recorder_.PrintCmdEndConditionalRenderingEXTArgs(os, *args, indent);
   }
 }
 

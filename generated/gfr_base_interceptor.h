@@ -88,7 +88,6 @@ namespace intercept
     virtual void PostCmdBindDescriptorSets(WrappedVkCommandBuffer* commandBuffer, VkPipelineBindPoint pipelineBindPoint, VkPipelineLayout layout, uint32_t firstSet, uint32_t descriptorSetCount, VkDescriptorSet const* pDescriptorSets, uint32_t dynamicOffsetCount, uint32_t const* pDynamicOffsets);
     virtual void PreCmdPushConstants(WrappedVkCommandBuffer* commandBuffer, VkPipelineLayout layout, VkShaderStageFlags stageFlags, uint32_t offset, uint32_t size, void const* pValues);
     virtual void PostCmdPushConstants(WrappedVkCommandBuffer* commandBuffer, VkPipelineLayout layout, VkShaderStageFlags stageFlags, uint32_t offset, uint32_t size, void const* pValues);
-    virtual VkResult PreCreateDevice(VkPhysicalDevice physicalDevice, VkDeviceCreateInfo const* pCreateInfo, AllocationCallbacks pAllocator, VkDevice* pDevice);
     virtual VkResult PostCreateDevice(VkPhysicalDevice physicalDevice, VkDeviceCreateInfo const* pCreateInfo, AllocationCallbacks pAllocator, VkDevice* pDevice, VkResult result);
     virtual void PreDestroyDevice(VkDevice device, AllocationCallbacks pAllocator);
     virtual void PostDestroyDevice(VkDevice device, AllocationCallbacks pAllocator);
@@ -183,6 +182,10 @@ namespace intercept
     virtual void PostCmdDrawIndirectCountAMD(WrappedVkCommandBuffer* commandBuffer, VkBuffer buffer, VkDeviceSize offset, VkBuffer countBuffer, VkDeviceSize countOffset, uint32_t maxDrawCount, uint32_t stride);
     virtual void PreCmdDrawIndexedIndirectCountAMD(WrappedVkCommandBuffer* commandBuffer, VkBuffer buffer, VkDeviceSize offset, VkBuffer countBuffer, VkDeviceSize countOffset, uint32_t maxDrawCount, uint32_t stride);
     virtual void PostCmdDrawIndexedIndirectCountAMD(WrappedVkCommandBuffer* commandBuffer, VkBuffer buffer, VkDeviceSize offset, VkBuffer countBuffer, VkDeviceSize countOffset, uint32_t maxDrawCount, uint32_t stride);
+    virtual void PreCmdBeginConditionalRenderingEXT(WrappedVkCommandBuffer* commandBuffer, VkConditionalRenderingBeginInfoEXT const* pConditinalRenderingBegin);
+    virtual void PostCmdBeginConditionalRenderingEXT(WrappedVkCommandBuffer* commandBuffer, VkConditionalRenderingBeginInfoEXT const* pConditinalRenderingBegin);
+    virtual void PreCmdEndConditionalRenderingEXT(WrappedVkCommandBuffer* commandBuffer);
+    virtual void PostCmdEndConditionalRenderingEXT(WrappedVkCommandBuffer* commandBuffer);
     virtual VkResult PreDebugMarkerSetObjectNameEXT(VkDevice device, VkDebugMarkerObjectNameInfoEXT const* pNameInfo);
     virtual VkResult PostDebugMarkerSetObjectNameEXT(VkDevice device, VkDebugMarkerObjectNameInfoEXT const* pNameInfo, VkResult result);
     virtual void PreCmdDebugMarkerBeginEXT(WrappedVkCommandBuffer* commandBuffer, VkDebugMarkerMarkerInfoEXT const* pMarkerInfo);

@@ -22,6 +22,7 @@
 #include <memory>
 #include <mutex>
 #include <string>
+#include <vector>
 #include <unordered_map>
 #include <utility>
 

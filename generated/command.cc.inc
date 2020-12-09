@@ -21,7 +21,7 @@
 void CommandBuffer::PreCmdExecuteCommands(VkCommandBuffer wrappedCommandBuffer, VkCommandBuffer commandBuffer, uint32_t commandBufferCount, VkCommandBuffer const* pCommandBuffers)
 {
   tracker_.TrackPreCmdExecuteCommands(wrappedCommandBuffer, commandBufferCount, pCommandBuffers);
-  if (instrument_all_commands_) {
+  if (true) {
     WriteBeginCommandExecutionMarker(tracker_.GetCommands().back().id);
   }
 }
@@ -29,7 +29,7 @@ void CommandBuffer::PreCmdExecuteCommands(VkCommandBuffer wrappedCommandBuffer, 
 void CommandBuffer::PostCmdExecuteCommands(VkCommandBuffer wrappedCommandBuffer, VkCommandBuffer commandBuffer, uint32_t commandBufferCount, VkCommandBuffer const* pCommandBuffers)
 {
   tracker_.TrackPostCmdExecuteCommands(wrappedCommandBuffer, commandBufferCount, pCommandBuffers);
-  if (instrument_all_commands_) {
+  if (true) {
     WriteEndCommandExecutionMarker(tracker_.GetCommands().back().id);
   }
 }
@@ -765,6 +765,38 @@ void CommandBuffer::PreCmdDrawIndexedIndirectCountAMD(VkCommandBuffer wrappedCom
 void CommandBuffer::PostCmdDrawIndexedIndirectCountAMD(VkCommandBuffer wrappedCommandBuffer, VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset, VkBuffer countBuffer, VkDeviceSize countOffset, uint32_t maxDrawCount, uint32_t stride)
 {
   tracker_.TrackPostCmdDrawIndexedIndirectCountAMD(wrappedCommandBuffer, buffer, offset, countBuffer, countOffset, maxDrawCount, stride);
+  if (instrument_all_commands_) {
+    WriteEndCommandExecutionMarker(tracker_.GetCommands().back().id);
+  }
+}
+
+void CommandBuffer::PreCmdBeginConditionalRenderingEXT(VkCommandBuffer wrappedCommandBuffer, VkCommandBuffer commandBuffer, VkConditionalRenderingBeginInfoEXT const* pConditinalRenderingBegin)
+{
+  tracker_.TrackPreCmdBeginConditionalRenderingEXT(wrappedCommandBuffer, pConditinalRenderingBegin);
+  if (instrument_all_commands_) {
+    WriteBeginCommandExecutionMarker(tracker_.GetCommands().back().id);
+  }
+}
+
+void CommandBuffer::PostCmdBeginConditionalRenderingEXT(VkCommandBuffer wrappedCommandBuffer, VkCommandBuffer commandBuffer, VkConditionalRenderingBeginInfoEXT const* pConditinalRenderingBegin)
+{
+  tracker_.TrackPostCmdBeginConditionalRenderingEXT(wrappedCommandBuffer, pConditinalRenderingBegin);
+  if (instrument_all_commands_) {
+    WriteEndCommandExecutionMarker(tracker_.GetCommands().back().id);
+  }
+}
+
+void CommandBuffer::PreCmdEndConditionalRenderingEXT(VkCommandBuffer wrappedCommandBuffer, VkCommandBuffer commandBuffer)
+{
+  tracker_.TrackPreCmdEndConditionalRenderingEXT(wrappedCommandBuffer);
+  if (instrument_all_commands_) {
+    WriteBeginCommandExecutionMarker(tracker_.GetCommands().back().id);
+  }
+}
+
+void CommandBuffer::PostCmdEndConditionalRenderingEXT(VkCommandBuffer wrappedCommandBuffer, VkCommandBuffer commandBuffer)
+{
+  tracker_.TrackPostCmdEndConditionalRenderingEXT(wrappedCommandBuffer);
   if (instrument_all_commands_) {
     WriteEndCommandExecutionMarker(tracker_.GetCommands().back().id);
   }

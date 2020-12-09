@@ -30,6 +30,7 @@
 #include <map>
 #include <memory>
 #include <mutex>
+#include <new>
 #include <string>
 #include <thread>
 #include <unordered_map>
@@ -44,6 +45,8 @@
 
 namespace gfr {
 
+using StringArray = std::vector<std::string>;
+
 struct DeviceCreateInfo {
   VkDeviceCreateInfo original_create_info;
   VkDeviceCreateInfo modified_create_info;
@@ -52,6 +55,12 @@ struct DeviceCreateInfo {
 enum QueueOperationType {
   kQueueSubmit,
   kQueueBindSparse,
+};
+
+enum CrashSource {
+  kDeviceLostError,
+  kHangDaemon,
+  kWatchdogTimer,
 };
 
 // Original bind sparse info with the submit tracker that tracks semaphores for
@@ -93,6 +102,24 @@ struct ExpandedBindSparseInfo {
   ExpandedBindSparseInfo(PackedBindSparseInfo* packed_bind_sparse_info_)
       : packed_bind_sparse_info(packed_bind_sparse_info_){};
 };
+
+static inline void GfrNewHandler() {
+  std::cout << "GFR: Memory allocation failed!" << std::endl;
+  std::cerr << "GFR: Memory allocation failed!" << std::endl;
+  std::set_new_handler(nullptr);
+}
+
+template <typename T, typename... Args>
+T* GfrNew(Args&&... args) {
+  std::set_new_handler(GfrNewHandler);
+  return new T(std::forward<Args>(args)...);
+}
+
+template <typename T, typename... Args>
+T* GfrNewArray(size_t size) {
+  std::set_new_handler(GfrNewHandler);
+  return new T[size];
+}
 
 class GfrContext : public intercept::BaseInterceptor {
  public:
@@ -151,16 +178,19 @@ class GfrContext : public intercept::BaseInterceptor {
   std::string GetObjectName(VkDevice vk_device, uint64_t handle);
   std::string GetObjectInfo(VkDevice vk_device, uint64_t handle);
 
-  void DumpAllDevicesExecutionState();
-  void DumpDeviceExecutionState(VkDevice vk_device, bool dump_prologue);
-  void DumpDeviceExecutionState(const Device* device, bool dump_prologue);
+  void DumpAllDevicesExecutionState(CrashSource crash_source);
+  void DumpDeviceExecutionState(VkDevice vk_device, bool dump_prologue,
+                                CrashSource crash_source, std::ostream* os);
+  void DumpDeviceExecutionState(const Device* device, bool dump_prologue,
+                                CrashSource crash_source, std::ostream* os);
   void DumpDeviceExecutionState(const Device* device, std::string error_report,
-                                bool dump_prologue);
+                                bool dump_prologue, CrashSource crash_source,
+                                std::ostream* os);
   void DumpDeviceExecutionStateValidationFailed(const Device* device,
                                                 std::ostream& os);
 
   void DumpReportPrologue(std::ostream& os, const Device* device);
-  void WriteReport(std::ostream& os);
+  void WriteReport(std::ostream& os, CrashSource crash_source);
 
   void StartWatchdogTimer();
   void StopWatchdogTimer();
@@ -203,7 +233,6 @@ class GfrContext : public intercept::BaseInterceptor {
   virtual void PreUpdateDescriptorSets(VkDevice device, uint32_t descriptorWriteCount, VkWriteDescriptorSet const* pDescriptorWrites, uint32_t descriptorCopyCount, VkCopyDescriptorSet const* pDescriptorCopies) final override;
   virtual void PostUpdateDescriptorSets(VkDevice device, uint32_t descriptorWriteCount, VkWriteDescriptorSet const* pDescriptorWrites, uint32_t descriptorCopyCount, VkCopyDescriptorSet const* pDescriptorCopies) final override;
 
-  virtual VkResult PreCreateDevice(VkPhysicalDevice physicalDevice, VkDeviceCreateInfo const* pCreateInfo, AllocationCallbacks pAllocator, VkDevice* pDevice) final override;
   virtual VkResult PostCreateDevice(VkPhysicalDevice physicalDevice, VkDeviceCreateInfo const* pCreateInfo, AllocationCallbacks pAllocator, VkDevice* pDevice, VkResult result) final override;
   virtual void PreDestroyDevice(VkDevice device, AllocationCallbacks pAllocator) final override;
   virtual void PostDestroyDevice(VkDevice device, AllocationCallbacks pAllocator) final override;
@@ -259,12 +288,11 @@ class GfrContext : public intercept::BaseInterceptor {
 #include "gfr_commands.h.inc"
 
  private:
-  using CStringArray = std::vector<const char*>;
-  using UniqueCStringArray = std::unique_ptr<CStringArray>;
-  using StringArray = std::vector<std::string>;
+  using CStringArray = std::vector<char*>;
 
-  UniqueCStringArray instance_extension_names_;
-  StringArray instance_extension_names_copy_;
+  StringArray instance_extension_names_;
+  StringArray instance_extension_names_original_;
+  CStringArray instance_extension_names_cstr_;
   VkInstance vk_instance_ = VK_NULL_HANDLE;
 
   VkInstanceCreateInfo instance_create_info_;
@@ -287,9 +315,10 @@ class GfrContext : public intercept::BaseInterceptor {
 
   mutable std::mutex devices_mutex_;
   std::unordered_map<VkDevice, DevicePtr> devices_;
-  // b/111738598: This should be released in PostDestroyDevice.
-  std::vector<UniqueCStringArray> device_extension_names_;
-  std::vector<StringArray> device_extension_names_copy_;
+  StringArray device_extension_names_;
+  StringArray device_extension_names_original_;
+  CStringArray device_extension_names_cstr_;
+  CStringArray device_extension_names_original_cstr_;
 
   // Tracks VkDevice that a VkQueue belongs to. This is needed when tracking
   // semaphores in vkQueueBindSparse, for which we need to allocate new command
@@ -316,11 +345,12 @@ class GfrContext : public intercept::BaseInterceptor {
   bool trace_all_ = false;
 
   bool output_path_created_ = false;
+  std::string base_output_path_;
   std::string output_path_;
   std::string output_name_;
 
   bool log_configs_ = false;
-  std::vector<std::string> configs_;
+  StringArray configs_;
   template <class T>
   void GetEnvVal(const char* name, T* value);
 

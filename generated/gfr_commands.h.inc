@@ -117,6 +117,10 @@ virtual void PreCmdDrawIndirectCountAMD(WrappedVkCommandBuffer* commandBuffer, V
 virtual void PostCmdDrawIndirectCountAMD(WrappedVkCommandBuffer* commandBuffer, VkBuffer buffer, VkDeviceSize offset, VkBuffer countBuffer, VkDeviceSize countOffset, uint32_t maxDrawCount, uint32_t stride) final override;
 virtual void PreCmdDrawIndexedIndirectCountAMD(WrappedVkCommandBuffer* commandBuffer, VkBuffer buffer, VkDeviceSize offset, VkBuffer countBuffer, VkDeviceSize countOffset, uint32_t maxDrawCount, uint32_t stride) final override;
 virtual void PostCmdDrawIndexedIndirectCountAMD(WrappedVkCommandBuffer* commandBuffer, VkBuffer buffer, VkDeviceSize offset, VkBuffer countBuffer, VkDeviceSize countOffset, uint32_t maxDrawCount, uint32_t stride) final override;
+virtual void PreCmdBeginConditionalRenderingEXT(WrappedVkCommandBuffer* commandBuffer, VkConditionalRenderingBeginInfoEXT const* pConditinalRenderingBegin) final override;
+virtual void PostCmdBeginConditionalRenderingEXT(WrappedVkCommandBuffer* commandBuffer, VkConditionalRenderingBeginInfoEXT const* pConditinalRenderingBegin) final override;
+virtual void PreCmdEndConditionalRenderingEXT(WrappedVkCommandBuffer* commandBuffer) final override;
+virtual void PostCmdEndConditionalRenderingEXT(WrappedVkCommandBuffer* commandBuffer) final override;
 virtual void PreCmdDebugMarkerBeginEXT(WrappedVkCommandBuffer* commandBuffer, VkDebugMarkerMarkerInfoEXT const* pMarkerInfo) final override;
 virtual void PostCmdDebugMarkerBeginEXT(WrappedVkCommandBuffer* commandBuffer, VkDebugMarkerMarkerInfoEXT const* pMarkerInfo) final override;
 virtual void PreCmdDebugMarkerEndEXT(WrappedVkCommandBuffer* commandBuffer) final override;

@@ -136,6 +136,10 @@ class CommandTracker
   void TrackPostCmdDrawIndirectCountAMD(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset, VkBuffer countBuffer, VkDeviceSize countOffset, uint32_t maxDrawCount, uint32_t stride);
   void TrackPreCmdDrawIndexedIndirectCountAMD(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset, VkBuffer countBuffer, VkDeviceSize countOffset, uint32_t maxDrawCount, uint32_t stride);
   void TrackPostCmdDrawIndexedIndirectCountAMD(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset, VkBuffer countBuffer, VkDeviceSize countOffset, uint32_t maxDrawCount, uint32_t stride);
+  void TrackPreCmdBeginConditionalRenderingEXT(VkCommandBuffer commandBuffer, VkConditionalRenderingBeginInfoEXT const* pConditinalRenderingBegin);
+  void TrackPostCmdBeginConditionalRenderingEXT(VkCommandBuffer commandBuffer, VkConditionalRenderingBeginInfoEXT const* pConditinalRenderingBegin);
+  void TrackPreCmdEndConditionalRenderingEXT(VkCommandBuffer commandBuffer);
+  void TrackPostCmdEndConditionalRenderingEXT(VkCommandBuffer commandBuffer);
   void TrackPreCmdDebugMarkerBeginEXT(VkCommandBuffer commandBuffer, VkDebugMarkerMarkerInfoEXT const* pMarkerInfo);
   void TrackPostCmdDebugMarkerBeginEXT(VkCommandBuffer commandBuffer, VkDebugMarkerMarkerInfoEXT const* pMarkerInfo);
   void TrackPreCmdDebugMarkerEndEXT(VkCommandBuffer commandBuffer);
@@ -212,6 +216,8 @@ class CommandTracker
   void PrintCmdWriteBufferMarkerAMD(std::ostream &os, const Command &cmd, const std::string& indent);
   void PrintCmdDrawIndirectCountAMD(std::ostream &os, const Command &cmd, const std::string& indent);
   void PrintCmdDrawIndexedIndirectCountAMD(std::ostream &os, const Command &cmd, const std::string& indent);
+  void PrintCmdBeginConditionalRenderingEXT(std::ostream &os, const Command &cmd, const std::string& indent);
+  void PrintCmdEndConditionalRenderingEXT(std::ostream &os, const Command &cmd, const std::string& indent);
   void PrintCmdDebugMarkerBeginEXT(std::ostream &os, const Command &cmd, const std::string& indent);
   void PrintCmdDebugMarkerEndEXT(std::ostream &os, const Command &cmd, const std::string& indent);
   void PrintCmdDebugMarkerInsertEXT(std::ostream &os, const Command &cmd, const std::string& indent);

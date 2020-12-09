@@ -20,7 +20,9 @@
 #include <array>
 #include <cassert>
 #include <cstddef>
+#include <iostream>
 #include <memory>
+#include <new>
 #include <vector>
 
 //
@@ -89,6 +91,7 @@ class LinearAllocator {
    public:
     Block(size_t blocksize) {
       blocksize_ = blocksize;
+      std::set_new_handler(NewHandler);
       data_ = new char[blocksize_];
       Reset();
     }
@@ -113,6 +116,11 @@ class LinearAllocator {
     void Reset() { head_ = data_; }
 
    private:
+    static void NewHandler() {
+      std::cout << "GFR: Memory allocation failed!" << std::endl;
+      std::cerr << "GFR: Memory allocation failed!" << std::endl;
+      std::set_new_handler(nullptr);
+    };
     size_t blocksize_;
     char* head_;
     char* data_;

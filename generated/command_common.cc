@@ -73,6 +73,8 @@ const char *Command::GetCommandName(const Command &cmd) {
     case Command::Type::kWriteBufferMarkerAMD: return "vkCmdWriteBufferMarkerAMD";
     case Command::Type::kDrawIndirectCountAMD: return "vkCmdDrawIndirectCountAMD";
     case Command::Type::kDrawIndexedIndirectCountAMD: return "vkCmdDrawIndexedIndirectCountAMD";
+    case Command::Type::kBeginConditionalRenderingEXT: return "vkCmdBeginConditionalRenderingEXT";
+    case Command::Type::kEndConditionalRenderingEXT: return "vkCmdEndConditionalRenderingEXT";
     case Command::Type::kDebugMarkerBeginEXT: return "vkCmdDebugMarkerBeginEXT";
     case Command::Type::kDebugMarkerEndEXT: return "vkCmdDebugMarkerEndEXT";
     case Command::Type::kDebugMarkerInsertEXT: return "vkCmdDebugMarkerInsertEXT";

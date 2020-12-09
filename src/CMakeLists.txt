@@ -34,7 +34,6 @@ add_library(${target_name} MODULE
     ${CMAKE_CURRENT_SOURCE_DIR}/gfr.h
     ${CMAKE_CURRENT_SOURCE_DIR}/gfr.cc
     ${CMAKE_CURRENT_SOURCE_DIR}/linear_allocator.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/logger.h
     ${CMAKE_CURRENT_SOURCE_DIR}/marker.h
     ${CMAKE_CURRENT_SOURCE_DIR}/object_name_db.h
     ${CMAKE_CURRENT_SOURCE_DIR}/object_name_db.cc

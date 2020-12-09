@@ -46,16 +46,17 @@ void CommandPool::AllocateCommandBuffers(
 void CommandPool::FreeCommandBuffers(uint32_t command_buffer_count,
                                      const VkCommandBuffer* p_command_buffers) {
   for (uint32_t i = 0; i < command_buffer_count; ++i) {
-    std::vector<VkCommandBuffer>::iterator it = std::find(primary_command_buffers_.begin(),
-                                                          primary_command_buffers_.end(),
-                                                          p_command_buffers[i]);
-    if (it != primary_command_buffers_.end()) {
-      primary_command_buffers_.erase(it);
-    }
-    it = std::find(secondary_command_buffers_.begin(),
-                   secondary_command_buffers_.end(), p_command_buffers[i]);
-    if (it != secondary_command_buffers_.end()) {
-      secondary_command_buffers_.erase(it);
+    auto iter = std::find(primary_command_buffers_.begin(),
+                          primary_command_buffers_.end(), p_command_buffers[i]);
+    if (iter != primary_command_buffers_.end()) {
+      primary_command_buffers_.erase(iter);
+    } else {
+      auto iter =
+          std::find(secondary_command_buffers_.begin(),
+                    secondary_command_buffers_.end(), p_command_buffers[i]);
+      if (iter != secondary_command_buffers_.end()) {
+        secondary_command_buffers_.erase(iter);
+      }
     }
   }
 }
