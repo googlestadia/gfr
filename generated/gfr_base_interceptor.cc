@@ -230,11 +230,6 @@ namespace intercept
   {
   }
 
-  VkResult BaseInterceptor::PreCreateDevice(VkPhysicalDevice physicalDevice, VkDeviceCreateInfo const* pCreateInfo, AllocationCallbacks pAllocator, VkDevice* pDevice)
-  {
-    return VK_SUCCESS;
-  }
-
   VkResult BaseInterceptor::PostCreateDevice(VkPhysicalDevice physicalDevice, VkDeviceCreateInfo const* pCreateInfo, AllocationCallbacks pAllocator, VkDevice* pDevice, VkResult result)
   {
     return result;
@@ -626,6 +621,22 @@ namespace intercept
   }
 
   void BaseInterceptor::PostCmdDrawIndexedIndirectCountAMD(WrappedVkCommandBuffer* commandBuffer, VkBuffer buffer, VkDeviceSize offset, VkBuffer countBuffer, VkDeviceSize countOffset, uint32_t maxDrawCount, uint32_t stride)
+  {
+  }
+
+  void BaseInterceptor::PreCmdBeginConditionalRenderingEXT(WrappedVkCommandBuffer* commandBuffer, VkConditionalRenderingBeginInfoEXT const* pConditinalRenderingBegin)
+  {
+  }
+
+  void BaseInterceptor::PostCmdBeginConditionalRenderingEXT(WrappedVkCommandBuffer* commandBuffer, VkConditionalRenderingBeginInfoEXT const* pConditinalRenderingBegin)
+  {
+  }
+
+  void BaseInterceptor::PreCmdEndConditionalRenderingEXT(WrappedVkCommandBuffer* commandBuffer)
+  {
+  }
+
+  void BaseInterceptor::PostCmdEndConditionalRenderingEXT(WrappedVkCommandBuffer* commandBuffer)
   {
   }
 

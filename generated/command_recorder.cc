@@ -217,6 +217,7 @@ std::ostream& operator << (std::ostream& os, const VkRenderPassBeginInfo &a);
 std::ostream& operator << (std::ostream& os, const VkMemoryBarrier &a);
 std::ostream& operator << (std::ostream& os, const VkBufferMemoryBarrier &a);
 std::ostream& operator << (std::ostream& os, const VkImageMemoryBarrier &a);
+std::ostream& operator << (std::ostream& os, const VkConditionalRenderingBeginInfoEXT &a);
 std::ostream& operator << (std::ostream& os, const VkDebugMarkerMarkerInfoEXT &a);
 std::ostream& operator << (std::ostream& os, const VkDebugUtilsLabelEXT &a);
 std::ostream& operator << (std::ostream& os, const VkCommandBufferInheritanceInfo &a);
@@ -978,6 +979,53 @@ std::ostream& operator << (std::ostream& os, const VkImageMemoryBarrier &a)
   return os;
 }
 
+std::ostream& operator << (std::ostream& os, const VkConditionalRenderingBeginInfoEXT &a)
+{
+  os << OpenBracket;
+  os << NewEntry;
+  // PrintField
+  os << "- # parameter:";
+  os << OpenBracket << NewEntry;
+  os << "name: " << ".sType";
+  os << NewEntry;
+  os << "value: " << a.sType;
+  os << CloseBracket << NewEntry;
+  // PrintField
+  os << "- # parameter:";
+  os << OpenBracket << NewEntry;
+  os << "name: " << ".pNext";
+  os << NewEntry;
+  if (a.pNext) {
+    os << "value: " << a.pNext;
+  } else {
+    os << "value: nullptr";
+  }
+  os << CloseBracket << NewEntry;
+  // PrintField
+  os << "- # parameter:";
+  os << OpenBracket << NewEntry;
+  os << "name: " << ".buffer";
+  os << NewEntry;
+  os << "value: " << a.buffer;
+  os << CloseBracket << NewEntry;
+  // PrintField
+  os << "- # parameter:";
+  os << OpenBracket << NewEntry;
+  os << "name: " << ".offset";
+  os << NewEntry;
+  os << "value: " << a.offset;
+  os << CloseBracket << NewEntry;
+  // PrintField
+  os << "- # parameter:";
+  os << OpenBracket << NewEntry;
+  os << "name: " << ".flags";
+  os << NewEntry;
+  os << "value: " << a.flags;
+  os << CloseBracket;
+  os << CloseBracket; // Named Op
+  return os;
+}
+
 std::ostream& operator << (std::ostream& os, const VkDebugMarkerMarkerInfoEXT &a)
 {
   os << OpenBracket;
@@ -1535,6 +1583,20 @@ VkImageMemoryBarrier *CommandRecorder::CopyArray<VkImageMemoryBarrier>(const VkI
 }
 
 template<>
+VkConditionalRenderingBeginInfoEXT *CommandRecorder::CopyArray<VkConditionalRenderingBeginInfoEXT>(const VkConditionalRenderingBeginInfoEXT *src, uint64_t start_index, uint64_t count)
+{
+  auto ptr = reinterpret_cast<VkConditionalRenderingBeginInfoEXT *>(m_allocator.Alloc(sizeof(VkConditionalRenderingBeginInfoEXT) * count));
+  for (uint64_t i = 0; i < count; ++i) {
+    ptr[i].sType = src[start_index + i].sType; // enum
+    ptr[i].pNext = src[start_index + i].pNext; // ptr void
+    ptr[i].buffer = src[start_index + i].buffer; // VkBuffer
+    ptr[i].offset = src[start_index + i].offset; // VkDeviceSize
+    ptr[i].flags = src[start_index + i].flags; // VkConditionalRenderingFlagsEXT
+  }
+  return ptr;
+}
+
+template<>
 VkDebugMarkerMarkerInfoEXT *CommandRecorder::CopyArray<VkDebugMarkerMarkerInfoEXT>(const VkDebugMarkerMarkerInfoEXT *src, uint64_t start_index, uint64_t count)
 {
   auto ptr = reinterpret_cast<VkDebugMarkerMarkerInfoEXT *>(m_allocator.Alloc(sizeof(VkDebugMarkerMarkerInfoEXT) * count));
@@ -1583,7 +1645,7 @@ void CommandRecorder::PrintBeginCommandBufferArgs(std::ostream &os, const BeginC
   os << "name: " << "pBeginInfo";
   os << NewEntry;
   os << "members:";
-  os << *args.pBeginInfo; // [READ]parameter
+  os << *args.pBeginInfo;
   os << CloseBracket << NewEntry;;
 }
 
@@ -1648,7 +1710,7 @@ void CommandRecorder::PrintCmdExecuteCommandsArgs(std::ostream &os, const CmdExe
     os << OpenBracket << NewEntry;
     if ((uint64_t)args.commandBufferCount > 0) {
       for (uint32_t i = (uint64_t)(static_cast<uint32_t>(0U)); i < (uint64_t)args.commandBufferCount; i++) {
-        os << "- # member:";
+        os << "- # VkCommandBuffer";
         os << OpenBracket << NewEntry;
         os << "value: ";
         os << args.pCommandBuffers[i];
@@ -1714,9 +1776,9 @@ void CommandRecorder::PrintCmdCopyBufferArgs(std::ostream &os, const CmdCopyBuff
     os << OpenBracket << NewEntry;
     if ((uint64_t)args.regionCount > 0) {
       for (uint32_t i = (uint64_t)(static_cast<uint32_t>(0U)); i < (uint64_t)args.regionCount; i++) {
-        os << "- # member:";
+        os << "- # VkBufferCopy";
         os << OpenBracket << NewEntry;
-        os << "value: ";
+        os << "members:";
         os << args.pRegions[i];
         os << CloseBracket;
         if (i < (uint64_t)args.regionCount - 1) {
@@ -1794,9 +1856,9 @@ void CommandRecorder::PrintCmdCopyImageArgs(std::ostream &os, const CmdCopyImage
     os << OpenBracket << NewEntry;
     if ((uint64_t)args.regionCount > 0) {
       for (uint32_t i = (uint64_t)(static_cast<uint32_t>(0U)); i < (uint64_t)args.regionCount; i++) {
-        os << "- # member:";
+        os << "- # VkImageCopy";
         os << OpenBracket << NewEntry;
-        os << "value: ";
+        os << "members:";
         os << args.pRegions[i];
         os << CloseBracket;
         if (i < (uint64_t)args.regionCount - 1) {
@@ -1881,9 +1943,9 @@ void CommandRecorder::PrintCmdBlitImageArgs(std::ostream &os, const CmdBlitImage
     os << OpenBracket << NewEntry;
     if ((uint64_t)args.regionCount > 0) {
       for (uint32_t i = (uint64_t)(static_cast<uint32_t>(0U)); i < (uint64_t)args.regionCount; i++) {
-        os << "- # member:";
+        os << "- # VkImageBlit";
         os << OpenBracket << NewEntry;
-        os << "value: ";
+        os << "members:";
         os << args.pRegions[i];
         os << CloseBracket;
         if (i < (uint64_t)args.regionCount - 1) {
@@ -1954,9 +2016,9 @@ void CommandRecorder::PrintCmdCopyBufferToImageArgs(std::ostream &os, const CmdC
     os << OpenBracket << NewEntry;
     if ((uint64_t)args.regionCount > 0) {
       for (uint32_t i = (uint64_t)(static_cast<uint32_t>(0U)); i < (uint64_t)args.regionCount; i++) {
-        os << "- # member:";
+        os << "- # VkBufferImageCopy";
         os << OpenBracket << NewEntry;
-        os << "value: ";
+        os << "members:";
         os << args.pRegions[i];
         os << CloseBracket;
         if (i < (uint64_t)args.regionCount - 1) {
@@ -2027,9 +2089,9 @@ void CommandRecorder::PrintCmdCopyImageToBufferArgs(std::ostream &os, const CmdC
     os << OpenBracket << NewEntry;
     if ((uint64_t)args.regionCount > 0) {
       for (uint32_t i = (uint64_t)(static_cast<uint32_t>(0U)); i < (uint64_t)args.regionCount; i++) {
-        os << "- # member:";
+        os << "- # VkBufferImageCopy";
         os << OpenBracket << NewEntry;
-        os << "value: ";
+        os << "members:";
         os << args.pRegions[i];
         os << CloseBracket;
         if (i < (uint64_t)args.regionCount - 1) {
@@ -2166,7 +2228,7 @@ void CommandRecorder::PrintCmdClearColorImageArgs(std::ostream &os, const CmdCle
   os << "name: " << "pColor";
   os << NewEntry;
   os << "members:";
-  os << *args.pColor; // [READ]parameter
+  os << *args.pColor;
   os << CloseBracket << NewEntry;
   if (args.pRanges) {
     os << "- # parameter:";
@@ -2177,9 +2239,9 @@ void CommandRecorder::PrintCmdClearColorImageArgs(std::ostream &os, const CmdCle
     os << OpenBracket << NewEntry;
     if ((uint64_t)args.rangeCount > 0) {
       for (uint32_t i = (uint64_t)(static_cast<uint32_t>(0U)); i < (uint64_t)args.rangeCount; i++) {
-        os << "- # member:";
+        os << "- # VkImageSubresourceRange";
         os << OpenBracket << NewEntry;
-        os << "value: ";
+        os << "members:";
         os << args.pRanges[i];
         os << CloseBracket;
         if (i < (uint64_t)args.rangeCount - 1) {
@@ -2240,7 +2302,7 @@ void CommandRecorder::PrintCmdClearDepthStencilImageArgs(std::ostream &os, const
   os << "name: " << "pDepthStencil";
   os << NewEntry;
   os << "members:";
-  os << *args.pDepthStencil; // [READ]parameter
+  os << *args.pDepthStencil;
   os << CloseBracket << NewEntry;
   if (args.pRanges) {
     os << "- # parameter:";
@@ -2251,9 +2313,9 @@ void CommandRecorder::PrintCmdClearDepthStencilImageArgs(std::ostream &os, const
     os << OpenBracket << NewEntry;
     if ((uint64_t)args.rangeCount > 0) {
       for (uint32_t i = (uint64_t)(static_cast<uint32_t>(0U)); i < (uint64_t)args.rangeCount; i++) {
-        os << "- # member:";
+        os << "- # VkImageSubresourceRange";
         os << OpenBracket << NewEntry;
-        os << "value: ";
+        os << "members:";
         os << args.pRanges[i];
         os << CloseBracket;
         if (i < (uint64_t)args.rangeCount - 1) {
@@ -2311,9 +2373,9 @@ void CommandRecorder::PrintCmdClearAttachmentsArgs(std::ostream &os, const CmdCl
     os << OpenBracket << NewEntry;
     if ((uint64_t)args.attachmentCount > 0) {
       for (uint32_t i = (uint64_t)(static_cast<uint32_t>(0U)); i < (uint64_t)args.attachmentCount; i++) {
-        os << "- # member:";
+        os << "- # VkClearAttachment";
         os << OpenBracket << NewEntry;
-        os << "value: ";
+        os << "members:";
         os << args.pAttachments[i];
         os << CloseBracket;
         if (i < (uint64_t)args.attachmentCount - 1) {
@@ -2341,9 +2403,9 @@ void CommandRecorder::PrintCmdClearAttachmentsArgs(std::ostream &os, const CmdCl
     os << OpenBracket << NewEntry;
     if ((uint64_t)args.rectCount > 0) {
       for (uint32_t i = (uint64_t)(static_cast<uint32_t>(0U)); i < (uint64_t)args.rectCount; i++) {
-        os << "- # member:";
+        os << "- # VkClearRect";
         os << OpenBracket << NewEntry;
-        os << "value: ";
+        os << "members:";
         os << args.pRects[i];
         os << CloseBracket;
         if (i < (uint64_t)args.rectCount - 1) {
@@ -2421,9 +2483,9 @@ void CommandRecorder::PrintCmdResolveImageArgs(std::ostream &os, const CmdResolv
     os << OpenBracket << NewEntry;
     if ((uint64_t)args.regionCount > 0) {
       for (uint32_t i = (uint64_t)(static_cast<uint32_t>(0U)); i < (uint64_t)args.regionCount; i++) {
-        os << "- # member:";
+        os << "- # VkImageResolve";
         os << OpenBracket << NewEntry;
-        os << "value: ";
+        os << "members:";
         os << args.pRegions[i];
         os << CloseBracket;
         if (i < (uint64_t)args.regionCount - 1) {
@@ -2502,7 +2564,7 @@ void CommandRecorder::PrintCmdBindDescriptorSetsArgs(std::ostream &os, const Cmd
     os << OpenBracket << NewEntry;
     if ((uint64_t)args.descriptorSetCount > 0) {
       for (uint32_t i = (uint64_t)(static_cast<uint32_t>(0U)); i < (uint64_t)args.descriptorSetCount; i++) {
-        os << "- # member:";
+        os << "- # VkDescriptorSet";
         os << OpenBracket << NewEntry;
         os << "value: ";
         os << args.pDescriptorSets[i];
@@ -2532,7 +2594,7 @@ void CommandRecorder::PrintCmdBindDescriptorSetsArgs(std::ostream &os, const Cmd
     os << OpenBracket << NewEntry;
     if ((uint64_t)args.dynamicOffsetCount > 0) {
       for (uint32_t i = (uint64_t)(static_cast<uint32_t>(0U)); i < (uint64_t)args.dynamicOffsetCount; i++) {
-        os << "- # member:";
+        os << "- # u32";
         os << OpenBracket << NewEntry;
         os << "value: ";
         os << args.pDynamicOffsets[i];
@@ -2668,7 +2730,7 @@ void CommandRecorder::PrintCmdBindVertexBuffersArgs(std::ostream &os, const CmdB
     os << OpenBracket << NewEntry;
     if ((uint64_t)args.bindingCount > 0) {
       for (uint32_t i = (uint64_t)(static_cast<uint32_t>(0U)); i < (uint64_t)args.bindingCount; i++) {
-        os << "- # member:";
+        os << "- # VkBuffer";
         os << OpenBracket << NewEntry;
         os << "value: ";
         os << args.pBuffers[i];
@@ -2698,7 +2760,7 @@ void CommandRecorder::PrintCmdBindVertexBuffersArgs(std::ostream &os, const CmdB
     os << OpenBracket << NewEntry;
     if ((uint64_t)args.bindingCount > 0) {
       for (uint32_t i = (uint64_t)(static_cast<uint32_t>(0U)); i < (uint64_t)args.bindingCount; i++) {
-        os << "- # member:";
+        os << "- # VkDeviceSize";
         os << OpenBracket << NewEntry;
         os << "value: ";
         os << args.pOffsets[i];
@@ -3016,9 +3078,9 @@ void CommandRecorder::PrintCmdSetViewportArgs(std::ostream &os, const CmdSetView
     os << OpenBracket << NewEntry;
     if ((uint64_t)args.viewportCount > 0) {
       for (uint32_t i = (uint64_t)(static_cast<uint32_t>(0U)); i < (uint64_t)args.viewportCount; i++) {
-        os << "- # member:";
+        os << "- # VkViewport";
         os << OpenBracket << NewEntry;
-        os << "value: ";
+        os << "members:";
         os << args.pViewports[i];
         os << CloseBracket;
         if (i < (uint64_t)args.viewportCount - 1) {
@@ -3074,9 +3136,9 @@ void CommandRecorder::PrintCmdSetScissorArgs(std::ostream &os, const CmdSetSciss
     os << OpenBracket << NewEntry;
     if ((uint64_t)args.scissorCount > 0) {
       for (uint32_t i = (uint64_t)(static_cast<uint32_t>(0U)); i < (uint64_t)args.scissorCount; i++) {
-        os << "- # member:";
+        os << "- # VkRect2D";
         os << OpenBracket << NewEntry;
-        os << "value: ";
+        os << "members:";
         os << args.pScissors[i];
         os << CloseBracket;
         if (i < (uint64_t)args.scissorCount - 1) {
@@ -3502,7 +3564,7 @@ void CommandRecorder::PrintCmdBeginRenderPassArgs(std::ostream &os, const CmdBeg
   os << "name: " << "pRenderPassBegin";
   os << NewEntry;
   os << "members:";
-  os << *args.pRenderPassBegin; // [READ]parameter
+  os << *args.pRenderPassBegin;
   os << CloseBracket << NewEntry;;
 }
 
@@ -3659,7 +3721,7 @@ void CommandRecorder::PrintCmdWaitEventsArgs(std::ostream &os, const CmdWaitEven
     os << OpenBracket << NewEntry;
     if ((uint64_t)args.eventCount > 0) {
       for (uint32_t i = (uint64_t)(static_cast<uint32_t>(0U)); i < (uint64_t)args.eventCount; i++) {
-        os << "- # member:";
+        os << "- # VkEvent";
         os << OpenBracket << NewEntry;
         os << "value: ";
         os << args.pEvents[i];
@@ -3689,9 +3751,9 @@ void CommandRecorder::PrintCmdWaitEventsArgs(std::ostream &os, const CmdWaitEven
     os << OpenBracket << NewEntry;
     if ((uint64_t)args.memoryBarrierCount > 0) {
       for (uint32_t i = (uint64_t)(static_cast<uint32_t>(0U)); i < (uint64_t)args.memoryBarrierCount; i++) {
-        os << "- # member:";
+        os << "- # VkMemoryBarrier";
         os << OpenBracket << NewEntry;
-        os << "value: ";
+        os << "members:";
         os << args.pMemoryBarriers[i];
         os << CloseBracket;
         if (i < (uint64_t)args.memoryBarrierCount - 1) {
@@ -3719,9 +3781,9 @@ void CommandRecorder::PrintCmdWaitEventsArgs(std::ostream &os, const CmdWaitEven
     os << OpenBracket << NewEntry;
     if ((uint64_t)args.bufferMemoryBarrierCount > 0) {
       for (uint32_t i = (uint64_t)(static_cast<uint32_t>(0U)); i < (uint64_t)args.bufferMemoryBarrierCount; i++) {
-        os << "- # member:";
+        os << "- # VkBufferMemoryBarrier";
         os << OpenBracket << NewEntry;
-        os << "value: ";
+        os << "members:";
         os << args.pBufferMemoryBarriers[i];
         os << CloseBracket;
         if (i < (uint64_t)args.bufferMemoryBarrierCount - 1) {
@@ -3749,9 +3811,9 @@ void CommandRecorder::PrintCmdWaitEventsArgs(std::ostream &os, const CmdWaitEven
     os << OpenBracket << NewEntry;
     if ((uint64_t)args.imageMemoryBarrierCount > 0) {
       for (uint32_t i = (uint64_t)(static_cast<uint32_t>(0U)); i < (uint64_t)args.imageMemoryBarrierCount; i++) {
-        os << "- # member:";
+        os << "- # VkImageMemoryBarrier";
         os << OpenBracket << NewEntry;
-        os << "value: ";
+        os << "members:";
         os << args.pImageMemoryBarriers[i];
         os << CloseBracket;
         if (i < (uint64_t)args.imageMemoryBarrierCount - 1) {
@@ -3838,9 +3900,9 @@ void CommandRecorder::PrintCmdPipelineBarrierArgs(std::ostream &os, const CmdPip
     os << OpenBracket << NewEntry;
     if ((uint64_t)args.memoryBarrierCount > 0) {
       for (uint32_t i = (uint64_t)(static_cast<uint32_t>(0U)); i < (uint64_t)args.memoryBarrierCount; i++) {
-        os << "- # member:";
+        os << "- # VkMemoryBarrier";
         os << OpenBracket << NewEntry;
-        os << "value: ";
+        os << "members:";
         os << args.pMemoryBarriers[i];
         os << CloseBracket;
         if (i < (uint64_t)args.memoryBarrierCount - 1) {
@@ -3868,9 +3930,9 @@ void CommandRecorder::PrintCmdPipelineBarrierArgs(std::ostream &os, const CmdPip
     os << OpenBracket << NewEntry;
     if ((uint64_t)args.bufferMemoryBarrierCount > 0) {
       for (uint32_t i = (uint64_t)(static_cast<uint32_t>(0U)); i < (uint64_t)args.bufferMemoryBarrierCount; i++) {
-        os << "- # member:";
+        os << "- # VkBufferMemoryBarrier";
         os << OpenBracket << NewEntry;
-        os << "value: ";
+        os << "members:";
         os << args.pBufferMemoryBarriers[i];
         os << CloseBracket;
         if (i < (uint64_t)args.bufferMemoryBarrierCount - 1) {
@@ -3898,9 +3960,9 @@ void CommandRecorder::PrintCmdPipelineBarrierArgs(std::ostream &os, const CmdPip
     os << OpenBracket << NewEntry;
     if ((uint64_t)args.imageMemoryBarrierCount > 0) {
       for (uint32_t i = (uint64_t)(static_cast<uint32_t>(0U)); i < (uint64_t)args.imageMemoryBarrierCount; i++) {
-        os << "- # member:";
+        os << "- # VkImageMemoryBarrier";
         os << OpenBracket << NewEntry;
-        os << "value: ";
+        os << "members:";
         os << args.pImageMemoryBarriers[i];
         os << CloseBracket;
         if (i < (uint64_t)args.imageMemoryBarrierCount - 1) {
@@ -4073,6 +4135,33 @@ void CommandRecorder::PrintCmdDrawIndexedIndirectCountAMDArgs(std::ostream &os, 
   os << CloseBracket;
 }
 
+void CommandRecorder::PrintCmdBeginConditionalRenderingEXTArgs(std::ostream &os, const CmdBeginConditionalRenderingEXTArgs &args, const std::string& indent)
+{
+  IndentGuard param_indent(os, (int)indent.size() + 1);
+  os << NewEntry;
+  // PrintCommandArg
+  os << "- # parameter:";
+  os << OpenBracket << NewEntry;
+  os << "name: " << "commandBuffer";
+  os << NewEntry;
+  os << "value: " << args.commandBuffer;
+  os << CloseBracket << NewEntry;
+  // PrintCommandArg;
+}
+
+void CommandRecorder::PrintCmdEndConditionalRenderingEXTArgs(std::ostream &os, const CmdEndConditionalRenderingEXTArgs &args, const std::string& indent)
+{
+  IndentGuard param_indent(os, (int)indent.size() + 1);
+  os << NewEntry;
+  // PrintCommandArg
+  os << "- # parameter:";
+  os << OpenBracket << NewEntry;
+  os << "name: " << "commandBuffer";
+  os << NewEntry;
+  os << "value: " << args.commandBuffer;
+  os << CloseBracket;
+}
+
 void CommandRecorder::PrintCmdDebugMarkerBeginEXTArgs(std::ostream &os, const CmdDebugMarkerBeginEXTArgs &args, const std::string& indent)
 {
   IndentGuard param_indent(os, (int)indent.size() + 1);
@@ -4090,7 +4179,7 @@ void CommandRecorder::PrintCmdDebugMarkerBeginEXTArgs(std::ostream &os, const Cm
   os << "name: " << "pMarkerInfo";
   os << NewEntry;
   os << "members:";
-  os << *args.pMarkerInfo; // [READ]parameter
+  os << *args.pMarkerInfo;
   os << CloseBracket << NewEntry;;
 }
 
@@ -4124,7 +4213,7 @@ void CommandRecorder::PrintCmdDebugMarkerInsertEXTArgs(std::ostream &os, const C
   os << "name: " << "pMarkerInfo";
   os << NewEntry;
   os << "members:";
-  os << *args.pMarkerInfo; // [READ]parameter
+  os << *args.pMarkerInfo;
   os << CloseBracket << NewEntry;;
 }
 
@@ -4145,7 +4234,7 @@ void CommandRecorder::PrintCmdBeginDebugUtilsLabelEXTArgs(std::ostream &os, cons
   os << "name: " << "pLabelInfo";
   os << NewEntry;
   os << "members:";
-  os << *args.pLabelInfo; // [READ]parameter
+  os << *args.pLabelInfo;
   os << CloseBracket << NewEntry;;
 }
 
@@ -4179,7 +4268,7 @@ void CommandRecorder::PrintCmdInsertDebugUtilsLabelEXTArgs(std::ostream &os, con
   os << "name: " << "pLabelInfo";
   os << NewEntry;
   os << "members:";
-  os << *args.pLabelInfo; // [READ]parameter
+  os << *args.pLabelInfo;
   os << CloseBracket << NewEntry;;
 }
 
@@ -5055,6 +5144,21 @@ CmdDrawIndexedIndirectCountAMDArgs *CommandRecorder::RecordCmdDrawIndexedIndirec
   args->countOffset = countOffset; // VkDeviceSize
   args->maxDrawCount = maxDrawCount; // u32
   args->stride = stride; // u32
+  return args;
+}
+
+CmdBeginConditionalRenderingEXTArgs *CommandRecorder::RecordCmdBeginConditionalRenderingEXT(VkCommandBuffer commandBuffer, VkConditionalRenderingBeginInfoEXT const* pConditinalRenderingBegin)
+{
+  auto *args = Alloc<CmdBeginConditionalRenderingEXTArgs>();
+  args->commandBuffer = commandBuffer; // VkCommandBuffer
+  args->pConditinalRenderingBegin = pConditinalRenderingBegin; // VkConditionalRenderingBeginInfoEXT*
+  return args;
+}
+
+CmdEndConditionalRenderingEXTArgs *CommandRecorder::RecordCmdEndConditionalRenderingEXT(VkCommandBuffer commandBuffer)
+{
+  auto *args = Alloc<CmdEndConditionalRenderingEXTArgs>();
+  args->commandBuffer = commandBuffer; // VkCommandBuffer
   return args;
 }
 

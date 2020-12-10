@@ -17,6 +17,7 @@
  */
 
 // clang-format off
+#include <algorithm>
 #include <array>
 #include <cassert>
 #include <list>
@@ -2000,6 +2001,36 @@ VKAPI_ATTR void VKAPI_CALL CmdDrawIndexedIndirectCountAMD(VkCommandBuffer comman
   GetInterceptor()->PostCmdDrawIndexedIndirectCountAMD(wrappedcommandBuffer, buffer, offset, countBuffer, countOffset, maxDrawCount, stride);
 }
 
+VKAPI_ATTR void VKAPI_CALL CmdBeginConditionalRenderingEXT(VkCommandBuffer commandBuffer, VkConditionalRenderingBeginInfoEXT const* pConditinalRenderingBegin)
+{
+  auto &dispatch_table = *GetDeviceDispatchTable(commandBuffer);
+  WrappedVkCommandBuffer *wrappedcommandBuffer = reinterpret_cast<WrappedVkCommandBuffer *>(commandBuffer);
+  VkCommandBuffer unwrappedcommandBuffer = wrappedcommandBuffer->wrapped_object;
+
+  GetInterceptor()->PreCmdBeginConditionalRenderingEXT(wrappedcommandBuffer, pConditinalRenderingBegin);
+
+  if (dispatch_table.CmdBeginConditionalRenderingEXT) {
+    dispatch_table.CmdBeginConditionalRenderingEXT(unwrappedcommandBuffer, pConditinalRenderingBegin);
+  }
+
+  GetInterceptor()->PostCmdBeginConditionalRenderingEXT(wrappedcommandBuffer, pConditinalRenderingBegin);
+}
+
+VKAPI_ATTR void VKAPI_CALL CmdEndConditionalRenderingEXT(VkCommandBuffer commandBuffer)
+{
+  auto &dispatch_table = *GetDeviceDispatchTable(commandBuffer);
+  WrappedVkCommandBuffer *wrappedcommandBuffer = reinterpret_cast<WrappedVkCommandBuffer *>(commandBuffer);
+  VkCommandBuffer unwrappedcommandBuffer = wrappedcommandBuffer->wrapped_object;
+
+  GetInterceptor()->PreCmdEndConditionalRenderingEXT(wrappedcommandBuffer);
+
+  if (dispatch_table.CmdEndConditionalRenderingEXT) {
+    dispatch_table.CmdEndConditionalRenderingEXT(unwrappedcommandBuffer);
+  }
+
+  GetInterceptor()->PostCmdEndConditionalRenderingEXT(wrappedcommandBuffer);
+}
+
 VKAPI_ATTR VkResult VKAPI_CALL DebugMarkerSetObjectTagEXT(VkDevice device, VkDebugMarkerObjectTagInfoEXT const* pTagInfo)
 {
   auto &dispatch_table = *GetDeviceDispatchTable(device);
@@ -3102,6 +3133,8 @@ const std::unordered_map<std::string, void *> name_to_funcptr_map {
   {"vkCmdWriteBufferMarkerAMD", (void *)CmdWriteBufferMarkerAMD },
   {"vkCmdDrawIndirectCountAMD", (void *)CmdDrawIndirectCountAMD },
   {"vkCmdDrawIndexedIndirectCountAMD", (void *)CmdDrawIndexedIndirectCountAMD },
+  {"vkCmdBeginConditionalRenderingEXT", (void *)CmdBeginConditionalRenderingEXT },
+  {"vkCmdEndConditionalRenderingEXT", (void *)CmdEndConditionalRenderingEXT },
   {"vkDebugMarkerSetObjectTagEXT", (void *)DebugMarkerSetObjectTagEXT },
   {"vkDebugMarkerSetObjectNameEXT", (void *)DebugMarkerSetObjectNameEXT },
   {"vkCmdDebugMarkerBeginEXT", (void *)CmdDebugMarkerBeginEXT },
@@ -3189,6 +3222,34 @@ const std::unordered_map<std::string, void *> name_to_funcptr_map {
   {"vkGetSemaphoreCounterValueKHR", (void *)GetSemaphoreCounterValueKHR },
 };
 
+// List of Vulkan functions of the implemented instance extensions
+const std::vector<std::string> instance_ext_func_names {
+  "vkDebugReportCallbackEXT",
+  "vkCreateDebugReportCallbackEXT",
+  "vkDestroyDebugReportCallbackEXT",
+  "vkDebugReportMessageEXT",
+  "vkSetDebugUtilsObjectNameEXT",
+  "vkSetDebugUtilsObjectTagEXT",
+  "vkCmdBeginDebugUtilsLabelEXT",
+  "vkCmdEndDebugUtilsLabelEXT",
+  "vkCmdInsertDebugUtilsLabelEXT",
+  "vkQueueBeginDebugUtilsLabelEXT",
+  "vkQueueEndDebugUtilsLabelEXT",
+  "vkQueueInsertDebugUtilsLabelEXT",
+  "vkCreateDebugUtilsMessengerEXT",
+  "vkDestroyDebugUtilsMessengerEXT",
+  "vkSubmitDebugUtilsMessageEXT",
+};
+
+// List of Vulkan functions of the implemented device extensions
+const std::vector<std::string> device_ext_func_names {
+  "vkDebugMarkerSetObjectTagEXT",
+  "vkDebugMarkerSetObjectNameEXT",
+  "vkCmdDebugMarkerBeginEXT",
+  "vkCmdDebugMarkerEndEXT",
+  "vkCmdDebugMarkerInsertEXT",
+};
+
 // Manually written functions, generated as part of template
 
 VKAPI_ATTR VkResult VKAPI_CALL EnumerateInstanceLayerProperties(uint32_t* pPropertyCount, VkLayerProperties* pProperties)
@@ -3258,10 +3319,6 @@ VKAPI_ATTR VkResult VKAPI_CALL EnumerateDeviceExtensionProperties(VkPhysicalDevi
   if (result == VK_SUCCESS && layer_requested) {
     // set and copy base extensions
     *pPropertyCount = num_other_extensions;
-    if (pProperties != nullptr) {
-      memcpy(pProperties, &extensions[0],
-      num_other_extensions * sizeof(VkExtensionProperties));
-    }
     // find our unique extensions that need to be added
     uint32_t num_additional_extensions = 0;
     auto num_device_extensions = g_device_extensions.size();
@@ -3283,14 +3340,16 @@ VKAPI_ATTR VkResult VKAPI_CALL EnumerateDeviceExtensionProperties(VkPhysicalDevi
     if (nullptr == pProperties) {
       *pPropertyCount += num_additional_extensions;
     } else {
-      uint32_t numExtensions = num_other_extensions;
+      uint32_t numExtensions = std::min(num_other_extensions, max_extensions);
+      memcpy(pProperties, &extensions[0],
+      numExtensions * sizeof(VkExtensionProperties));
       for (size_t i = 0; i < num_additional_extensions && numExtensions < max_extensions; ++i) {
         pProperties[numExtensions++] = *additional_extensions[i];
       }
       *pPropertyCount = numExtensions;
       // not enough space for all extensions
       if (num_other_extensions + num_additional_extensions > max_extensions) {
-        return VK_INCOMPLETE;
+        result = VK_INCOMPLETE;
       }
     }
   }
@@ -3350,7 +3409,6 @@ const VkAllocationCallbacks *pAllocator, VkDevice *pDevice) {
   PFN_vkCreateDevice fpCreateDevice = (PFN_vkCreateDevice)fpGetInstanceProcAddr(instance_data->instance, "vkCreateDevice");
   chain_info->u.pLayerInfo = chain_info->u.pLayerInfo->pNext;
 
-  GetInterceptor()->PreCreateDevice(gpu, pCreateInfo, pAllocator, pDevice);
   const VkDeviceCreateInfo* device_create_info = GetInterceptor()->GetModifiedDeviceCreateInfo(gpu, pCreateInfo);
   lock.unlock();
   // Force coherent memory
@@ -3395,33 +3453,56 @@ VKAPI_ATTR void VKAPI_CALL DestroyDevice(VkDevice device, const VkAllocationCall
 }
 
 VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL GetInstanceProcAddr(VkInstance instance, const char *funcName) {
-  InstanceLayerData *instance_data;
-  const auto &item = name_to_funcptr_map.find(funcName);
-  if (item != name_to_funcptr_map.end()) {
-    return reinterpret_cast<PFN_vkVoidFunction>(item->second);
+  if (instance == VK_NULL_HANDLE || !strcmp(funcName, "vkCreateInstance")) {
+    const auto &item = name_to_funcptr_map.find(funcName);
+    if (item != name_to_funcptr_map.end()) {
+      return reinterpret_cast<PFN_vkVoidFunction>(item->second);
+    }
+    return nullptr;
   }
-  instance_data =
-  GetInstanceLayerData(get_dispatch_key(instance));
+  // If instance is initialized, return the `ProcAddr` of a
+  // function only if it exists in the dispatch table or is
+  // implemented as part of an instance extension.
+  InstanceLayerData *instance_data = GetInstanceLayerData(get_dispatch_key(instance));
   auto &table = instance_data->dispatch_table;
   if (!table.GetInstanceProcAddr) {
     return nullptr;
   }
-  return table.GetInstanceProcAddr(instance, funcName);
-}
-
-VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL GetDeviceProcAddr(VkDevice device, const char *funcName) {
-  assert(device);
-  DeviceLayerData *device_data =
-  GetDeviceLayerData(get_dispatch_key(device));
+  // Check if the procaddr exist in dispatch table.
+  auto ret = table.GetInstanceProcAddr(instance, funcName);
+  if (!ret) {
+    // Check if the layer implements the funtion in an instance extension.
+    if(std::find(instance_ext_func_names.begin(), instance_ext_func_names.end(), funcName) == instance_ext_func_names.end()) {
+      return ret;
+    }
+  }
   const auto &item = name_to_funcptr_map.find(funcName);
   if (item != name_to_funcptr_map.end()) {
     return reinterpret_cast<PFN_vkVoidFunction>(item->second);
   }
+  return ret;
+}
+
+VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL GetDeviceProcAddr(VkDevice device, const char *funcName) {
+  assert(device);
+  DeviceLayerData *device_data = GetDeviceLayerData(get_dispatch_key(device));
   auto &table = device_data->dispatch_table;
   if (!table.GetDeviceProcAddr) {
     return nullptr;
   }
-  return table.GetDeviceProcAddr(device, funcName);
+  // Check if the procaddr exist in dispatch table.
+  auto ret = table.GetDeviceProcAddr(device, funcName);
+  if (!ret) {
+    // Check if the layer implements the funtion in a device extension.
+    if(std::find(device_ext_func_names.begin(), device_ext_func_names.end(), funcName) == device_ext_func_names.end()) {
+      return ret;
+    }
+  }
+  const auto &item = name_to_funcptr_map.find(funcName);
+  if (item != name_to_funcptr_map.end()) {
+    return reinterpret_cast<PFN_vkVoidFunction>(item->second);
+  }
+  return ret;
 }
 
 } // namespace intercept

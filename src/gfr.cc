@@ -37,7 +37,6 @@
 #include <memory>
 #include <sstream>
 
-#include "logger.h"
 #include "util.h"
 
 #if defined(WIN32)
@@ -120,6 +119,7 @@ GfrContext::GfrContext() : intercept::BaseInterceptor() {
 
     // ensure base path is created
     MakeDir(output_path_);
+    base_output_path_ = output_path_;
 
     // if output_name_ is given, don't create a subdirectory
     char* d_env_value = getenv(k_env_var_output_name);
@@ -259,7 +259,7 @@ void GfrContext::WatchdogTimer() {
       std::cout << "GFR: Watchdog check failed, no submit in " << ms << "ms"
                 << std::endl;
 
-      DumpAllDevicesExecutionState();
+      DumpAllDevicesExecutionState(CrashSource::kWatchdogTimer);
 
       // Reset the timer to prevent constantly dumping the log.
       last_submit_time_ =
@@ -330,7 +330,7 @@ void GfrContext::GpuHangdListener() {
 
     if (0x8badf00d == msg) {
       std::cerr << "GFR: Driver signalled a hang." << std::endl;
-      DumpAllDevicesExecutionState();
+      DumpAllDevicesExecutionState(CrashSource::kHangDaemon);
     }
   }
 #endif  // __linux__
@@ -351,10 +351,9 @@ void GfrContext::PostApiFunction(const char* api_name) {
 const VkInstanceCreateInfo* GfrContext::GetModifiedInstanceCreateInfo(
     const VkInstanceCreateInfo* pCreateInfo) {
   instance_create_info_ = *pCreateInfo;
-  instance_extension_names_ = std::make_unique<CStringArray>();
-  instance_extension_names_->assign(pCreateInfo->ppEnabledExtensionNames,
-                                    pCreateInfo->ppEnabledExtensionNames +
-                                        pCreateInfo->enabledExtensionCount);
+  instance_extension_names_.assign(pCreateInfo->ppEnabledExtensionNames,
+                                   pCreateInfo->ppEnabledExtensionNames +
+                                       pCreateInfo->enabledExtensionCount);
 
   bool requested_debug_report = false;
   for (uint32_t i = 0; i < pCreateInfo->enabledExtensionCount; ++i) {
@@ -367,11 +366,14 @@ const VkInstanceCreateInfo* GfrContext::GetModifiedInstanceCreateInfo(
   }
   // Create persistent storage for the extension names
   if (!requested_debug_report) {
-    instance_extension_names_->push_back(VK_EXT_DEBUG_REPORT_EXTENSION_NAME);
+    instance_extension_names_.push_back(VK_EXT_DEBUG_REPORT_EXTENSION_NAME);
+    instance_extension_names_cstr_.clear();
+    for (auto& ext : instance_extension_names_)
+      instance_extension_names_cstr_.push_back(&ext.front());
     instance_create_info_.enabledExtensionCount =
-        static_cast<uint32_t>(instance_extension_names_->size());
+        static_cast<uint32_t>(instance_extension_names_cstr_.size());
     instance_create_info_.ppEnabledExtensionNames =
-        instance_extension_names_->data();
+        instance_extension_names_cstr_.data();
   }
   return &instance_create_info_;
 }
@@ -399,13 +401,12 @@ const VkDeviceCreateInfo* GfrContext::GetModifiedDeviceCreateInfo(
   }
 
   // Keep a copy of extensions
-  UniqueCStringArray extension_names = std::make_unique<CStringArray>();
-  extension_names->assign(pCreateInfo->ppEnabledExtensionNames,
-                          pCreateInfo->ppEnabledExtensionNames +
-                              pCreateInfo->enabledExtensionCount);
+  device_extension_names_original_.assign(
+      pCreateInfo->ppEnabledExtensionNames,
+      pCreateInfo->ppEnabledExtensionNames +
+          pCreateInfo->enabledExtensionCount);
 
-  UniqueCStringArray original_extension_names = std::make_unique<CStringArray>();
-  *original_extension_names = *extension_names;
+  device_extension_names_ = device_extension_names_original_;
 
   if (!requested_buffer_marker) {
     // Get available extensions and add buffer marker if possible
@@ -431,7 +432,7 @@ const VkDeviceCreateInfo* GfrContext::GetModifiedDeviceCreateInfo(
     }
 
     if (has_buffer_marker) {
-      extension_names->push_back(VK_AMD_BUFFER_MARKER_EXTENSION_NAME);
+      device_extension_names_.push_back(VK_AMD_BUFFER_MARKER_EXTENSION_NAME);
     } else {
       std::cerr << "GFR Warning: No VK_AMD_buffer_marker extension, "
                    "progression tracking will be disabled. "
@@ -463,7 +464,7 @@ const VkDeviceCreateInfo* GfrContext::GetModifiedDeviceCreateInfo(
 
     // Create persistent storage for the extension names
     if (has_coherent_memory) {
-      extension_names->push_back("VK_AMD_device_coherent_memory");
+      device_extension_names_.push_back("VK_AMD_device_coherent_memory");
     } else {
       std::cerr << "GFR Warning: No VK_AMD_device_coherent_memory extension, "
                    "results may not be as accurate as possible."
@@ -473,25 +474,29 @@ const VkDeviceCreateInfo* GfrContext::GetModifiedDeviceCreateInfo(
 
   auto device_create_info = std::make_unique<DeviceCreateInfo>();
   device_create_info->original_create_info = *pCreateInfo;
+
+  device_extension_names_original_cstr_.clear();
+  for (auto& ext : device_extension_names_original_)
+    device_extension_names_original_cstr_.push_back(&ext.front());
+  device_extension_names_cstr_.clear();
+  for (auto& ext : device_extension_names_)
+    device_extension_names_cstr_.push_back(&ext.front());
+
   device_create_info->original_create_info.enabledExtensionCount =
-      static_cast<uint32_t>(original_extension_names->size());
+      static_cast<uint32_t>(device_extension_names_original_cstr_.size());
   device_create_info->original_create_info.ppEnabledExtensionNames =
-      original_extension_names->data();
+      device_extension_names_original_cstr_.data();
   device_create_info->modified_create_info = *pCreateInfo;
   device_create_info->modified_create_info.enabledExtensionCount =
-      static_cast<uint32_t>(extension_names->size());
+      static_cast<uint32_t>(device_extension_names_cstr_.size());
   device_create_info->modified_create_info.ppEnabledExtensionNames =
-      extension_names->data();
+      device_extension_names_cstr_.data();
   auto p_modified_create_info = &(device_create_info->modified_create_info);
   {
     std::lock_guard<std::mutex> lock(device_create_infos_mutex_);
     device_create_infos_[p_modified_create_info] =
         std::move(device_create_info);
   }
-
-  // Store the extension names
-  device_extension_names_.push_back(std::move(extension_names));
-  device_extension_names_.push_back(std::move(original_extension_names));
 
   return p_modified_create_info;
 }
@@ -528,64 +533,73 @@ std::string GfrContext::GetObjectInfo(VkDevice vk_device, uint64_t handle) {
   return Uint64ToStr(handle);
 }
 
-void GfrContext::DumpAllDevicesExecutionState() {
+void GfrContext::DumpAllDevicesExecutionState(CrashSource crash_source) {
   std::lock_guard<std::mutex> lock(devices_mutex_);
   bool dump_prologue = true;
+  std::stringstream os;
   for (auto& it : devices_) {
     auto device = it.second.get();
-    DumpDeviceExecutionState(device, dump_prologue);
+    DumpDeviceExecutionState(device, dump_prologue, crash_source, &os);
     dump_prologue = false;
   }
+  WriteReport(os, crash_source);
 }
 
-void GfrContext::DumpDeviceExecutionState(VkDevice vk_device,
-                                          bool dump_prologue = true) {
+void GfrContext::DumpDeviceExecutionState(
+    VkDevice vk_device, bool dump_prologue = true,
+    CrashSource crash_source = kDeviceLostError, std::ostream* os = nullptr) {
   std::lock_guard<std::mutex> lock(devices_mutex_);
   if (devices_.find(vk_device) != devices_.end()) {
-    DumpDeviceExecutionState(devices_[vk_device].get(), {}, dump_prologue);
+    DumpDeviceExecutionState(devices_[vk_device].get(), {}, dump_prologue,
+                             crash_source, os);
   }
 }
 
-void GfrContext::DumpDeviceExecutionState(const Device* device,
-                                          bool dump_prologue = true) {
-  DumpDeviceExecutionState(device, {}, dump_prologue);
+void GfrContext::DumpDeviceExecutionState(
+    const Device* device, bool dump_prologue = true,
+    CrashSource crash_source = kDeviceLostError, std::ostream* os = nullptr) {
+  DumpDeviceExecutionState(device, {}, dump_prologue, crash_source, os);
 }
 
-void GfrContext::DumpDeviceExecutionState(const Device* device,
-                                          std::string error_report,
-                                          bool dump_prologue = true) {
+void GfrContext::DumpDeviceExecutionState(
+    const Device* device, std::string error_report, bool dump_prologue = true,
+    CrashSource crash_source = kDeviceLostError, std::ostream* os = nullptr) {
   if (!device) {
     return;
   }
 
-  std::stringstream os;
+  std::stringstream ss;
   if (dump_prologue) {
-    DumpReportPrologue(os, device);
+    DumpReportPrologue(ss, device);
   }
 
-  device->Print(os);
+  device->Print(ss);
 
   if (track_semaphores_) {
-    device->GetSubmitTracker()->DumpWaitingSubmits(os);
-    os << "\n";
-    device->GetSemaphoreTracker()->DumpWaitingThreads(os);
-    os << "\n";
+    device->GetSubmitTracker()->DumpWaitingSubmits(ss);
+    ss << "\n";
+    device->GetSemaphoreTracker()->DumpWaitingThreads(ss);
+    ss << "\n";
   }
 
-  os << "\n";
-  os << error_report;
+  ss << "\n";
+  ss << error_report;
 
   auto options = CommandBufferDumpOption::kDefault;
   if (debug_dump_all_command_buffers_)
     options |= CommandBufferDumpOption::kDumpAllCommands;
 
   if (debug_autodump_rate_ > 0 || debug_dump_all_command_buffers_) {
-    device->DumpAllCommandBuffers(os, options);
+    device->DumpAllCommandBuffers(ss, options);
   } else {
-    device->DumpIncompleteCommandBuffers(os, options);
+    device->DumpIncompleteCommandBuffers(ss, options);
   }
 
-  WriteReport(os);
+  if (os) {
+    *os << ss.str();
+  } else {
+    WriteReport(ss, crash_source);
+  }
 }
 
 void GfrContext::DumpDeviceExecutionStateValidationFailed(const Device* device,
@@ -597,8 +611,8 @@ void GfrContext::DumpDeviceExecutionStateValidationFailed(const Device* device,
   debug_dump_all_command_buffers_ = true;
   std::stringstream error_report;
   error_report << os.rdbuf();
-  DumpDeviceExecutionState(device, error_report.str(),
-                           true /* dump_prologue */);
+  DumpDeviceExecutionState(device, error_report.str(), true /* dump_prologue */,
+                           CrashSource::kDeviceLostError, &os);
   debug_dump_all_command_buffers_ = dump_all;
 }
 
@@ -641,14 +655,14 @@ void GfrContext::DumpReportPrologue(std::ostream& os, const Device* device) {
   }
 
   os << t << "instanceExtensions:";
-  for (auto& ext : instance_extension_names_copy_) {
+  for (auto& ext : instance_extension_names_original_) {
     os << tt << "- \"" << ext << "\"";
   }
   os << "\n";
 }
 
-void GfrContext::WriteReport(std::ostream& os) {
-  // Make sure our output directory exists
+void GfrContext::WriteReport(std::ostream& os, CrashSource crash_source) {
+  // Make sure our output directory exists.
   MakeOutputPath();
 
   // now write our log.
@@ -679,12 +693,22 @@ void GfrContext::WriteReport(std::ostream& os) {
     fs.close();
   }
 
+#if !defined(WIN32)
+  // Create a symlink from the generated log file
+  auto symlink_path = base_output_path_ + "gfr.log.symlink";
+  remove(symlink_path.c_str());
+  symlink(output_path.c_str(), symlink_path.c_str());
+#endif
+
   std::stringstream ss;
   ss << "----------------------------------------------------------------\n";
   ss << "- GRAPHICS FLIGHT RECORDER - ERROR DETECTED                    -\n";
   ss << "----------------------------------------------------------------\n";
   ss << "\n";
   ss << "Output written to: " << output_path << "\n";
+#if !defined(WIN32)
+  ss << "Symlink to output: " << symlink_path << "\n";
+#endif
   ss << "\n";
   ss << "----------------------------------------------------------------\n";
 #if defined(WIN32)
@@ -817,9 +841,6 @@ void GfrContext::LogBindSparseInfosSemaphores(
 VkResult GfrContext::PreCreateInstance(const VkInstanceCreateInfo* pCreateInfo,
                                        const VkAllocationCallbacks* pAllocator,
                                        VkInstance* pInstance) {
-  auto logger = std::make_unique<Logger>();
-  logger->LogToolVersion(kGfrVersion);
-
   // Setup debug flags
   GetEnvVal<bool>(k_env_var_debug_dump_on_begin, &debug_dump_on_begin_);
   GetEnvVal<int>(k_env_var_debug_autodump, &debug_autodump_rate_);
@@ -831,9 +852,10 @@ VkResult GfrContext::PreCreateInstance(const VkInstanceCreateInfo* pCreateInfo,
   GetEnvVal<bool>(k_env_var_validate_command_buffer_state,
                   &validate_command_buffer_state_);
 
-  instance_extension_names_copy_.assign(pCreateInfo->ppEnabledExtensionNames,
-                                        pCreateInfo->ppEnabledExtensionNames +
-                                            pCreateInfo->enabledExtensionCount);
+  instance_extension_names_original_.assign(
+      pCreateInfo->ppEnabledExtensionNames,
+      pCreateInfo->ppEnabledExtensionNames +
+          pCreateInfo->enabledExtensionCount);
   return VK_SUCCESS;
 }
 
@@ -872,19 +894,6 @@ void GfrContext::PostDestroyInstance(VkInstance instance,
 
 // TODO(b/141996712): extensions should be down at the intercept level, not
 // pre/post OR intercept should always extend/copy list
-VkResult GfrContext::PreCreateDevice(VkPhysicalDevice physicalDevice,
-                                     const VkDeviceCreateInfo* pCreateInfo,
-                                     const VkAllocationCallbacks* pAllocator,
-                                     VkDevice* pDevice) {
-  StringArray extension_name_copy;
-  extension_name_copy.assign(pCreateInfo->ppEnabledExtensionNames,
-                             pCreateInfo->ppEnabledExtensionNames +
-                                 pCreateInfo->enabledExtensionCount);
-
-  device_extension_names_copy_.push_back(std::move(extension_name_copy));
-  return VK_SUCCESS;
-}
-
 VkResult GfrContext::PostCreateDevice(VkPhysicalDevice physicalDevice,
                                       const VkDeviceCreateInfo* pCreateInfo,
                                       const VkAllocationCallbacks* pAllocator,
@@ -936,10 +945,11 @@ VkResult GfrContext::PostCreateDevice(VkPhysicalDevice physicalDevice,
                "buffers. VkDevice: 0x"
             << std::hex << (uint64_t)(vk_device) << std::dec
             << ", queueFamilyIndex: " << queue_family_index;
+      } else {
+        std::lock_guard<std::mutex> lock(devices_mutex_);
+        devices_[vk_device]->RegisterHelperCommandPool(queue_family_index,
+                                                       command_pool);
       }
-      std::lock_guard<std::mutex> lock(devices_mutex_);
-      devices_[vk_device]->RegisterHelperCommandPool(queue_family_index,
-                                                     command_pool);
     }
   }
 
@@ -1522,7 +1532,7 @@ VkResult GfrContext::PostWaitSemaphoresKHR(
       auto dispatch_table = intercept::GetDeviceDispatchTable(device);
       std::lock_guard<std::mutex> lock(devices_mutex_);
       auto semaphore_tracker = devices_[device]->GetSemaphoreTracker();
-      for (int i = 0; i < pWaitInfo->semaphoreCount; i++) {
+      for (uint32_t i = 0; i < pWaitInfo->semaphoreCount; i++) {
         auto res = dispatch_table->GetSemaphoreCounterValueKHR(
             device, pWaitInfo->pSemaphores[i], &semaphore_value);
         if (res == VK_SUCCESS) {
@@ -1817,10 +1827,18 @@ VKAPI_ATTR VkResult VKAPI_CALL QueueSubmit(VkQueue queue, uint32_t submitCount,
       cb_allocate_info.commandBufferCount = 2;
 
       // TODO b/152057973: Recycle state tracking CBs
-      VkCommandBuffer* new_buffers = new VkCommandBuffer[2];
+      VkCommandBuffer* new_buffers = gfr::GfrNewArray<VkCommandBuffer>(2);
       auto result = dispatch_table->AllocateCommandBuffers(
           vk_device, &cb_allocate_info, new_buffers);
       assert(result == VK_SUCCESS);
+      if (result != VK_SUCCESS) {
+        std::cerr
+            << "GFR Warning: failed to allocate helper command buffers for "
+               "tracking queue submit state. vkAllocateCommandBuffers() "
+               "returned "
+            << result;
+        break;
+      }
       unwrapped_cbs[0] = new_buffers[0];
       unwrapped_cbs[cb_count + 1] = new_buffers[1];
       intercept::SetDeviceLoaderData(vk_device, unwrapped_cbs[0]);
@@ -1844,20 +1862,31 @@ VKAPI_ATTR VkResult VKAPI_CALL QueueSubmit(VkQueue queue, uint32_t submitCount,
       result = dispatch_table->BeginCommandBuffer(unwrapped_cbs[0],
                                                   &commandBufferBeginInfo);
       assert(result == VK_SUCCESS);
-      g_interceptor->RecordSubmitStart(vk_device, queue_submit_id,
-                                       submit_info_id, unwrapped_cbs[0]);
-      result = dispatch_table->EndCommandBuffer(unwrapped_cbs[0]);
-      assert(result == VK_SUCCESS);
+      if (result != VK_SUCCESS) {
+        std::cerr << "GFR Warning: failed to begin helper command buffer. "
+                     "vkBeginCommandBuffer() returned "
+                  << result;
+      } else {
+        g_interceptor->RecordSubmitStart(vk_device, queue_submit_id,
+                                         submit_info_id, unwrapped_cbs[0]);
+        result = dispatch_table->EndCommandBuffer(unwrapped_cbs[0]);
+        assert(result == VK_SUCCESS);
+      }
 
       result = dispatch_table->BeginCommandBuffer(unwrapped_cbs[cb_count + 1],
                                                   &commandBufferBeginInfo);
       assert(result == VK_SUCCESS);
-      g_interceptor->RecordSubmitFinish(vk_device, queue_submit_id,
-                                        submit_info_id,
-                                        unwrapped_cbs[cb_count + 1]);
-      result = dispatch_table->EndCommandBuffer(unwrapped_cbs[cb_count + 1]);
-      assert(result == VK_SUCCESS);
-
+      if (result != VK_SUCCESS) {
+        std::cerr << "GFR Warning: failed to begin helper command buffer. "
+                     "vkBeginCommandBuffer() returned "
+                  << result;
+      } else {
+        g_interceptor->RecordSubmitFinish(vk_device, queue_submit_id,
+                                          submit_info_id,
+                                          unwrapped_cbs[cb_count + 1]);
+        result = dispatch_table->EndCommandBuffer(unwrapped_cbs[cb_count + 1]);
+        assert(result == VK_SUCCESS);
+      }
       if (trace_all_semaphores) {
         g_interceptor->LogSubmitInfoSemaphores(vk_device, queue,
                                                submit_info_id);
@@ -1952,10 +1981,19 @@ QueueBindSparse(VkQueue queue, uint32_t bindInfoCount,
   cb_allocate_info.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
   cb_allocate_info.commandBufferCount = num_submits;
   // TODO b/152057973: Recycle state tracking CBs
-  VkCommandBuffer* new_buffers = new VkCommandBuffer[num_submits];
+  VkCommandBuffer* new_buffers = gfr::GfrNewArray<VkCommandBuffer>(num_submits);
   auto result = dispatch_table->AllocateCommandBuffers(
       vk_device, &cb_allocate_info, new_buffers);
   assert(result == VK_SUCCESS);
+  if (result != VK_SUCCESS) {
+    std::cerr << "GFR Warning: failed to allocate helper command buffers for "
+                 "tracking queue bind sparse state. vkAllocateCommandBuffers() "
+                 "returned "
+              << result;
+    // Silently pass the call to the dispatch table.
+    return dispatch_table->QueueBindSparse(queue, bindInfoCount, pBindInfo,
+                                           fence);
+  }
   for (uint32_t i = 0; i < num_submits; i++) {
     helper_cbs[i] = new_buffers[i];
   }
@@ -1973,11 +2011,17 @@ QueueBindSparse(VkQueue queue, uint32_t bindInfoCount,
     result = dispatch_table->BeginCommandBuffer(helper_cbs[i],
                                                 &commandBufferBeginInfo);
     assert(result == VK_SUCCESS);
-    g_interceptor->RecordBindSparseHelperSubmit(
-        vk_device, qbind_sparse_id, &expanded_bind_sparse_info.submit_infos[i],
-        vk_pool);
-    result = dispatch_table->EndCommandBuffer(helper_cbs[i]);
-    assert(result == VK_SUCCESS);
+    if (result != VK_SUCCESS) {
+      std::cerr << "GFR Warning: failed to begin helper command buffer. "
+                   "vkBeginCommandBuffer() returned "
+                << result;
+    } else {
+      g_interceptor->RecordBindSparseHelperSubmit(
+          vk_device, qbind_sparse_id,
+          &expanded_bind_sparse_info.submit_infos[i], vk_pool);
+      result = dispatch_table->EndCommandBuffer(helper_cbs[i]);
+      assert(result == VK_SUCCESS);
+    }
 
     if (expanded_bind_sparse_info.submit_infos[i].signalSemaphoreCount > 0) {
       // Rip out semaphore signal operations from signal helper submit. We

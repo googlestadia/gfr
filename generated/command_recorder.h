@@ -409,6 +409,15 @@ struct CmdDrawIndexedIndirectCountAMDArgs {
   uint32_t stride;
 };
 
+struct CmdBeginConditionalRenderingEXTArgs {
+  VkCommandBuffer commandBuffer;
+  VkConditionalRenderingBeginInfoEXT const* pConditinalRenderingBegin;
+};
+
+struct CmdEndConditionalRenderingEXTArgs {
+  VkCommandBuffer commandBuffer;
+};
+
 struct CmdDebugMarkerBeginEXTArgs {
   VkCommandBuffer commandBuffer;
   VkDebugMarkerMarkerInfoEXT const* pMarkerInfo;
@@ -594,6 +603,10 @@ class CommandRecorder
   CmdDrawIndirectCountAMDArgs *RecordCmdDrawIndirectCountAMD(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset, VkBuffer countBuffer, VkDeviceSize countOffset, uint32_t maxDrawCount, uint32_t stride);
   void PrintCmdDrawIndexedIndirectCountAMDArgs(std::ostream &os, const CmdDrawIndexedIndirectCountAMDArgs &args, const std::string& indent);
   CmdDrawIndexedIndirectCountAMDArgs *RecordCmdDrawIndexedIndirectCountAMD(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset, VkBuffer countBuffer, VkDeviceSize countOffset, uint32_t maxDrawCount, uint32_t stride);
+  void PrintCmdBeginConditionalRenderingEXTArgs(std::ostream &os, const CmdBeginConditionalRenderingEXTArgs &args, const std::string& indent);
+  CmdBeginConditionalRenderingEXTArgs *RecordCmdBeginConditionalRenderingEXT(VkCommandBuffer commandBuffer, VkConditionalRenderingBeginInfoEXT const* pConditinalRenderingBegin);
+  void PrintCmdEndConditionalRenderingEXTArgs(std::ostream &os, const CmdEndConditionalRenderingEXTArgs &args, const std::string& indent);
+  CmdEndConditionalRenderingEXTArgs *RecordCmdEndConditionalRenderingEXT(VkCommandBuffer commandBuffer);
   void PrintCmdDebugMarkerBeginEXTArgs(std::ostream &os, const CmdDebugMarkerBeginEXTArgs &args, const std::string& indent);
   CmdDebugMarkerBeginEXTArgs *RecordCmdDebugMarkerBeginEXT(VkCommandBuffer commandBuffer, VkDebugMarkerMarkerInfoEXT const* pMarkerInfo);
   void PrintCmdDebugMarkerEndEXTArgs(std::ostream &os, const CmdDebugMarkerEndEXTArgs &args, const std::string& indent);

@@ -79,6 +79,8 @@ struct Command
     kWriteBufferMarkerAMD,
     kDrawIndirectCountAMD,
     kDrawIndexedIndirectCountAMD,
+    kBeginConditionalRenderingEXT,
+    kEndConditionalRenderingEXT,
     kDebugMarkerBeginEXT,
     kDebugMarkerEndEXT,
     kDebugMarkerInsertEXT,

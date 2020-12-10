@@ -94,7 +94,12 @@ uint32_t CommandBuffer::ReadMarker(MarkerPosition position) const {
 
 void CommandBuffer::WriteBeginCommandBufferMarker() {
   if (has_buffer_marker_) {
-    WriteMarker(MarkerPosition::kTop, kCommandBeginMarker);
+    // GFR log lables the commands inside a command buffer as follows:
+    // - vkBeginCommandBuffer: 1
+    // - n vkCmd commands recorded into command buffer: 2 ... n+1
+    // - vkEndCommandBuffer: n+2
+    WriteMarker(MarkerPosition::kTop, kCommandBeginMarker + 1);
+    WriteMarker(MarkerPosition::kBottom, kCommandBeginMarker + 1);
   }
 }
 
@@ -178,7 +183,7 @@ VkResult CommandBuffer::PostBeginCommandBuffer(
   if (cb_level_ == VK_COMMAND_BUFFER_LEVEL_SECONDARY &&
       pBeginInfo->pInheritanceInfo) {
     if (!scb_inheritance_info_) {
-      scb_inheritance_info_ = new VkCommandBufferInheritanceInfo();
+      scb_inheritance_info_ = gfr::GfrNew<VkCommandBufferInheritanceInfo>();
     }
     *scb_inheritance_info_ = *pBeginInfo->pInheritanceInfo;
   }
@@ -306,8 +311,8 @@ bool CommandBuffer::DumpCmdExecuteCommands(const Command& command,
   if (args->pCommandBuffers && args->commandBufferCount > 0) {
     os << pindent2 << "commandBuffers:";
     for (uint32_t i = 0; i < args->commandBufferCount; i++) {
-      device_->DumpWrappedCommandBuffer(args->pCommandBuffers[i], os, options,
-                                        pindent3);
+      device_->DumpSecondaryCommandBuffer(
+          args->pCommandBuffers[i], submit_info_id_, os, options, pindent3);
     }
   } else {
     os << pindent2 << "value: nullptr";
@@ -335,8 +340,7 @@ class CommandBufferInternalState {
   }
 
  private:
-  static constexpr int kNumBindPoints =
-      /*VK_PIPELINE_BIND_POINT_RANGE_SIZE=*/2;  // graphics, compute
+  static constexpr int kNumBindPoints = 2;  // graphics, compute
 
   Device* device_;
   std::array<const Pipeline*, kNumBindPoints> bound_pipelines_;
@@ -439,9 +443,10 @@ bool CommandBufferInternalState::Print(const Command& cmd,
 
 void CommandBuffer::DumpContents(std::ostream& os,
                                  CommandBufferDumpOptions options,
-                                 const std::string& indent) {
+                                 const std::string& indent,
+                                 uint64_t secondary_cb_submit_info_id) {
   auto num_commands = tracker_.GetCommands().size();
-  std::vector<std::string> indents = {indent};
+  StringArray indents = {indent};
   for (uint32_t i = 1; i < 4; i++) {
     indents.push_back(gfr::IncreaseIndent(indents[i - 1]));
   }
@@ -449,8 +454,13 @@ void CommandBuffer::DumpContents(std::ostream& os,
      << device_->GetObjectInfo((uint64_t)wrapped_command_buffer_, indents[1])
      << indents[1] << "device:"
      << device_->GetObjectInfo((uint64_t)vk_command_buffer_, indents[2])
-     << indents[1] << "submitInfoId: " << submit_info_id_ << indents[1]
-     << "commandPool:"
+     << indents[1] << "submitInfoId: ";
+  if (IsPrimaryCommandBuffer()) {
+    os << submit_info_id_;
+  } else {
+    os << secondary_cb_submit_info_id;
+  }
+  os << indents[1] << "commandPool:"
      << device_->GetObjectInfo((uint64_t)vk_command_pool_, indents[2])
      << indents[1] << "Level: ";
   if (IsPrimaryCommandBuffer()) {
@@ -482,15 +492,15 @@ void CommandBuffer::DumpContents(std::ostream& os,
     started = StartedExecution();
     completed = CompletedExecution();
 
-    if (buffer_state_ != BufferState::kPending) {
-      os << "[NOT_SUBMITTED]";
+    if (IsPrimaryCommandBuffer() && buffer_state_ != BufferState::kPending) {
+      os << "NOT_SUBMITTED";
     } else if (!started) {
-      os << "[EXECUTION_NOT_STARTED]";
+      os << "EXECUTION_NOT_STARTED";
     } else if (completed) {
-      os << "[EXECUTION_COMPLETED]";
+      os << "EXECUTION_COMPLETED";
     } else {
       last_complete_command = GetLastCompleteCommand();
-      os << "[EXECUTION_INCOMPLETE]" << indents[1]
+      os << "EXECUTION_INCOMPLETE" << indents[1]
          << "lastStartedCommand: " << GetLastStartedCommand() << indents[1]
          << "lastCompletedCommand: " << last_complete_command;
     }
@@ -540,14 +550,15 @@ void CommandBuffer::DumpContents(std::ostream& os,
       }
     }
     // Buffer
+    os << indents[1] << "MarkerBuffers:";
     if (has_buffer_marker_) {
-      os << indents[1] << "MarkerBuffers:" << indents[1]
-         << "  status: Available" << indents[1] << "  top_marker_buffer: "
-         << gfr::Uint64ToStr(ReadMarker(MarkerPosition::kTop)) << indents[1]
-         << "  bottom_marker_buffer: "
+      os << indents[2] << "status: Available" << indents[2]
+         << "top_marker_buffer: "
+         << gfr::Uint64ToStr(ReadMarker(MarkerPosition::kTop)) << indents[2]
+         << "bottom_marker_buffer: "
          << gfr::Uint64ToStr(ReadMarker(MarkerPosition::kBottom));
     } else {
-      os << indents[1] << "MarkerBuffers: "
+      os << indents[2]
          << "status: N/A (VK_AMD_buffer_marker extension not supported)";
     }
   }

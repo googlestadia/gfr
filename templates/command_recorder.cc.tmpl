@@ -41,6 +41,7 @@ vkCmdCopyBufferToImage
 vkCmdCopyImage
 vkCmdCopyImageToBuffer
 vkCmdBindPipeline
+vkCmdExecuteCommands
 vkCmdSetEvent
 vkCmdResetEvent
 vkCmdWaitEvents
@@ -671,10 +672,10 @@ vkResetCommandBuffer
       os << "name: " << "{{Template "C++.Read" $.Slice.Pointer}}";
       os << NewEntry;
       os << "members:";
-      os << *args.{{Template "C++.Read" $.Slice.Pointer}}; // {{Template "ReadType" $.Slice.Pointer}}
+      os << *args.{{Template "C++.Read" $.Slice.Pointer}};
       os << CloseBracket << NewEntry;
     {{end}}
-  {{else if IsPointerRange     $}}{{if not (IsMember $.Pointer)}}if (args.{{Template "C++.Read" $.Pointer}}) {
+  {{else if IsPointerRange $}}{{if not (IsMember $.Pointer)}}if (args.{{Template "C++.Read" $.Pointer}}) {
       os << "- # parameter:";
       os << OpenBracket << NewEntry;
       os << "name: " << "{{Template "C++.Read" $.Pointer}}";
@@ -683,9 +684,13 @@ vkResetCommandBuffer
       os << OpenBracket << NewEntry;
       if ((uint64_t)args.{{Macro "C++.ReadAsCallArgument" $.Range.RHS.Object}} > 0) {
         for (uint32_t i = {{Template "C++.Read" $.Range.LHS}}; i < (uint64_t)args.{{Macro "C++.ReadAsCallArgument" $.Range.RHS.Object}}; i++) {
-          os << "- # member:";
+          os << "- # {{$.Type.To}}";
           os << OpenBracket << NewEntry;
-          os << "value: ";
+         {{if IsClass ($.Type.To | Underlying | Unpack)}}
+            os << "members:";
+          {{else}}
+            os << "value: ";
+          {{end}}
           os << args.{{Template "C++.Read" $.Pointer}}[i];
           os << CloseBracket;
           if (i < (uint64_t)args.{{Macro "C++.ReadAsCallArgument" $.Range.RHS.Object}} - 1) {

@@ -676,6 +676,34 @@ void GfrContext::PostCmdDrawIndexedIndirectCountAMD(WrappedVkCommandBuffer* comm
   commandBuffer->custom_data->PostCmdDrawIndexedIndirectCountAMD((VkCommandBuffer)commandBuffer, unwrappedcommandBuffer, buffer, offset, countBuffer, countOffset, maxDrawCount, stride);
 }
 
+void GfrContext::PreCmdBeginConditionalRenderingEXT(WrappedVkCommandBuffer* commandBuffer, VkConditionalRenderingBeginInfoEXT const* pConditinalRenderingBegin)
+{
+  WrappedVkCommandBuffer *wrappedcommandBuffer = reinterpret_cast<WrappedVkCommandBuffer *>(commandBuffer);
+  VkCommandBuffer unwrappedcommandBuffer = wrappedcommandBuffer->wrapped_object;
+  commandBuffer->custom_data->PreCmdBeginConditionalRenderingEXT((VkCommandBuffer)commandBuffer, unwrappedcommandBuffer, pConditinalRenderingBegin);
+}
+
+void GfrContext::PostCmdBeginConditionalRenderingEXT(WrappedVkCommandBuffer* commandBuffer, VkConditionalRenderingBeginInfoEXT const* pConditinalRenderingBegin)
+{
+  WrappedVkCommandBuffer *wrappedcommandBuffer = reinterpret_cast<WrappedVkCommandBuffer *>(commandBuffer);
+  VkCommandBuffer unwrappedcommandBuffer = wrappedcommandBuffer->wrapped_object;
+  commandBuffer->custom_data->PostCmdBeginConditionalRenderingEXT((VkCommandBuffer)commandBuffer, unwrappedcommandBuffer, pConditinalRenderingBegin);
+}
+
+void GfrContext::PreCmdEndConditionalRenderingEXT(WrappedVkCommandBuffer* commandBuffer)
+{
+  WrappedVkCommandBuffer *wrappedcommandBuffer = reinterpret_cast<WrappedVkCommandBuffer *>(commandBuffer);
+  VkCommandBuffer unwrappedcommandBuffer = wrappedcommandBuffer->wrapped_object;
+  commandBuffer->custom_data->PreCmdEndConditionalRenderingEXT((VkCommandBuffer)commandBuffer, unwrappedcommandBuffer);
+}
+
+void GfrContext::PostCmdEndConditionalRenderingEXT(WrappedVkCommandBuffer* commandBuffer)
+{
+  WrappedVkCommandBuffer *wrappedcommandBuffer = reinterpret_cast<WrappedVkCommandBuffer *>(commandBuffer);
+  VkCommandBuffer unwrappedcommandBuffer = wrappedcommandBuffer->wrapped_object;
+  commandBuffer->custom_data->PostCmdEndConditionalRenderingEXT((VkCommandBuffer)commandBuffer, unwrappedcommandBuffer);
+}
+
 void GfrContext::PreCmdDebugMarkerBeginEXT(WrappedVkCommandBuffer* commandBuffer, VkDebugMarkerMarkerInfoEXT const* pMarkerInfo)
 {
   WrappedVkCommandBuffer *wrappedcommandBuffer = reinterpret_cast<WrappedVkCommandBuffer *>(commandBuffer);

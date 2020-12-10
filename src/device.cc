@@ -333,10 +333,11 @@ void Device::SetCommandBuffer(VkCommandBuffer vk_command_buffer,
   command_buffers_[vk_command_buffer] = std::move(command_buffer);
 }
 
-void Device::DumpWrappedCommandBuffer(VkCommandBuffer vk_command_buffer,
-                                      std::ostream& os,
-                                      CommandBufferDumpOptions options,
-                                      const std::string& indent) {
+void Device::DumpSecondaryCommandBuffer(VkCommandBuffer vk_command_buffer,
+                                        uint64_t submit_info_id,
+                                        std::ostream& os,
+                                        CommandBufferDumpOptions options,
+                                        const std::string& indent) {
   WrappedVkCommandBuffer* wrapped_command_buffer =
       reinterpret_cast<WrappedVkCommandBuffer*>(vk_command_buffer);
   VkCommandBuffer unwrapped_command_buffer =
@@ -344,8 +345,8 @@ void Device::DumpWrappedCommandBuffer(VkCommandBuffer vk_command_buffer,
   std::lock_guard<std::recursive_mutex> lock(command_buffers_mutex_);
   if (command_buffers_.find(unwrapped_command_buffer) !=
       command_buffers_.end()) {
-    command_buffers_[unwrapped_command_buffer]->DumpContents(os, options,
-                                                             indent);
+    command_buffers_[unwrapped_command_buffer]->DumpContents(
+        os, options, indent, submit_info_id);
   }
 }
 
@@ -548,7 +549,6 @@ void Device::DeleteCommandPool(VkCommandPool vk_command_pool) {
         command_pools_[vk_command_pool]->GetCommandBuffers(cb_level);
     for (auto vk_cmd : command_buffers) {
       auto p_cmd = command_buffers_[vk_cmd].get();
-      assert(p_cmd != nullptr);
       if (p_cmd != nullptr) {
         command_buffers_.erase(vk_cmd);
         wrapped_command_buffers_.erase(vk_cmd);
