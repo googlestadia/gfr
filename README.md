@@ -83,7 +83,7 @@ Once enabled, if `vkQueueSubmit()` or other Vulkan functions returns a fatal err
 ## Regenerating the layer
 
 GFR uses GAPID to generate much of it's layer binding. To rebuild the source files in the `generated` folder you
-need to have GAPID built: (http://github.com/gapid)
+need to have GAPID built: (https://github.com/google/gapid)
 
 On Linux, set `GAPID_DIR` to the root of the GAPID repository and make sure `apic` from GAPID is in your path (you
 will likely need to build GAPID yourself to have access to this utility).
