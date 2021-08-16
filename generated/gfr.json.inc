@@ -3,10 +3,10 @@
   "layer": {
     "name": "VK_LAYER_GOOGLE_graphics_flight_recorder",
     "type": "GLOBAL",
-    "library_path": "libVkLayer_gfr.so",
+    "library_path": "/usr/local/cloudcast/lib/libVkLayer_gfr.so",
     "api_version": "1.1.73",
     "implementation_version": "1",
-    "description": "Graphics Flight Recorder is a crash/hang debugging tool that helps determines GPU progress in a Vulkan application",
+    "description": "Google Graphics Flight Recorder is a crash/hang debugging tool that helps determines GPU progress in a Vulkan application",
     "functions": {
       "vkNegotiateLoaderLayerInterfaceVersion": "GFR_NegotiateLoaderLayerInterfaceVersion",
       "vkGetInstanceProcAddr": "GFR_GetInstanceProcAddr",

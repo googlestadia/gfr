@@ -50,14 +50,14 @@ NamedObject:
   debugName: string
 
 WaitSemaphore:
-  vkSemaphore: string
+  vkHandle: string
   debugName: string
   type: string
   waitValue: int
   lastValue: int
 
 SignalSemaphore:
-  vkSemaphore: string
+  vkHandle: string
   debugName: string
   type: string
   signalValue: int
@@ -108,6 +108,7 @@ CommandInternalState:
 
 Command:
   id: string
+  markerValue: string
   name: string
   state: [string]
   parameters: [Parameter]
@@ -118,6 +119,10 @@ CommandBuffer:
   vkHandle: string
   debugName: string
   device: NamedObject
+  beginMarkerValue: string
+  endMarkerValue: string
+  topMarkerBuffer: string
+  bottomMarkerBuffer: string
   submitInfoId: int
   commandPool: NamedObject
   level: string
@@ -129,7 +134,3 @@ CommandBuffer:
   lastStartedCommand: int
   lastCompletedCommand: int
   commands: [Command]
-  MarkerBuffers:
-    status: string
-    topMarkerBuffer: int
-    bottomMarkerBuffer: int

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015 Google Inc.
+ * Copyright (C) 2019 Google Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,977 +18,977 @@
 
 // clang-format off
 
-void CommandBuffer::PreCmdExecuteCommands(VkCommandBuffer wrappedCommandBuffer, VkCommandBuffer commandBuffer, uint32_t commandBufferCount, VkCommandBuffer const* pCommandBuffers)
+void CommandBuffer::PreCmdExecuteCommands(VkCommandBuffer commandBuffer, uint32_t commandBufferCount, VkCommandBuffer const* pCommandBuffers)
 {
-  tracker_.TrackPreCmdExecuteCommands(wrappedCommandBuffer, commandBufferCount, pCommandBuffers);
+  tracker_.TrackPreCmdExecuteCommands(commandBuffer, commandBufferCount, pCommandBuffers);
   if (true) {
     WriteBeginCommandExecutionMarker(tracker_.GetCommands().back().id);
   }
 }
 
-void CommandBuffer::PostCmdExecuteCommands(VkCommandBuffer wrappedCommandBuffer, VkCommandBuffer commandBuffer, uint32_t commandBufferCount, VkCommandBuffer const* pCommandBuffers)
+void CommandBuffer::PostCmdExecuteCommands(VkCommandBuffer commandBuffer, uint32_t commandBufferCount, VkCommandBuffer const* pCommandBuffers)
 {
-  tracker_.TrackPostCmdExecuteCommands(wrappedCommandBuffer, commandBufferCount, pCommandBuffers);
+  tracker_.TrackPostCmdExecuteCommands(commandBuffer, commandBufferCount, pCommandBuffers);
   if (true) {
     WriteEndCommandExecutionMarker(tracker_.GetCommands().back().id);
   }
 }
 
-void CommandBuffer::PreCmdCopyBuffer(VkCommandBuffer wrappedCommandBuffer, VkCommandBuffer commandBuffer, VkBuffer srcBuffer, VkBuffer dstBuffer, uint32_t regionCount, VkBufferCopy const* pRegions)
+void CommandBuffer::PreCmdCopyBuffer(VkCommandBuffer commandBuffer, VkBuffer srcBuffer, VkBuffer dstBuffer, uint32_t regionCount, VkBufferCopy const* pRegions)
 {
-  tracker_.TrackPreCmdCopyBuffer(wrappedCommandBuffer, srcBuffer, dstBuffer, regionCount, pRegions);
+  tracker_.TrackPreCmdCopyBuffer(commandBuffer, srcBuffer, dstBuffer, regionCount, pRegions);
   if (true) {
     WriteBeginCommandExecutionMarker(tracker_.GetCommands().back().id);
   }
 }
 
-void CommandBuffer::PostCmdCopyBuffer(VkCommandBuffer wrappedCommandBuffer, VkCommandBuffer commandBuffer, VkBuffer srcBuffer, VkBuffer dstBuffer, uint32_t regionCount, VkBufferCopy const* pRegions)
+void CommandBuffer::PostCmdCopyBuffer(VkCommandBuffer commandBuffer, VkBuffer srcBuffer, VkBuffer dstBuffer, uint32_t regionCount, VkBufferCopy const* pRegions)
 {
-  tracker_.TrackPostCmdCopyBuffer(wrappedCommandBuffer, srcBuffer, dstBuffer, regionCount, pRegions);
+  tracker_.TrackPostCmdCopyBuffer(commandBuffer, srcBuffer, dstBuffer, regionCount, pRegions);
   if (true) {
     WriteEndCommandExecutionMarker(tracker_.GetCommands().back().id);
   }
 }
 
-void CommandBuffer::PreCmdCopyImage(VkCommandBuffer wrappedCommandBuffer, VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout, VkImage dstImage, VkImageLayout dstImageLayout, uint32_t regionCount, VkImageCopy const* pRegions)
+void CommandBuffer::PreCmdCopyImage(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout, VkImage dstImage, VkImageLayout dstImageLayout, uint32_t regionCount, VkImageCopy const* pRegions)
 {
-  tracker_.TrackPreCmdCopyImage(wrappedCommandBuffer, srcImage, srcImageLayout, dstImage, dstImageLayout, regionCount, pRegions);
+  tracker_.TrackPreCmdCopyImage(commandBuffer, srcImage, srcImageLayout, dstImage, dstImageLayout, regionCount, pRegions);
   if (true) {
     WriteBeginCommandExecutionMarker(tracker_.GetCommands().back().id);
   }
 }
 
-void CommandBuffer::PostCmdCopyImage(VkCommandBuffer wrappedCommandBuffer, VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout, VkImage dstImage, VkImageLayout dstImageLayout, uint32_t regionCount, VkImageCopy const* pRegions)
+void CommandBuffer::PostCmdCopyImage(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout, VkImage dstImage, VkImageLayout dstImageLayout, uint32_t regionCount, VkImageCopy const* pRegions)
 {
-  tracker_.TrackPostCmdCopyImage(wrappedCommandBuffer, srcImage, srcImageLayout, dstImage, dstImageLayout, regionCount, pRegions);
+  tracker_.TrackPostCmdCopyImage(commandBuffer, srcImage, srcImageLayout, dstImage, dstImageLayout, regionCount, pRegions);
   if (true) {
     WriteEndCommandExecutionMarker(tracker_.GetCommands().back().id);
   }
 }
 
-void CommandBuffer::PreCmdBlitImage(VkCommandBuffer wrappedCommandBuffer, VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout, VkImage dstImage, VkImageLayout dstImageLayout, uint32_t regionCount, VkImageBlit const* pRegions, VkFilter filter)
+void CommandBuffer::PreCmdBlitImage(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout, VkImage dstImage, VkImageLayout dstImageLayout, uint32_t regionCount, VkImageBlit const* pRegions, VkFilter filter)
 {
-  tracker_.TrackPreCmdBlitImage(wrappedCommandBuffer, srcImage, srcImageLayout, dstImage, dstImageLayout, regionCount, pRegions, filter);
+  tracker_.TrackPreCmdBlitImage(commandBuffer, srcImage, srcImageLayout, dstImage, dstImageLayout, regionCount, pRegions, filter);
   if (instrument_all_commands_) {
     WriteBeginCommandExecutionMarker(tracker_.GetCommands().back().id);
   }
 }
 
-void CommandBuffer::PostCmdBlitImage(VkCommandBuffer wrappedCommandBuffer, VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout, VkImage dstImage, VkImageLayout dstImageLayout, uint32_t regionCount, VkImageBlit const* pRegions, VkFilter filter)
+void CommandBuffer::PostCmdBlitImage(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout, VkImage dstImage, VkImageLayout dstImageLayout, uint32_t regionCount, VkImageBlit const* pRegions, VkFilter filter)
 {
-  tracker_.TrackPostCmdBlitImage(wrappedCommandBuffer, srcImage, srcImageLayout, dstImage, dstImageLayout, regionCount, pRegions, filter);
+  tracker_.TrackPostCmdBlitImage(commandBuffer, srcImage, srcImageLayout, dstImage, dstImageLayout, regionCount, pRegions, filter);
   if (instrument_all_commands_) {
     WriteEndCommandExecutionMarker(tracker_.GetCommands().back().id);
   }
 }
 
-void CommandBuffer::PreCmdCopyBufferToImage(VkCommandBuffer wrappedCommandBuffer, VkCommandBuffer commandBuffer, VkBuffer srcBuffer, VkImage dstImage, VkImageLayout dstImageLayout, uint32_t regionCount, VkBufferImageCopy const* pRegions)
+void CommandBuffer::PreCmdCopyBufferToImage(VkCommandBuffer commandBuffer, VkBuffer srcBuffer, VkImage dstImage, VkImageLayout dstImageLayout, uint32_t regionCount, VkBufferImageCopy const* pRegions)
 {
-  tracker_.TrackPreCmdCopyBufferToImage(wrappedCommandBuffer, srcBuffer, dstImage, dstImageLayout, regionCount, pRegions);
+  tracker_.TrackPreCmdCopyBufferToImage(commandBuffer, srcBuffer, dstImage, dstImageLayout, regionCount, pRegions);
   if (true) {
     WriteBeginCommandExecutionMarker(tracker_.GetCommands().back().id);
   }
 }
 
-void CommandBuffer::PostCmdCopyBufferToImage(VkCommandBuffer wrappedCommandBuffer, VkCommandBuffer commandBuffer, VkBuffer srcBuffer, VkImage dstImage, VkImageLayout dstImageLayout, uint32_t regionCount, VkBufferImageCopy const* pRegions)
+void CommandBuffer::PostCmdCopyBufferToImage(VkCommandBuffer commandBuffer, VkBuffer srcBuffer, VkImage dstImage, VkImageLayout dstImageLayout, uint32_t regionCount, VkBufferImageCopy const* pRegions)
 {
-  tracker_.TrackPostCmdCopyBufferToImage(wrappedCommandBuffer, srcBuffer, dstImage, dstImageLayout, regionCount, pRegions);
+  tracker_.TrackPostCmdCopyBufferToImage(commandBuffer, srcBuffer, dstImage, dstImageLayout, regionCount, pRegions);
   if (true) {
     WriteEndCommandExecutionMarker(tracker_.GetCommands().back().id);
   }
 }
 
-void CommandBuffer::PreCmdCopyImageToBuffer(VkCommandBuffer wrappedCommandBuffer, VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout, VkBuffer dstBuffer, uint32_t regionCount, VkBufferImageCopy const* pRegions)
+void CommandBuffer::PreCmdCopyImageToBuffer(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout, VkBuffer dstBuffer, uint32_t regionCount, VkBufferImageCopy const* pRegions)
 {
-  tracker_.TrackPreCmdCopyImageToBuffer(wrappedCommandBuffer, srcImage, srcImageLayout, dstBuffer, regionCount, pRegions);
+  tracker_.TrackPreCmdCopyImageToBuffer(commandBuffer, srcImage, srcImageLayout, dstBuffer, regionCount, pRegions);
   if (true) {
     WriteBeginCommandExecutionMarker(tracker_.GetCommands().back().id);
   }
 }
 
-void CommandBuffer::PostCmdCopyImageToBuffer(VkCommandBuffer wrappedCommandBuffer, VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout, VkBuffer dstBuffer, uint32_t regionCount, VkBufferImageCopy const* pRegions)
+void CommandBuffer::PostCmdCopyImageToBuffer(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout, VkBuffer dstBuffer, uint32_t regionCount, VkBufferImageCopy const* pRegions)
 {
-  tracker_.TrackPostCmdCopyImageToBuffer(wrappedCommandBuffer, srcImage, srcImageLayout, dstBuffer, regionCount, pRegions);
+  tracker_.TrackPostCmdCopyImageToBuffer(commandBuffer, srcImage, srcImageLayout, dstBuffer, regionCount, pRegions);
   if (true) {
     WriteEndCommandExecutionMarker(tracker_.GetCommands().back().id);
   }
 }
 
-void CommandBuffer::PreCmdUpdateBuffer(VkCommandBuffer wrappedCommandBuffer, VkCommandBuffer commandBuffer, VkBuffer dstBuffer, VkDeviceSize dstOffset, VkDeviceSize dataSize, void const* pData)
+void CommandBuffer::PreCmdUpdateBuffer(VkCommandBuffer commandBuffer, VkBuffer dstBuffer, VkDeviceSize dstOffset, VkDeviceSize dataSize, void const* pData)
 {
-  tracker_.TrackPreCmdUpdateBuffer(wrappedCommandBuffer, dstBuffer, dstOffset, dataSize, pData);
+  tracker_.TrackPreCmdUpdateBuffer(commandBuffer, dstBuffer, dstOffset, dataSize, pData);
   if (instrument_all_commands_) {
     WriteBeginCommandExecutionMarker(tracker_.GetCommands().back().id);
   }
 }
 
-void CommandBuffer::PostCmdUpdateBuffer(VkCommandBuffer wrappedCommandBuffer, VkCommandBuffer commandBuffer, VkBuffer dstBuffer, VkDeviceSize dstOffset, VkDeviceSize dataSize, void const* pData)
+void CommandBuffer::PostCmdUpdateBuffer(VkCommandBuffer commandBuffer, VkBuffer dstBuffer, VkDeviceSize dstOffset, VkDeviceSize dataSize, void const* pData)
 {
-  tracker_.TrackPostCmdUpdateBuffer(wrappedCommandBuffer, dstBuffer, dstOffset, dataSize, pData);
+  tracker_.TrackPostCmdUpdateBuffer(commandBuffer, dstBuffer, dstOffset, dataSize, pData);
   if (instrument_all_commands_) {
     WriteEndCommandExecutionMarker(tracker_.GetCommands().back().id);
   }
 }
 
-void CommandBuffer::PreCmdFillBuffer(VkCommandBuffer wrappedCommandBuffer, VkCommandBuffer commandBuffer, VkBuffer dstBuffer, VkDeviceSize dstOffset, VkDeviceSize size, uint32_t data)
+void CommandBuffer::PreCmdFillBuffer(VkCommandBuffer commandBuffer, VkBuffer dstBuffer, VkDeviceSize dstOffset, VkDeviceSize size, uint32_t data)
 {
-  tracker_.TrackPreCmdFillBuffer(wrappedCommandBuffer, dstBuffer, dstOffset, size, data);
+  tracker_.TrackPreCmdFillBuffer(commandBuffer, dstBuffer, dstOffset, size, data);
   if (instrument_all_commands_) {
     WriteBeginCommandExecutionMarker(tracker_.GetCommands().back().id);
   }
 }
 
-void CommandBuffer::PostCmdFillBuffer(VkCommandBuffer wrappedCommandBuffer, VkCommandBuffer commandBuffer, VkBuffer dstBuffer, VkDeviceSize dstOffset, VkDeviceSize size, uint32_t data)
+void CommandBuffer::PostCmdFillBuffer(VkCommandBuffer commandBuffer, VkBuffer dstBuffer, VkDeviceSize dstOffset, VkDeviceSize size, uint32_t data)
 {
-  tracker_.TrackPostCmdFillBuffer(wrappedCommandBuffer, dstBuffer, dstOffset, size, data);
+  tracker_.TrackPostCmdFillBuffer(commandBuffer, dstBuffer, dstOffset, size, data);
   if (instrument_all_commands_) {
     WriteEndCommandExecutionMarker(tracker_.GetCommands().back().id);
   }
 }
 
-void CommandBuffer::PreCmdClearColorImage(VkCommandBuffer wrappedCommandBuffer, VkCommandBuffer commandBuffer, VkImage image, VkImageLayout imageLayout, VkClearColorValue const* pColor, uint32_t rangeCount, VkImageSubresourceRange const* pRanges)
+void CommandBuffer::PreCmdClearColorImage(VkCommandBuffer commandBuffer, VkImage image, VkImageLayout imageLayout, VkClearColorValue const* pColor, uint32_t rangeCount, VkImageSubresourceRange const* pRanges)
 {
-  tracker_.TrackPreCmdClearColorImage(wrappedCommandBuffer, image, imageLayout, pColor, rangeCount, pRanges);
+  tracker_.TrackPreCmdClearColorImage(commandBuffer, image, imageLayout, pColor, rangeCount, pRanges);
   if (instrument_all_commands_) {
     WriteBeginCommandExecutionMarker(tracker_.GetCommands().back().id);
   }
 }
 
-void CommandBuffer::PostCmdClearColorImage(VkCommandBuffer wrappedCommandBuffer, VkCommandBuffer commandBuffer, VkImage image, VkImageLayout imageLayout, VkClearColorValue const* pColor, uint32_t rangeCount, VkImageSubresourceRange const* pRanges)
+void CommandBuffer::PostCmdClearColorImage(VkCommandBuffer commandBuffer, VkImage image, VkImageLayout imageLayout, VkClearColorValue const* pColor, uint32_t rangeCount, VkImageSubresourceRange const* pRanges)
 {
-  tracker_.TrackPostCmdClearColorImage(wrappedCommandBuffer, image, imageLayout, pColor, rangeCount, pRanges);
+  tracker_.TrackPostCmdClearColorImage(commandBuffer, image, imageLayout, pColor, rangeCount, pRanges);
   if (instrument_all_commands_) {
     WriteEndCommandExecutionMarker(tracker_.GetCommands().back().id);
   }
 }
 
-void CommandBuffer::PreCmdClearDepthStencilImage(VkCommandBuffer wrappedCommandBuffer, VkCommandBuffer commandBuffer, VkImage image, VkImageLayout imageLayout, VkClearDepthStencilValue const* pDepthStencil, uint32_t rangeCount, VkImageSubresourceRange const* pRanges)
+void CommandBuffer::PreCmdClearDepthStencilImage(VkCommandBuffer commandBuffer, VkImage image, VkImageLayout imageLayout, VkClearDepthStencilValue const* pDepthStencil, uint32_t rangeCount, VkImageSubresourceRange const* pRanges)
 {
-  tracker_.TrackPreCmdClearDepthStencilImage(wrappedCommandBuffer, image, imageLayout, pDepthStencil, rangeCount, pRanges);
+  tracker_.TrackPreCmdClearDepthStencilImage(commandBuffer, image, imageLayout, pDepthStencil, rangeCount, pRanges);
   if (instrument_all_commands_) {
     WriteBeginCommandExecutionMarker(tracker_.GetCommands().back().id);
   }
 }
 
-void CommandBuffer::PostCmdClearDepthStencilImage(VkCommandBuffer wrappedCommandBuffer, VkCommandBuffer commandBuffer, VkImage image, VkImageLayout imageLayout, VkClearDepthStencilValue const* pDepthStencil, uint32_t rangeCount, VkImageSubresourceRange const* pRanges)
+void CommandBuffer::PostCmdClearDepthStencilImage(VkCommandBuffer commandBuffer, VkImage image, VkImageLayout imageLayout, VkClearDepthStencilValue const* pDepthStencil, uint32_t rangeCount, VkImageSubresourceRange const* pRanges)
 {
-  tracker_.TrackPostCmdClearDepthStencilImage(wrappedCommandBuffer, image, imageLayout, pDepthStencil, rangeCount, pRanges);
+  tracker_.TrackPostCmdClearDepthStencilImage(commandBuffer, image, imageLayout, pDepthStencil, rangeCount, pRanges);
   if (instrument_all_commands_) {
     WriteEndCommandExecutionMarker(tracker_.GetCommands().back().id);
   }
 }
 
-void CommandBuffer::PreCmdClearAttachments(VkCommandBuffer wrappedCommandBuffer, VkCommandBuffer commandBuffer, uint32_t attachmentCount, VkClearAttachment const* pAttachments, uint32_t rectCount, VkClearRect const* pRects)
+void CommandBuffer::PreCmdClearAttachments(VkCommandBuffer commandBuffer, uint32_t attachmentCount, VkClearAttachment const* pAttachments, uint32_t rectCount, VkClearRect const* pRects)
 {
-  tracker_.TrackPreCmdClearAttachments(wrappedCommandBuffer, attachmentCount, pAttachments, rectCount, pRects);
+  tracker_.TrackPreCmdClearAttachments(commandBuffer, attachmentCount, pAttachments, rectCount, pRects);
   if (instrument_all_commands_) {
     WriteBeginCommandExecutionMarker(tracker_.GetCommands().back().id);
   }
 }
 
-void CommandBuffer::PostCmdClearAttachments(VkCommandBuffer wrappedCommandBuffer, VkCommandBuffer commandBuffer, uint32_t attachmentCount, VkClearAttachment const* pAttachments, uint32_t rectCount, VkClearRect const* pRects)
+void CommandBuffer::PostCmdClearAttachments(VkCommandBuffer commandBuffer, uint32_t attachmentCount, VkClearAttachment const* pAttachments, uint32_t rectCount, VkClearRect const* pRects)
 {
-  tracker_.TrackPostCmdClearAttachments(wrappedCommandBuffer, attachmentCount, pAttachments, rectCount, pRects);
+  tracker_.TrackPostCmdClearAttachments(commandBuffer, attachmentCount, pAttachments, rectCount, pRects);
   if (instrument_all_commands_) {
     WriteEndCommandExecutionMarker(tracker_.GetCommands().back().id);
   }
 }
 
-void CommandBuffer::PreCmdResolveImage(VkCommandBuffer wrappedCommandBuffer, VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout, VkImage dstImage, VkImageLayout dstImageLayout, uint32_t regionCount, VkImageResolve const* pRegions)
+void CommandBuffer::PreCmdResolveImage(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout, VkImage dstImage, VkImageLayout dstImageLayout, uint32_t regionCount, VkImageResolve const* pRegions)
 {
-  tracker_.TrackPreCmdResolveImage(wrappedCommandBuffer, srcImage, srcImageLayout, dstImage, dstImageLayout, regionCount, pRegions);
+  tracker_.TrackPreCmdResolveImage(commandBuffer, srcImage, srcImageLayout, dstImage, dstImageLayout, regionCount, pRegions);
   if (instrument_all_commands_) {
     WriteBeginCommandExecutionMarker(tracker_.GetCommands().back().id);
   }
 }
 
-void CommandBuffer::PostCmdResolveImage(VkCommandBuffer wrappedCommandBuffer, VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout, VkImage dstImage, VkImageLayout dstImageLayout, uint32_t regionCount, VkImageResolve const* pRegions)
+void CommandBuffer::PostCmdResolveImage(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout, VkImage dstImage, VkImageLayout dstImageLayout, uint32_t regionCount, VkImageResolve const* pRegions)
 {
-  tracker_.TrackPostCmdResolveImage(wrappedCommandBuffer, srcImage, srcImageLayout, dstImage, dstImageLayout, regionCount, pRegions);
+  tracker_.TrackPostCmdResolveImage(commandBuffer, srcImage, srcImageLayout, dstImage, dstImageLayout, regionCount, pRegions);
   if (instrument_all_commands_) {
     WriteEndCommandExecutionMarker(tracker_.GetCommands().back().id);
   }
 }
 
-void CommandBuffer::PreCmdBindDescriptorSets(VkCommandBuffer wrappedCommandBuffer, VkCommandBuffer commandBuffer, VkPipelineBindPoint pipelineBindPoint, VkPipelineLayout layout, uint32_t firstSet, uint32_t descriptorSetCount, VkDescriptorSet const* pDescriptorSets, uint32_t dynamicOffsetCount, uint32_t const* pDynamicOffsets)
+void CommandBuffer::PreCmdBindDescriptorSets(VkCommandBuffer commandBuffer, VkPipelineBindPoint pipelineBindPoint, VkPipelineLayout layout, uint32_t firstSet, uint32_t descriptorSetCount, VkDescriptorSet const* pDescriptorSets, uint32_t dynamicOffsetCount, uint32_t const* pDynamicOffsets)
 {
-  tracker_.TrackPreCmdBindDescriptorSets(wrappedCommandBuffer, pipelineBindPoint, layout, firstSet, descriptorSetCount, pDescriptorSets, dynamicOffsetCount, pDynamicOffsets);
+  tracker_.TrackPreCmdBindDescriptorSets(commandBuffer, pipelineBindPoint, layout, firstSet, descriptorSetCount, pDescriptorSets, dynamicOffsetCount, pDynamicOffsets);
   if (instrument_all_commands_) {
     WriteBeginCommandExecutionMarker(tracker_.GetCommands().back().id);
   }
 }
 
-void CommandBuffer::PostCmdBindDescriptorSets(VkCommandBuffer wrappedCommandBuffer, VkCommandBuffer commandBuffer, VkPipelineBindPoint pipelineBindPoint, VkPipelineLayout layout, uint32_t firstSet, uint32_t descriptorSetCount, VkDescriptorSet const* pDescriptorSets, uint32_t dynamicOffsetCount, uint32_t const* pDynamicOffsets)
+void CommandBuffer::PostCmdBindDescriptorSets(VkCommandBuffer commandBuffer, VkPipelineBindPoint pipelineBindPoint, VkPipelineLayout layout, uint32_t firstSet, uint32_t descriptorSetCount, VkDescriptorSet const* pDescriptorSets, uint32_t dynamicOffsetCount, uint32_t const* pDynamicOffsets)
 {
-  tracker_.TrackPostCmdBindDescriptorSets(wrappedCommandBuffer, pipelineBindPoint, layout, firstSet, descriptorSetCount, pDescriptorSets, dynamicOffsetCount, pDynamicOffsets);
+  tracker_.TrackPostCmdBindDescriptorSets(commandBuffer, pipelineBindPoint, layout, firstSet, descriptorSetCount, pDescriptorSets, dynamicOffsetCount, pDynamicOffsets);
   if (instrument_all_commands_) {
     WriteEndCommandExecutionMarker(tracker_.GetCommands().back().id);
   }
 }
 
-void CommandBuffer::PreCmdPushConstants(VkCommandBuffer wrappedCommandBuffer, VkCommandBuffer commandBuffer, VkPipelineLayout layout, VkShaderStageFlags stageFlags, uint32_t offset, uint32_t size, void const* pValues)
+void CommandBuffer::PreCmdPushConstants(VkCommandBuffer commandBuffer, VkPipelineLayout layout, VkShaderStageFlags stageFlags, uint32_t offset, uint32_t size, void const* pValues)
 {
-  tracker_.TrackPreCmdPushConstants(wrappedCommandBuffer, layout, stageFlags, offset, size, pValues);
+  tracker_.TrackPreCmdPushConstants(commandBuffer, layout, stageFlags, offset, size, pValues);
   if (instrument_all_commands_) {
     WriteBeginCommandExecutionMarker(tracker_.GetCommands().back().id);
   }
 }
 
-void CommandBuffer::PostCmdPushConstants(VkCommandBuffer wrappedCommandBuffer, VkCommandBuffer commandBuffer, VkPipelineLayout layout, VkShaderStageFlags stageFlags, uint32_t offset, uint32_t size, void const* pValues)
+void CommandBuffer::PostCmdPushConstants(VkCommandBuffer commandBuffer, VkPipelineLayout layout, VkShaderStageFlags stageFlags, uint32_t offset, uint32_t size, void const* pValues)
 {
-  tracker_.TrackPostCmdPushConstants(wrappedCommandBuffer, layout, stageFlags, offset, size, pValues);
+  tracker_.TrackPostCmdPushConstants(commandBuffer, layout, stageFlags, offset, size, pValues);
   if (instrument_all_commands_) {
     WriteEndCommandExecutionMarker(tracker_.GetCommands().back().id);
   }
 }
 
-void CommandBuffer::PreCmdBindIndexBuffer(VkCommandBuffer wrappedCommandBuffer, VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset, VkIndexType indexType)
+void CommandBuffer::PreCmdBindIndexBuffer(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset, VkIndexType indexType)
 {
-  tracker_.TrackPreCmdBindIndexBuffer(wrappedCommandBuffer, buffer, offset, indexType);
+  tracker_.TrackPreCmdBindIndexBuffer(commandBuffer, buffer, offset, indexType);
   if (instrument_all_commands_) {
     WriteBeginCommandExecutionMarker(tracker_.GetCommands().back().id);
   }
 }
 
-void CommandBuffer::PostCmdBindIndexBuffer(VkCommandBuffer wrappedCommandBuffer, VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset, VkIndexType indexType)
+void CommandBuffer::PostCmdBindIndexBuffer(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset, VkIndexType indexType)
 {
-  tracker_.TrackPostCmdBindIndexBuffer(wrappedCommandBuffer, buffer, offset, indexType);
+  tracker_.TrackPostCmdBindIndexBuffer(commandBuffer, buffer, offset, indexType);
   if (instrument_all_commands_) {
     WriteEndCommandExecutionMarker(tracker_.GetCommands().back().id);
   }
 }
 
-void CommandBuffer::PreCmdBindVertexBuffers(VkCommandBuffer wrappedCommandBuffer, VkCommandBuffer commandBuffer, uint32_t firstBinding, uint32_t bindingCount, VkBuffer const* pBuffers, VkDeviceSize const* pOffsets)
+void CommandBuffer::PreCmdBindVertexBuffers(VkCommandBuffer commandBuffer, uint32_t firstBinding, uint32_t bindingCount, VkBuffer const* pBuffers, VkDeviceSize const* pOffsets)
 {
-  tracker_.TrackPreCmdBindVertexBuffers(wrappedCommandBuffer, firstBinding, bindingCount, pBuffers, pOffsets);
+  tracker_.TrackPreCmdBindVertexBuffers(commandBuffer, firstBinding, bindingCount, pBuffers, pOffsets);
   if (instrument_all_commands_) {
     WriteBeginCommandExecutionMarker(tracker_.GetCommands().back().id);
   }
 }
 
-void CommandBuffer::PostCmdBindVertexBuffers(VkCommandBuffer wrappedCommandBuffer, VkCommandBuffer commandBuffer, uint32_t firstBinding, uint32_t bindingCount, VkBuffer const* pBuffers, VkDeviceSize const* pOffsets)
+void CommandBuffer::PostCmdBindVertexBuffers(VkCommandBuffer commandBuffer, uint32_t firstBinding, uint32_t bindingCount, VkBuffer const* pBuffers, VkDeviceSize const* pOffsets)
 {
-  tracker_.TrackPostCmdBindVertexBuffers(wrappedCommandBuffer, firstBinding, bindingCount, pBuffers, pOffsets);
+  tracker_.TrackPostCmdBindVertexBuffers(commandBuffer, firstBinding, bindingCount, pBuffers, pOffsets);
   if (instrument_all_commands_) {
     WriteEndCommandExecutionMarker(tracker_.GetCommands().back().id);
   }
 }
 
-void CommandBuffer::PreCmdDraw(VkCommandBuffer wrappedCommandBuffer, VkCommandBuffer commandBuffer, uint32_t vertexCount, uint32_t instanceCount, uint32_t firstVertex, uint32_t firstInstance)
+void CommandBuffer::PreCmdDraw(VkCommandBuffer commandBuffer, uint32_t vertexCount, uint32_t instanceCount, uint32_t firstVertex, uint32_t firstInstance)
 {
-  tracker_.TrackPreCmdDraw(wrappedCommandBuffer, vertexCount, instanceCount, firstVertex, firstInstance);
+  tracker_.TrackPreCmdDraw(commandBuffer, vertexCount, instanceCount, firstVertex, firstInstance);
   if (true) {
     WriteBeginCommandExecutionMarker(tracker_.GetCommands().back().id);
   }
 }
 
-void CommandBuffer::PostCmdDraw(VkCommandBuffer wrappedCommandBuffer, VkCommandBuffer commandBuffer, uint32_t vertexCount, uint32_t instanceCount, uint32_t firstVertex, uint32_t firstInstance)
+void CommandBuffer::PostCmdDraw(VkCommandBuffer commandBuffer, uint32_t vertexCount, uint32_t instanceCount, uint32_t firstVertex, uint32_t firstInstance)
 {
-  tracker_.TrackPostCmdDraw(wrappedCommandBuffer, vertexCount, instanceCount, firstVertex, firstInstance);
+  tracker_.TrackPostCmdDraw(commandBuffer, vertexCount, instanceCount, firstVertex, firstInstance);
   if (true) {
     WriteEndCommandExecutionMarker(tracker_.GetCommands().back().id);
   }
 }
 
-void CommandBuffer::PreCmdDrawIndexed(VkCommandBuffer wrappedCommandBuffer, VkCommandBuffer commandBuffer, uint32_t indexCount, uint32_t instanceCount, uint32_t firstIndex, int32_t vertexOffset, uint32_t firstInstance)
+void CommandBuffer::PreCmdDrawIndexed(VkCommandBuffer commandBuffer, uint32_t indexCount, uint32_t instanceCount, uint32_t firstIndex, int32_t vertexOffset, uint32_t firstInstance)
 {
-  tracker_.TrackPreCmdDrawIndexed(wrappedCommandBuffer, indexCount, instanceCount, firstIndex, vertexOffset, firstInstance);
+  tracker_.TrackPreCmdDrawIndexed(commandBuffer, indexCount, instanceCount, firstIndex, vertexOffset, firstInstance);
   if (true) {
     WriteBeginCommandExecutionMarker(tracker_.GetCommands().back().id);
   }
 }
 
-void CommandBuffer::PostCmdDrawIndexed(VkCommandBuffer wrappedCommandBuffer, VkCommandBuffer commandBuffer, uint32_t indexCount, uint32_t instanceCount, uint32_t firstIndex, int32_t vertexOffset, uint32_t firstInstance)
+void CommandBuffer::PostCmdDrawIndexed(VkCommandBuffer commandBuffer, uint32_t indexCount, uint32_t instanceCount, uint32_t firstIndex, int32_t vertexOffset, uint32_t firstInstance)
 {
-  tracker_.TrackPostCmdDrawIndexed(wrappedCommandBuffer, indexCount, instanceCount, firstIndex, vertexOffset, firstInstance);
+  tracker_.TrackPostCmdDrawIndexed(commandBuffer, indexCount, instanceCount, firstIndex, vertexOffset, firstInstance);
   if (true) {
     WriteEndCommandExecutionMarker(tracker_.GetCommands().back().id);
   }
 }
 
-void CommandBuffer::PreCmdDrawIndirect(VkCommandBuffer wrappedCommandBuffer, VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset, uint32_t drawCount, uint32_t stride)
+void CommandBuffer::PreCmdDrawIndirect(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset, uint32_t drawCount, uint32_t stride)
 {
-  tracker_.TrackPreCmdDrawIndirect(wrappedCommandBuffer, buffer, offset, drawCount, stride);
+  tracker_.TrackPreCmdDrawIndirect(commandBuffer, buffer, offset, drawCount, stride);
   if (true) {
     WriteBeginCommandExecutionMarker(tracker_.GetCommands().back().id);
   }
 }
 
-void CommandBuffer::PostCmdDrawIndirect(VkCommandBuffer wrappedCommandBuffer, VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset, uint32_t drawCount, uint32_t stride)
+void CommandBuffer::PostCmdDrawIndirect(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset, uint32_t drawCount, uint32_t stride)
 {
-  tracker_.TrackPostCmdDrawIndirect(wrappedCommandBuffer, buffer, offset, drawCount, stride);
+  tracker_.TrackPostCmdDrawIndirect(commandBuffer, buffer, offset, drawCount, stride);
   if (true) {
     WriteEndCommandExecutionMarker(tracker_.GetCommands().back().id);
   }
 }
 
-void CommandBuffer::PreCmdDrawIndexedIndirect(VkCommandBuffer wrappedCommandBuffer, VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset, uint32_t drawCount, uint32_t stride)
+void CommandBuffer::PreCmdDrawIndexedIndirect(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset, uint32_t drawCount, uint32_t stride)
 {
-  tracker_.TrackPreCmdDrawIndexedIndirect(wrappedCommandBuffer, buffer, offset, drawCount, stride);
+  tracker_.TrackPreCmdDrawIndexedIndirect(commandBuffer, buffer, offset, drawCount, stride);
   if (true) {
     WriteBeginCommandExecutionMarker(tracker_.GetCommands().back().id);
   }
 }
 
-void CommandBuffer::PostCmdDrawIndexedIndirect(VkCommandBuffer wrappedCommandBuffer, VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset, uint32_t drawCount, uint32_t stride)
+void CommandBuffer::PostCmdDrawIndexedIndirect(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset, uint32_t drawCount, uint32_t stride)
 {
-  tracker_.TrackPostCmdDrawIndexedIndirect(wrappedCommandBuffer, buffer, offset, drawCount, stride);
+  tracker_.TrackPostCmdDrawIndexedIndirect(commandBuffer, buffer, offset, drawCount, stride);
   if (true) {
     WriteEndCommandExecutionMarker(tracker_.GetCommands().back().id);
   }
 }
 
-void CommandBuffer::PreCmdDispatch(VkCommandBuffer wrappedCommandBuffer, VkCommandBuffer commandBuffer, uint32_t groupCountX, uint32_t groupCountY, uint32_t groupCountZ)
+void CommandBuffer::PreCmdDispatch(VkCommandBuffer commandBuffer, uint32_t groupCountX, uint32_t groupCountY, uint32_t groupCountZ)
 {
-  tracker_.TrackPreCmdDispatch(wrappedCommandBuffer, groupCountX, groupCountY, groupCountZ);
+  tracker_.TrackPreCmdDispatch(commandBuffer, groupCountX, groupCountY, groupCountZ);
   if (true) {
     WriteBeginCommandExecutionMarker(tracker_.GetCommands().back().id);
   }
 }
 
-void CommandBuffer::PostCmdDispatch(VkCommandBuffer wrappedCommandBuffer, VkCommandBuffer commandBuffer, uint32_t groupCountX, uint32_t groupCountY, uint32_t groupCountZ)
+void CommandBuffer::PostCmdDispatch(VkCommandBuffer commandBuffer, uint32_t groupCountX, uint32_t groupCountY, uint32_t groupCountZ)
 {
-  tracker_.TrackPostCmdDispatch(wrappedCommandBuffer, groupCountX, groupCountY, groupCountZ);
+  tracker_.TrackPostCmdDispatch(commandBuffer, groupCountX, groupCountY, groupCountZ);
   if (true) {
     WriteEndCommandExecutionMarker(tracker_.GetCommands().back().id);
   }
 }
 
-void CommandBuffer::PreCmdDispatchIndirect(VkCommandBuffer wrappedCommandBuffer, VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset)
+void CommandBuffer::PreCmdDispatchIndirect(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset)
 {
-  tracker_.TrackPreCmdDispatchIndirect(wrappedCommandBuffer, buffer, offset);
+  tracker_.TrackPreCmdDispatchIndirect(commandBuffer, buffer, offset);
   if (true) {
     WriteBeginCommandExecutionMarker(tracker_.GetCommands().back().id);
   }
 }
 
-void CommandBuffer::PostCmdDispatchIndirect(VkCommandBuffer wrappedCommandBuffer, VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset)
+void CommandBuffer::PostCmdDispatchIndirect(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset)
 {
-  tracker_.TrackPostCmdDispatchIndirect(wrappedCommandBuffer, buffer, offset);
+  tracker_.TrackPostCmdDispatchIndirect(commandBuffer, buffer, offset);
   if (true) {
     WriteEndCommandExecutionMarker(tracker_.GetCommands().back().id);
   }
 }
 
-void CommandBuffer::PreCmdBindPipeline(VkCommandBuffer wrappedCommandBuffer, VkCommandBuffer commandBuffer, VkPipelineBindPoint pipelineBindPoint, VkPipeline pipeline)
+void CommandBuffer::PreCmdBindPipeline(VkCommandBuffer commandBuffer, VkPipelineBindPoint pipelineBindPoint, VkPipeline pipeline)
 {
-  tracker_.TrackPreCmdBindPipeline(wrappedCommandBuffer, pipelineBindPoint, pipeline);
+  tracker_.TrackPreCmdBindPipeline(commandBuffer, pipelineBindPoint, pipeline);
   if (true) {
     WriteBeginCommandExecutionMarker(tracker_.GetCommands().back().id);
   }
 }
 
-void CommandBuffer::PostCmdBindPipeline(VkCommandBuffer wrappedCommandBuffer, VkCommandBuffer commandBuffer, VkPipelineBindPoint pipelineBindPoint, VkPipeline pipeline)
+void CommandBuffer::PostCmdBindPipeline(VkCommandBuffer commandBuffer, VkPipelineBindPoint pipelineBindPoint, VkPipeline pipeline)
 {
-  tracker_.TrackPostCmdBindPipeline(wrappedCommandBuffer, pipelineBindPoint, pipeline);
+  tracker_.TrackPostCmdBindPipeline(commandBuffer, pipelineBindPoint, pipeline);
   if (true) {
     WriteEndCommandExecutionMarker(tracker_.GetCommands().back().id);
   }
 }
 
-void CommandBuffer::PreCmdSetViewport(VkCommandBuffer wrappedCommandBuffer, VkCommandBuffer commandBuffer, uint32_t firstViewport, uint32_t viewportCount, VkViewport const* pViewports)
+void CommandBuffer::PreCmdSetViewport(VkCommandBuffer commandBuffer, uint32_t firstViewport, uint32_t viewportCount, VkViewport const* pViewports)
 {
-  tracker_.TrackPreCmdSetViewport(wrappedCommandBuffer, firstViewport, viewportCount, pViewports);
+  tracker_.TrackPreCmdSetViewport(commandBuffer, firstViewport, viewportCount, pViewports);
   if (instrument_all_commands_) {
     WriteBeginCommandExecutionMarker(tracker_.GetCommands().back().id);
   }
 }
 
-void CommandBuffer::PostCmdSetViewport(VkCommandBuffer wrappedCommandBuffer, VkCommandBuffer commandBuffer, uint32_t firstViewport, uint32_t viewportCount, VkViewport const* pViewports)
+void CommandBuffer::PostCmdSetViewport(VkCommandBuffer commandBuffer, uint32_t firstViewport, uint32_t viewportCount, VkViewport const* pViewports)
 {
-  tracker_.TrackPostCmdSetViewport(wrappedCommandBuffer, firstViewport, viewportCount, pViewports);
+  tracker_.TrackPostCmdSetViewport(commandBuffer, firstViewport, viewportCount, pViewports);
   if (instrument_all_commands_) {
     WriteEndCommandExecutionMarker(tracker_.GetCommands().back().id);
   }
 }
 
-void CommandBuffer::PreCmdSetScissor(VkCommandBuffer wrappedCommandBuffer, VkCommandBuffer commandBuffer, uint32_t firstScissor, uint32_t scissorCount, VkRect2D const* pScissors)
+void CommandBuffer::PreCmdSetScissor(VkCommandBuffer commandBuffer, uint32_t firstScissor, uint32_t scissorCount, VkRect2D const* pScissors)
 {
-  tracker_.TrackPreCmdSetScissor(wrappedCommandBuffer, firstScissor, scissorCount, pScissors);
+  tracker_.TrackPreCmdSetScissor(commandBuffer, firstScissor, scissorCount, pScissors);
   if (instrument_all_commands_) {
     WriteBeginCommandExecutionMarker(tracker_.GetCommands().back().id);
   }
 }
 
-void CommandBuffer::PostCmdSetScissor(VkCommandBuffer wrappedCommandBuffer, VkCommandBuffer commandBuffer, uint32_t firstScissor, uint32_t scissorCount, VkRect2D const* pScissors)
+void CommandBuffer::PostCmdSetScissor(VkCommandBuffer commandBuffer, uint32_t firstScissor, uint32_t scissorCount, VkRect2D const* pScissors)
 {
-  tracker_.TrackPostCmdSetScissor(wrappedCommandBuffer, firstScissor, scissorCount, pScissors);
+  tracker_.TrackPostCmdSetScissor(commandBuffer, firstScissor, scissorCount, pScissors);
   if (instrument_all_commands_) {
     WriteEndCommandExecutionMarker(tracker_.GetCommands().back().id);
   }
 }
 
-void CommandBuffer::PreCmdSetLineWidth(VkCommandBuffer wrappedCommandBuffer, VkCommandBuffer commandBuffer, float lineWidth)
+void CommandBuffer::PreCmdSetLineWidth(VkCommandBuffer commandBuffer, float lineWidth)
 {
-  tracker_.TrackPreCmdSetLineWidth(wrappedCommandBuffer, lineWidth);
+  tracker_.TrackPreCmdSetLineWidth(commandBuffer, lineWidth);
   if (instrument_all_commands_) {
     WriteBeginCommandExecutionMarker(tracker_.GetCommands().back().id);
   }
 }
 
-void CommandBuffer::PostCmdSetLineWidth(VkCommandBuffer wrappedCommandBuffer, VkCommandBuffer commandBuffer, float lineWidth)
+void CommandBuffer::PostCmdSetLineWidth(VkCommandBuffer commandBuffer, float lineWidth)
 {
-  tracker_.TrackPostCmdSetLineWidth(wrappedCommandBuffer, lineWidth);
+  tracker_.TrackPostCmdSetLineWidth(commandBuffer, lineWidth);
   if (instrument_all_commands_) {
     WriteEndCommandExecutionMarker(tracker_.GetCommands().back().id);
   }
 }
 
-void CommandBuffer::PreCmdSetDepthBias(VkCommandBuffer wrappedCommandBuffer, VkCommandBuffer commandBuffer, float depthBiasConstantFactor, float depthBiasClamp, float depthBiasSlopeFactor)
+void CommandBuffer::PreCmdSetDepthBias(VkCommandBuffer commandBuffer, float depthBiasConstantFactor, float depthBiasClamp, float depthBiasSlopeFactor)
 {
-  tracker_.TrackPreCmdSetDepthBias(wrappedCommandBuffer, depthBiasConstantFactor, depthBiasClamp, depthBiasSlopeFactor);
+  tracker_.TrackPreCmdSetDepthBias(commandBuffer, depthBiasConstantFactor, depthBiasClamp, depthBiasSlopeFactor);
   if (instrument_all_commands_) {
     WriteBeginCommandExecutionMarker(tracker_.GetCommands().back().id);
   }
 }
 
-void CommandBuffer::PostCmdSetDepthBias(VkCommandBuffer wrappedCommandBuffer, VkCommandBuffer commandBuffer, float depthBiasConstantFactor, float depthBiasClamp, float depthBiasSlopeFactor)
+void CommandBuffer::PostCmdSetDepthBias(VkCommandBuffer commandBuffer, float depthBiasConstantFactor, float depthBiasClamp, float depthBiasSlopeFactor)
 {
-  tracker_.TrackPostCmdSetDepthBias(wrappedCommandBuffer, depthBiasConstantFactor, depthBiasClamp, depthBiasSlopeFactor);
+  tracker_.TrackPostCmdSetDepthBias(commandBuffer, depthBiasConstantFactor, depthBiasClamp, depthBiasSlopeFactor);
   if (instrument_all_commands_) {
     WriteEndCommandExecutionMarker(tracker_.GetCommands().back().id);
   }
 }
 
-void CommandBuffer::PreCmdSetBlendConstants(VkCommandBuffer wrappedCommandBuffer, VkCommandBuffer commandBuffer, float blendConstants[4])
+void CommandBuffer::PreCmdSetBlendConstants(VkCommandBuffer commandBuffer, float blendConstants[4])
 {
-  tracker_.TrackPreCmdSetBlendConstants(wrappedCommandBuffer, blendConstants);
+  tracker_.TrackPreCmdSetBlendConstants(commandBuffer, blendConstants);
   if (instrument_all_commands_) {
     WriteBeginCommandExecutionMarker(tracker_.GetCommands().back().id);
   }
 }
 
-void CommandBuffer::PostCmdSetBlendConstants(VkCommandBuffer wrappedCommandBuffer, VkCommandBuffer commandBuffer, float blendConstants[4])
+void CommandBuffer::PostCmdSetBlendConstants(VkCommandBuffer commandBuffer, float blendConstants[4])
 {
-  tracker_.TrackPostCmdSetBlendConstants(wrappedCommandBuffer, blendConstants);
+  tracker_.TrackPostCmdSetBlendConstants(commandBuffer, blendConstants);
   if (instrument_all_commands_) {
     WriteEndCommandExecutionMarker(tracker_.GetCommands().back().id);
   }
 }
 
-void CommandBuffer::PreCmdSetDepthBounds(VkCommandBuffer wrappedCommandBuffer, VkCommandBuffer commandBuffer, float minDepthBounds, float maxDepthBounds)
+void CommandBuffer::PreCmdSetDepthBounds(VkCommandBuffer commandBuffer, float minDepthBounds, float maxDepthBounds)
 {
-  tracker_.TrackPreCmdSetDepthBounds(wrappedCommandBuffer, minDepthBounds, maxDepthBounds);
+  tracker_.TrackPreCmdSetDepthBounds(commandBuffer, minDepthBounds, maxDepthBounds);
   if (instrument_all_commands_) {
     WriteBeginCommandExecutionMarker(tracker_.GetCommands().back().id);
   }
 }
 
-void CommandBuffer::PostCmdSetDepthBounds(VkCommandBuffer wrappedCommandBuffer, VkCommandBuffer commandBuffer, float minDepthBounds, float maxDepthBounds)
+void CommandBuffer::PostCmdSetDepthBounds(VkCommandBuffer commandBuffer, float minDepthBounds, float maxDepthBounds)
 {
-  tracker_.TrackPostCmdSetDepthBounds(wrappedCommandBuffer, minDepthBounds, maxDepthBounds);
+  tracker_.TrackPostCmdSetDepthBounds(commandBuffer, minDepthBounds, maxDepthBounds);
   if (instrument_all_commands_) {
     WriteEndCommandExecutionMarker(tracker_.GetCommands().back().id);
   }
 }
 
-void CommandBuffer::PreCmdSetStencilCompareMask(VkCommandBuffer wrappedCommandBuffer, VkCommandBuffer commandBuffer, VkStencilFaceFlags faceMask, uint32_t compareMask)
+void CommandBuffer::PreCmdSetStencilCompareMask(VkCommandBuffer commandBuffer, VkStencilFaceFlags faceMask, uint32_t compareMask)
 {
-  tracker_.TrackPreCmdSetStencilCompareMask(wrappedCommandBuffer, faceMask, compareMask);
+  tracker_.TrackPreCmdSetStencilCompareMask(commandBuffer, faceMask, compareMask);
   if (instrument_all_commands_) {
     WriteBeginCommandExecutionMarker(tracker_.GetCommands().back().id);
   }
 }
 
-void CommandBuffer::PostCmdSetStencilCompareMask(VkCommandBuffer wrappedCommandBuffer, VkCommandBuffer commandBuffer, VkStencilFaceFlags faceMask, uint32_t compareMask)
+void CommandBuffer::PostCmdSetStencilCompareMask(VkCommandBuffer commandBuffer, VkStencilFaceFlags faceMask, uint32_t compareMask)
 {
-  tracker_.TrackPostCmdSetStencilCompareMask(wrappedCommandBuffer, faceMask, compareMask);
+  tracker_.TrackPostCmdSetStencilCompareMask(commandBuffer, faceMask, compareMask);
   if (instrument_all_commands_) {
     WriteEndCommandExecutionMarker(tracker_.GetCommands().back().id);
   }
 }
 
-void CommandBuffer::PreCmdSetStencilWriteMask(VkCommandBuffer wrappedCommandBuffer, VkCommandBuffer commandBuffer, VkStencilFaceFlags faceMask, uint32_t writeMask)
+void CommandBuffer::PreCmdSetStencilWriteMask(VkCommandBuffer commandBuffer, VkStencilFaceFlags faceMask, uint32_t writeMask)
 {
-  tracker_.TrackPreCmdSetStencilWriteMask(wrappedCommandBuffer, faceMask, writeMask);
+  tracker_.TrackPreCmdSetStencilWriteMask(commandBuffer, faceMask, writeMask);
   if (instrument_all_commands_) {
     WriteBeginCommandExecutionMarker(tracker_.GetCommands().back().id);
   }
 }
 
-void CommandBuffer::PostCmdSetStencilWriteMask(VkCommandBuffer wrappedCommandBuffer, VkCommandBuffer commandBuffer, VkStencilFaceFlags faceMask, uint32_t writeMask)
+void CommandBuffer::PostCmdSetStencilWriteMask(VkCommandBuffer commandBuffer, VkStencilFaceFlags faceMask, uint32_t writeMask)
 {
-  tracker_.TrackPostCmdSetStencilWriteMask(wrappedCommandBuffer, faceMask, writeMask);
+  tracker_.TrackPostCmdSetStencilWriteMask(commandBuffer, faceMask, writeMask);
   if (instrument_all_commands_) {
     WriteEndCommandExecutionMarker(tracker_.GetCommands().back().id);
   }
 }
 
-void CommandBuffer::PreCmdSetStencilReference(VkCommandBuffer wrappedCommandBuffer, VkCommandBuffer commandBuffer, VkStencilFaceFlags faceMask, uint32_t reference)
+void CommandBuffer::PreCmdSetStencilReference(VkCommandBuffer commandBuffer, VkStencilFaceFlags faceMask, uint32_t reference)
 {
-  tracker_.TrackPreCmdSetStencilReference(wrappedCommandBuffer, faceMask, reference);
+  tracker_.TrackPreCmdSetStencilReference(commandBuffer, faceMask, reference);
   if (instrument_all_commands_) {
     WriteBeginCommandExecutionMarker(tracker_.GetCommands().back().id);
   }
 }
 
-void CommandBuffer::PostCmdSetStencilReference(VkCommandBuffer wrappedCommandBuffer, VkCommandBuffer commandBuffer, VkStencilFaceFlags faceMask, uint32_t reference)
+void CommandBuffer::PostCmdSetStencilReference(VkCommandBuffer commandBuffer, VkStencilFaceFlags faceMask, uint32_t reference)
 {
-  tracker_.TrackPostCmdSetStencilReference(wrappedCommandBuffer, faceMask, reference);
+  tracker_.TrackPostCmdSetStencilReference(commandBuffer, faceMask, reference);
   if (instrument_all_commands_) {
     WriteEndCommandExecutionMarker(tracker_.GetCommands().back().id);
   }
 }
 
-void CommandBuffer::PreCmdBeginQuery(VkCommandBuffer wrappedCommandBuffer, VkCommandBuffer commandBuffer, VkQueryPool queryPool, uint32_t query, VkQueryControlFlags flags)
+void CommandBuffer::PreCmdBeginQuery(VkCommandBuffer commandBuffer, VkQueryPool queryPool, uint32_t query, VkQueryControlFlags flags)
 {
-  tracker_.TrackPreCmdBeginQuery(wrappedCommandBuffer, queryPool, query, flags);
+  tracker_.TrackPreCmdBeginQuery(commandBuffer, queryPool, query, flags);
   if (instrument_all_commands_) {
     WriteBeginCommandExecutionMarker(tracker_.GetCommands().back().id);
   }
 }
 
-void CommandBuffer::PostCmdBeginQuery(VkCommandBuffer wrappedCommandBuffer, VkCommandBuffer commandBuffer, VkQueryPool queryPool, uint32_t query, VkQueryControlFlags flags)
+void CommandBuffer::PostCmdBeginQuery(VkCommandBuffer commandBuffer, VkQueryPool queryPool, uint32_t query, VkQueryControlFlags flags)
 {
-  tracker_.TrackPostCmdBeginQuery(wrappedCommandBuffer, queryPool, query, flags);
+  tracker_.TrackPostCmdBeginQuery(commandBuffer, queryPool, query, flags);
   if (instrument_all_commands_) {
     WriteEndCommandExecutionMarker(tracker_.GetCommands().back().id);
   }
 }
 
-void CommandBuffer::PreCmdEndQuery(VkCommandBuffer wrappedCommandBuffer, VkCommandBuffer commandBuffer, VkQueryPool queryPool, uint32_t query)
+void CommandBuffer::PreCmdEndQuery(VkCommandBuffer commandBuffer, VkQueryPool queryPool, uint32_t query)
 {
-  tracker_.TrackPreCmdEndQuery(wrappedCommandBuffer, queryPool, query);
+  tracker_.TrackPreCmdEndQuery(commandBuffer, queryPool, query);
   if (instrument_all_commands_) {
     WriteBeginCommandExecutionMarker(tracker_.GetCommands().back().id);
   }
 }
 
-void CommandBuffer::PostCmdEndQuery(VkCommandBuffer wrappedCommandBuffer, VkCommandBuffer commandBuffer, VkQueryPool queryPool, uint32_t query)
+void CommandBuffer::PostCmdEndQuery(VkCommandBuffer commandBuffer, VkQueryPool queryPool, uint32_t query)
 {
-  tracker_.TrackPostCmdEndQuery(wrappedCommandBuffer, queryPool, query);
+  tracker_.TrackPostCmdEndQuery(commandBuffer, queryPool, query);
   if (instrument_all_commands_) {
     WriteEndCommandExecutionMarker(tracker_.GetCommands().back().id);
   }
 }
 
-void CommandBuffer::PreCmdResetQueryPool(VkCommandBuffer wrappedCommandBuffer, VkCommandBuffer commandBuffer, VkQueryPool queryPool, uint32_t firstQuery, uint32_t queryCount)
+void CommandBuffer::PreCmdResetQueryPool(VkCommandBuffer commandBuffer, VkQueryPool queryPool, uint32_t firstQuery, uint32_t queryCount)
 {
-  tracker_.TrackPreCmdResetQueryPool(wrappedCommandBuffer, queryPool, firstQuery, queryCount);
+  tracker_.TrackPreCmdResetQueryPool(commandBuffer, queryPool, firstQuery, queryCount);
   if (instrument_all_commands_) {
     WriteBeginCommandExecutionMarker(tracker_.GetCommands().back().id);
   }
 }
 
-void CommandBuffer::PostCmdResetQueryPool(VkCommandBuffer wrappedCommandBuffer, VkCommandBuffer commandBuffer, VkQueryPool queryPool, uint32_t firstQuery, uint32_t queryCount)
+void CommandBuffer::PostCmdResetQueryPool(VkCommandBuffer commandBuffer, VkQueryPool queryPool, uint32_t firstQuery, uint32_t queryCount)
 {
-  tracker_.TrackPostCmdResetQueryPool(wrappedCommandBuffer, queryPool, firstQuery, queryCount);
+  tracker_.TrackPostCmdResetQueryPool(commandBuffer, queryPool, firstQuery, queryCount);
   if (instrument_all_commands_) {
     WriteEndCommandExecutionMarker(tracker_.GetCommands().back().id);
   }
 }
 
-void CommandBuffer::PreCmdWriteTimestamp(VkCommandBuffer wrappedCommandBuffer, VkCommandBuffer commandBuffer, VkPipelineStageFlagBits pipelineStage, VkQueryPool queryPool, uint32_t query)
+void CommandBuffer::PreCmdWriteTimestamp(VkCommandBuffer commandBuffer, VkPipelineStageFlagBits pipelineStage, VkQueryPool queryPool, uint32_t query)
 {
-  tracker_.TrackPreCmdWriteTimestamp(wrappedCommandBuffer, pipelineStage, queryPool, query);
+  tracker_.TrackPreCmdWriteTimestamp(commandBuffer, pipelineStage, queryPool, query);
   if (instrument_all_commands_) {
     WriteBeginCommandExecutionMarker(tracker_.GetCommands().back().id);
   }
 }
 
-void CommandBuffer::PostCmdWriteTimestamp(VkCommandBuffer wrappedCommandBuffer, VkCommandBuffer commandBuffer, VkPipelineStageFlagBits pipelineStage, VkQueryPool queryPool, uint32_t query)
+void CommandBuffer::PostCmdWriteTimestamp(VkCommandBuffer commandBuffer, VkPipelineStageFlagBits pipelineStage, VkQueryPool queryPool, uint32_t query)
 {
-  tracker_.TrackPostCmdWriteTimestamp(wrappedCommandBuffer, pipelineStage, queryPool, query);
+  tracker_.TrackPostCmdWriteTimestamp(commandBuffer, pipelineStage, queryPool, query);
   if (instrument_all_commands_) {
     WriteEndCommandExecutionMarker(tracker_.GetCommands().back().id);
   }
 }
 
-void CommandBuffer::PreCmdCopyQueryPoolResults(VkCommandBuffer wrappedCommandBuffer, VkCommandBuffer commandBuffer, VkQueryPool queryPool, uint32_t firstQuery, uint32_t queryCount, VkBuffer dstBuffer, VkDeviceSize dstOffset, VkDeviceSize stride, VkQueryResultFlags flags)
+void CommandBuffer::PreCmdCopyQueryPoolResults(VkCommandBuffer commandBuffer, VkQueryPool queryPool, uint32_t firstQuery, uint32_t queryCount, VkBuffer dstBuffer, VkDeviceSize dstOffset, VkDeviceSize stride, VkQueryResultFlags flags)
 {
-  tracker_.TrackPreCmdCopyQueryPoolResults(wrappedCommandBuffer, queryPool, firstQuery, queryCount, dstBuffer, dstOffset, stride, flags);
+  tracker_.TrackPreCmdCopyQueryPoolResults(commandBuffer, queryPool, firstQuery, queryCount, dstBuffer, dstOffset, stride, flags);
   if (instrument_all_commands_) {
     WriteBeginCommandExecutionMarker(tracker_.GetCommands().back().id);
   }
 }
 
-void CommandBuffer::PostCmdCopyQueryPoolResults(VkCommandBuffer wrappedCommandBuffer, VkCommandBuffer commandBuffer, VkQueryPool queryPool, uint32_t firstQuery, uint32_t queryCount, VkBuffer dstBuffer, VkDeviceSize dstOffset, VkDeviceSize stride, VkQueryResultFlags flags)
+void CommandBuffer::PostCmdCopyQueryPoolResults(VkCommandBuffer commandBuffer, VkQueryPool queryPool, uint32_t firstQuery, uint32_t queryCount, VkBuffer dstBuffer, VkDeviceSize dstOffset, VkDeviceSize stride, VkQueryResultFlags flags)
 {
-  tracker_.TrackPostCmdCopyQueryPoolResults(wrappedCommandBuffer, queryPool, firstQuery, queryCount, dstBuffer, dstOffset, stride, flags);
+  tracker_.TrackPostCmdCopyQueryPoolResults(commandBuffer, queryPool, firstQuery, queryCount, dstBuffer, dstOffset, stride, flags);
   if (instrument_all_commands_) {
     WriteEndCommandExecutionMarker(tracker_.GetCommands().back().id);
   }
 }
 
-void CommandBuffer::PreCmdBeginRenderPass(VkCommandBuffer wrappedCommandBuffer, VkCommandBuffer commandBuffer, VkRenderPassBeginInfo const* pRenderPassBegin, VkSubpassContents contents)
+void CommandBuffer::PreCmdBeginRenderPass(VkCommandBuffer commandBuffer, VkRenderPassBeginInfo const* pRenderPassBegin, VkSubpassContents contents)
 {
-  tracker_.TrackPreCmdBeginRenderPass(wrappedCommandBuffer, pRenderPassBegin, contents);
+  tracker_.TrackPreCmdBeginRenderPass(commandBuffer, pRenderPassBegin, contents);
   if (instrument_all_commands_) {
     WriteBeginCommandExecutionMarker(tracker_.GetCommands().back().id);
   }
 }
 
-void CommandBuffer::PostCmdBeginRenderPass(VkCommandBuffer wrappedCommandBuffer, VkCommandBuffer commandBuffer, VkRenderPassBeginInfo const* pRenderPassBegin, VkSubpassContents contents)
+void CommandBuffer::PostCmdBeginRenderPass(VkCommandBuffer commandBuffer, VkRenderPassBeginInfo const* pRenderPassBegin, VkSubpassContents contents)
 {
-  tracker_.TrackPostCmdBeginRenderPass(wrappedCommandBuffer, pRenderPassBegin, contents);
+  tracker_.TrackPostCmdBeginRenderPass(commandBuffer, pRenderPassBegin, contents);
   if (instrument_all_commands_) {
     WriteEndCommandExecutionMarker(tracker_.GetCommands().back().id);
   }
 }
 
-void CommandBuffer::PreCmdNextSubpass(VkCommandBuffer wrappedCommandBuffer, VkCommandBuffer commandBuffer, VkSubpassContents contents)
+void CommandBuffer::PreCmdNextSubpass(VkCommandBuffer commandBuffer, VkSubpassContents contents)
 {
-  tracker_.TrackPreCmdNextSubpass(wrappedCommandBuffer, contents);
+  tracker_.TrackPreCmdNextSubpass(commandBuffer, contents);
   if (instrument_all_commands_) {
     WriteBeginCommandExecutionMarker(tracker_.GetCommands().back().id);
   }
 }
 
-void CommandBuffer::PostCmdNextSubpass(VkCommandBuffer wrappedCommandBuffer, VkCommandBuffer commandBuffer, VkSubpassContents contents)
+void CommandBuffer::PostCmdNextSubpass(VkCommandBuffer commandBuffer, VkSubpassContents contents)
 {
-  tracker_.TrackPostCmdNextSubpass(wrappedCommandBuffer, contents);
+  tracker_.TrackPostCmdNextSubpass(commandBuffer, contents);
   if (instrument_all_commands_) {
     WriteEndCommandExecutionMarker(tracker_.GetCommands().back().id);
   }
 }
 
-void CommandBuffer::PreCmdEndRenderPass(VkCommandBuffer wrappedCommandBuffer, VkCommandBuffer commandBuffer)
+void CommandBuffer::PreCmdEndRenderPass(VkCommandBuffer commandBuffer)
 {
-  tracker_.TrackPreCmdEndRenderPass(wrappedCommandBuffer);
+  tracker_.TrackPreCmdEndRenderPass(commandBuffer);
   if (instrument_all_commands_) {
     WriteBeginCommandExecutionMarker(tracker_.GetCommands().back().id);
   }
 }
 
-void CommandBuffer::PostCmdEndRenderPass(VkCommandBuffer wrappedCommandBuffer, VkCommandBuffer commandBuffer)
+void CommandBuffer::PostCmdEndRenderPass(VkCommandBuffer commandBuffer)
 {
-  tracker_.TrackPostCmdEndRenderPass(wrappedCommandBuffer);
+  tracker_.TrackPostCmdEndRenderPass(commandBuffer);
   if (instrument_all_commands_) {
     WriteEndCommandExecutionMarker(tracker_.GetCommands().back().id);
   }
 }
 
-void CommandBuffer::PreCmdSetEvent(VkCommandBuffer wrappedCommandBuffer, VkCommandBuffer commandBuffer, VkEvent event, VkPipelineStageFlags stageMask)
+void CommandBuffer::PreCmdSetEvent(VkCommandBuffer commandBuffer, VkEvent event, VkPipelineStageFlags stageMask)
 {
-  tracker_.TrackPreCmdSetEvent(wrappedCommandBuffer, event, stageMask);
+  tracker_.TrackPreCmdSetEvent(commandBuffer, event, stageMask);
   if (true) {
     WriteBeginCommandExecutionMarker(tracker_.GetCommands().back().id);
   }
 }
 
-void CommandBuffer::PostCmdSetEvent(VkCommandBuffer wrappedCommandBuffer, VkCommandBuffer commandBuffer, VkEvent event, VkPipelineStageFlags stageMask)
+void CommandBuffer::PostCmdSetEvent(VkCommandBuffer commandBuffer, VkEvent event, VkPipelineStageFlags stageMask)
 {
-  tracker_.TrackPostCmdSetEvent(wrappedCommandBuffer, event, stageMask);
+  tracker_.TrackPostCmdSetEvent(commandBuffer, event, stageMask);
   if (true) {
     WriteEndCommandExecutionMarker(tracker_.GetCommands().back().id);
   }
 }
 
-void CommandBuffer::PreCmdResetEvent(VkCommandBuffer wrappedCommandBuffer, VkCommandBuffer commandBuffer, VkEvent event, VkPipelineStageFlags stageMask)
+void CommandBuffer::PreCmdResetEvent(VkCommandBuffer commandBuffer, VkEvent event, VkPipelineStageFlags stageMask)
 {
-  tracker_.TrackPreCmdResetEvent(wrappedCommandBuffer, event, stageMask);
+  tracker_.TrackPreCmdResetEvent(commandBuffer, event, stageMask);
   if (true) {
     WriteBeginCommandExecutionMarker(tracker_.GetCommands().back().id);
   }
 }
 
-void CommandBuffer::PostCmdResetEvent(VkCommandBuffer wrappedCommandBuffer, VkCommandBuffer commandBuffer, VkEvent event, VkPipelineStageFlags stageMask)
+void CommandBuffer::PostCmdResetEvent(VkCommandBuffer commandBuffer, VkEvent event, VkPipelineStageFlags stageMask)
 {
-  tracker_.TrackPostCmdResetEvent(wrappedCommandBuffer, event, stageMask);
+  tracker_.TrackPostCmdResetEvent(commandBuffer, event, stageMask);
   if (true) {
     WriteEndCommandExecutionMarker(tracker_.GetCommands().back().id);
   }
 }
 
-void CommandBuffer::PreCmdWaitEvents(VkCommandBuffer wrappedCommandBuffer, VkCommandBuffer commandBuffer, uint32_t eventCount, VkEvent const* pEvents, VkPipelineStageFlags srcStageMask, VkPipelineStageFlags dstStageMask, uint32_t memoryBarrierCount, VkMemoryBarrier const* pMemoryBarriers, uint32_t bufferMemoryBarrierCount, VkBufferMemoryBarrier const* pBufferMemoryBarriers, uint32_t imageMemoryBarrierCount, VkImageMemoryBarrier const* pImageMemoryBarriers)
+void CommandBuffer::PreCmdWaitEvents(VkCommandBuffer commandBuffer, uint32_t eventCount, VkEvent const* pEvents, VkPipelineStageFlags srcStageMask, VkPipelineStageFlags dstStageMask, uint32_t memoryBarrierCount, VkMemoryBarrier const* pMemoryBarriers, uint32_t bufferMemoryBarrierCount, VkBufferMemoryBarrier const* pBufferMemoryBarriers, uint32_t imageMemoryBarrierCount, VkImageMemoryBarrier const* pImageMemoryBarriers)
 {
-  tracker_.TrackPreCmdWaitEvents(wrappedCommandBuffer, eventCount, pEvents, srcStageMask, dstStageMask, memoryBarrierCount, pMemoryBarriers, bufferMemoryBarrierCount, pBufferMemoryBarriers, imageMemoryBarrierCount, pImageMemoryBarriers);
+  tracker_.TrackPreCmdWaitEvents(commandBuffer, eventCount, pEvents, srcStageMask, dstStageMask, memoryBarrierCount, pMemoryBarriers, bufferMemoryBarrierCount, pBufferMemoryBarriers, imageMemoryBarrierCount, pImageMemoryBarriers);
   if (true) {
     WriteBeginCommandExecutionMarker(tracker_.GetCommands().back().id);
   }
 }
 
-void CommandBuffer::PostCmdWaitEvents(VkCommandBuffer wrappedCommandBuffer, VkCommandBuffer commandBuffer, uint32_t eventCount, VkEvent const* pEvents, VkPipelineStageFlags srcStageMask, VkPipelineStageFlags dstStageMask, uint32_t memoryBarrierCount, VkMemoryBarrier const* pMemoryBarriers, uint32_t bufferMemoryBarrierCount, VkBufferMemoryBarrier const* pBufferMemoryBarriers, uint32_t imageMemoryBarrierCount, VkImageMemoryBarrier const* pImageMemoryBarriers)
+void CommandBuffer::PostCmdWaitEvents(VkCommandBuffer commandBuffer, uint32_t eventCount, VkEvent const* pEvents, VkPipelineStageFlags srcStageMask, VkPipelineStageFlags dstStageMask, uint32_t memoryBarrierCount, VkMemoryBarrier const* pMemoryBarriers, uint32_t bufferMemoryBarrierCount, VkBufferMemoryBarrier const* pBufferMemoryBarriers, uint32_t imageMemoryBarrierCount, VkImageMemoryBarrier const* pImageMemoryBarriers)
 {
-  tracker_.TrackPostCmdWaitEvents(wrappedCommandBuffer, eventCount, pEvents, srcStageMask, dstStageMask, memoryBarrierCount, pMemoryBarriers, bufferMemoryBarrierCount, pBufferMemoryBarriers, imageMemoryBarrierCount, pImageMemoryBarriers);
+  tracker_.TrackPostCmdWaitEvents(commandBuffer, eventCount, pEvents, srcStageMask, dstStageMask, memoryBarrierCount, pMemoryBarriers, bufferMemoryBarrierCount, pBufferMemoryBarriers, imageMemoryBarrierCount, pImageMemoryBarriers);
   if (true) {
     WriteEndCommandExecutionMarker(tracker_.GetCommands().back().id);
   }
 }
 
-void CommandBuffer::PreCmdPipelineBarrier(VkCommandBuffer wrappedCommandBuffer, VkCommandBuffer commandBuffer, VkPipelineStageFlags srcStageMask, VkPipelineStageFlags dstStageMask, VkDependencyFlags dependencyFlags, uint32_t memoryBarrierCount, VkMemoryBarrier const* pMemoryBarriers, uint32_t bufferMemoryBarrierCount, VkBufferMemoryBarrier const* pBufferMemoryBarriers, uint32_t imageMemoryBarrierCount, VkImageMemoryBarrier const* pImageMemoryBarriers)
+void CommandBuffer::PreCmdPipelineBarrier(VkCommandBuffer commandBuffer, VkPipelineStageFlags srcStageMask, VkPipelineStageFlags dstStageMask, VkDependencyFlags dependencyFlags, uint32_t memoryBarrierCount, VkMemoryBarrier const* pMemoryBarriers, uint32_t bufferMemoryBarrierCount, VkBufferMemoryBarrier const* pBufferMemoryBarriers, uint32_t imageMemoryBarrierCount, VkImageMemoryBarrier const* pImageMemoryBarriers)
 {
-  tracker_.TrackPreCmdPipelineBarrier(wrappedCommandBuffer, srcStageMask, dstStageMask, dependencyFlags, memoryBarrierCount, pMemoryBarriers, bufferMemoryBarrierCount, pBufferMemoryBarriers, imageMemoryBarrierCount, pImageMemoryBarriers);
-  if (instrument_all_commands_) {
-    WriteBeginCommandExecutionMarker(tracker_.GetCommands().back().id);
-  }
-}
-
-void CommandBuffer::PostCmdPipelineBarrier(VkCommandBuffer wrappedCommandBuffer, VkCommandBuffer commandBuffer, VkPipelineStageFlags srcStageMask, VkPipelineStageFlags dstStageMask, VkDependencyFlags dependencyFlags, uint32_t memoryBarrierCount, VkMemoryBarrier const* pMemoryBarriers, uint32_t bufferMemoryBarrierCount, VkBufferMemoryBarrier const* pBufferMemoryBarriers, uint32_t imageMemoryBarrierCount, VkImageMemoryBarrier const* pImageMemoryBarriers)
-{
-  tracker_.TrackPostCmdPipelineBarrier(wrappedCommandBuffer, srcStageMask, dstStageMask, dependencyFlags, memoryBarrierCount, pMemoryBarriers, bufferMemoryBarrierCount, pBufferMemoryBarriers, imageMemoryBarrierCount, pImageMemoryBarriers);
-  if (instrument_all_commands_) {
-    WriteEndCommandExecutionMarker(tracker_.GetCommands().back().id);
-  }
-}
-
-void CommandBuffer::PreCmdWriteBufferMarkerAMD(VkCommandBuffer wrappedCommandBuffer, VkCommandBuffer commandBuffer, VkPipelineStageFlagBits pipelineStage, VkBuffer dstBuffer, VkDeviceSize dstOffset, uint32_t marker)
-{
-  tracker_.TrackPreCmdWriteBufferMarkerAMD(wrappedCommandBuffer, pipelineStage, dstBuffer, dstOffset, marker);
-  if (instrument_all_commands_) {
-    WriteBeginCommandExecutionMarker(tracker_.GetCommands().back().id);
-  }
-}
-
-void CommandBuffer::PostCmdWriteBufferMarkerAMD(VkCommandBuffer wrappedCommandBuffer, VkCommandBuffer commandBuffer, VkPipelineStageFlagBits pipelineStage, VkBuffer dstBuffer, VkDeviceSize dstOffset, uint32_t marker)
-{
-  tracker_.TrackPostCmdWriteBufferMarkerAMD(wrappedCommandBuffer, pipelineStage, dstBuffer, dstOffset, marker);
-  if (instrument_all_commands_) {
-    WriteEndCommandExecutionMarker(tracker_.GetCommands().back().id);
-  }
-}
-
-void CommandBuffer::PreCmdDrawIndirectCountAMD(VkCommandBuffer wrappedCommandBuffer, VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset, VkBuffer countBuffer, VkDeviceSize countOffset, uint32_t maxDrawCount, uint32_t stride)
-{
-  tracker_.TrackPreCmdDrawIndirectCountAMD(wrappedCommandBuffer, buffer, offset, countBuffer, countOffset, maxDrawCount, stride);
-  if (instrument_all_commands_) {
-    WriteBeginCommandExecutionMarker(tracker_.GetCommands().back().id);
-  }
-}
-
-void CommandBuffer::PostCmdDrawIndirectCountAMD(VkCommandBuffer wrappedCommandBuffer, VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset, VkBuffer countBuffer, VkDeviceSize countOffset, uint32_t maxDrawCount, uint32_t stride)
-{
-  tracker_.TrackPostCmdDrawIndirectCountAMD(wrappedCommandBuffer, buffer, offset, countBuffer, countOffset, maxDrawCount, stride);
-  if (instrument_all_commands_) {
-    WriteEndCommandExecutionMarker(tracker_.GetCommands().back().id);
-  }
-}
-
-void CommandBuffer::PreCmdDrawIndexedIndirectCountAMD(VkCommandBuffer wrappedCommandBuffer, VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset, VkBuffer countBuffer, VkDeviceSize countOffset, uint32_t maxDrawCount, uint32_t stride)
-{
-  tracker_.TrackPreCmdDrawIndexedIndirectCountAMD(wrappedCommandBuffer, buffer, offset, countBuffer, countOffset, maxDrawCount, stride);
-  if (instrument_all_commands_) {
-    WriteBeginCommandExecutionMarker(tracker_.GetCommands().back().id);
-  }
-}
-
-void CommandBuffer::PostCmdDrawIndexedIndirectCountAMD(VkCommandBuffer wrappedCommandBuffer, VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset, VkBuffer countBuffer, VkDeviceSize countOffset, uint32_t maxDrawCount, uint32_t stride)
-{
-  tracker_.TrackPostCmdDrawIndexedIndirectCountAMD(wrappedCommandBuffer, buffer, offset, countBuffer, countOffset, maxDrawCount, stride);
-  if (instrument_all_commands_) {
-    WriteEndCommandExecutionMarker(tracker_.GetCommands().back().id);
-  }
-}
-
-void CommandBuffer::PreCmdBeginConditionalRenderingEXT(VkCommandBuffer wrappedCommandBuffer, VkCommandBuffer commandBuffer, VkConditionalRenderingBeginInfoEXT const* pConditinalRenderingBegin)
-{
-  tracker_.TrackPreCmdBeginConditionalRenderingEXT(wrappedCommandBuffer, pConditinalRenderingBegin);
-  if (instrument_all_commands_) {
-    WriteBeginCommandExecutionMarker(tracker_.GetCommands().back().id);
-  }
-}
-
-void CommandBuffer::PostCmdBeginConditionalRenderingEXT(VkCommandBuffer wrappedCommandBuffer, VkCommandBuffer commandBuffer, VkConditionalRenderingBeginInfoEXT const* pConditinalRenderingBegin)
-{
-  tracker_.TrackPostCmdBeginConditionalRenderingEXT(wrappedCommandBuffer, pConditinalRenderingBegin);
-  if (instrument_all_commands_) {
-    WriteEndCommandExecutionMarker(tracker_.GetCommands().back().id);
-  }
-}
-
-void CommandBuffer::PreCmdEndConditionalRenderingEXT(VkCommandBuffer wrappedCommandBuffer, VkCommandBuffer commandBuffer)
-{
-  tracker_.TrackPreCmdEndConditionalRenderingEXT(wrappedCommandBuffer);
-  if (instrument_all_commands_) {
-    WriteBeginCommandExecutionMarker(tracker_.GetCommands().back().id);
-  }
-}
-
-void CommandBuffer::PostCmdEndConditionalRenderingEXT(VkCommandBuffer wrappedCommandBuffer, VkCommandBuffer commandBuffer)
-{
-  tracker_.TrackPostCmdEndConditionalRenderingEXT(wrappedCommandBuffer);
-  if (instrument_all_commands_) {
-    WriteEndCommandExecutionMarker(tracker_.GetCommands().back().id);
-  }
-}
-
-void CommandBuffer::PreCmdDebugMarkerBeginEXT(VkCommandBuffer wrappedCommandBuffer, VkCommandBuffer commandBuffer, VkDebugMarkerMarkerInfoEXT const* pMarkerInfo)
-{
-  tracker_.TrackPreCmdDebugMarkerBeginEXT(wrappedCommandBuffer, pMarkerInfo);
+  tracker_.TrackPreCmdPipelineBarrier(commandBuffer, srcStageMask, dstStageMask, dependencyFlags, memoryBarrierCount, pMemoryBarriers, bufferMemoryBarrierCount, pBufferMemoryBarriers, imageMemoryBarrierCount, pImageMemoryBarriers);
   if (true) {
     WriteBeginCommandExecutionMarker(tracker_.GetCommands().back().id);
   }
 }
 
-void CommandBuffer::PostCmdDebugMarkerBeginEXT(VkCommandBuffer wrappedCommandBuffer, VkCommandBuffer commandBuffer, VkDebugMarkerMarkerInfoEXT const* pMarkerInfo)
+void CommandBuffer::PostCmdPipelineBarrier(VkCommandBuffer commandBuffer, VkPipelineStageFlags srcStageMask, VkPipelineStageFlags dstStageMask, VkDependencyFlags dependencyFlags, uint32_t memoryBarrierCount, VkMemoryBarrier const* pMemoryBarriers, uint32_t bufferMemoryBarrierCount, VkBufferMemoryBarrier const* pBufferMemoryBarriers, uint32_t imageMemoryBarrierCount, VkImageMemoryBarrier const* pImageMemoryBarriers)
 {
-  tracker_.TrackPostCmdDebugMarkerBeginEXT(wrappedCommandBuffer, pMarkerInfo);
+  tracker_.TrackPostCmdPipelineBarrier(commandBuffer, srcStageMask, dstStageMask, dependencyFlags, memoryBarrierCount, pMemoryBarriers, bufferMemoryBarrierCount, pBufferMemoryBarriers, imageMemoryBarrierCount, pImageMemoryBarriers);
   if (true) {
     WriteEndCommandExecutionMarker(tracker_.GetCommands().back().id);
   }
 }
 
-void CommandBuffer::PreCmdDebugMarkerEndEXT(VkCommandBuffer wrappedCommandBuffer, VkCommandBuffer commandBuffer)
+void CommandBuffer::PreCmdWriteBufferMarkerAMD(VkCommandBuffer commandBuffer, VkPipelineStageFlagBits pipelineStage, VkBuffer dstBuffer, VkDeviceSize dstOffset, uint32_t marker)
 {
-  tracker_.TrackPreCmdDebugMarkerEndEXT(wrappedCommandBuffer);
-  if (true) {
-    WriteBeginCommandExecutionMarker(tracker_.GetCommands().back().id);
-  }
-}
-
-void CommandBuffer::PostCmdDebugMarkerEndEXT(VkCommandBuffer wrappedCommandBuffer, VkCommandBuffer commandBuffer)
-{
-  tracker_.TrackPostCmdDebugMarkerEndEXT(wrappedCommandBuffer);
-  if (true) {
-    WriteEndCommandExecutionMarker(tracker_.GetCommands().back().id);
-  }
-}
-
-void CommandBuffer::PreCmdDebugMarkerInsertEXT(VkCommandBuffer wrappedCommandBuffer, VkCommandBuffer commandBuffer, VkDebugMarkerMarkerInfoEXT const* pMarkerInfo)
-{
-  tracker_.TrackPreCmdDebugMarkerInsertEXT(wrappedCommandBuffer, pMarkerInfo);
-  if (true) {
-    WriteBeginCommandExecutionMarker(tracker_.GetCommands().back().id);
-  }
-}
-
-void CommandBuffer::PostCmdDebugMarkerInsertEXT(VkCommandBuffer wrappedCommandBuffer, VkCommandBuffer commandBuffer, VkDebugMarkerMarkerInfoEXT const* pMarkerInfo)
-{
-  tracker_.TrackPostCmdDebugMarkerInsertEXT(wrappedCommandBuffer, pMarkerInfo);
-  if (true) {
-    WriteEndCommandExecutionMarker(tracker_.GetCommands().back().id);
-  }
-}
-
-void CommandBuffer::PreCmdBeginDebugUtilsLabelEXT(VkCommandBuffer wrappedCommandBuffer, VkCommandBuffer commandBuffer, VkDebugUtilsLabelEXT const* pLabelInfo)
-{
-  tracker_.TrackPreCmdBeginDebugUtilsLabelEXT(wrappedCommandBuffer, pLabelInfo);
-  if (true) {
-    WriteBeginCommandExecutionMarker(tracker_.GetCommands().back().id);
-  }
-}
-
-void CommandBuffer::PostCmdBeginDebugUtilsLabelEXT(VkCommandBuffer wrappedCommandBuffer, VkCommandBuffer commandBuffer, VkDebugUtilsLabelEXT const* pLabelInfo)
-{
-  tracker_.TrackPostCmdBeginDebugUtilsLabelEXT(wrappedCommandBuffer, pLabelInfo);
-  if (true) {
-    WriteEndCommandExecutionMarker(tracker_.GetCommands().back().id);
-  }
-}
-
-void CommandBuffer::PreCmdEndDebugUtilsLabelEXT(VkCommandBuffer wrappedCommandBuffer, VkCommandBuffer commandBuffer)
-{
-  tracker_.TrackPreCmdEndDebugUtilsLabelEXT(wrappedCommandBuffer);
-  if (true) {
-    WriteBeginCommandExecutionMarker(tracker_.GetCommands().back().id);
-  }
-}
-
-void CommandBuffer::PostCmdEndDebugUtilsLabelEXT(VkCommandBuffer wrappedCommandBuffer, VkCommandBuffer commandBuffer)
-{
-  tracker_.TrackPostCmdEndDebugUtilsLabelEXT(wrappedCommandBuffer);
-  if (true) {
-    WriteEndCommandExecutionMarker(tracker_.GetCommands().back().id);
-  }
-}
-
-void CommandBuffer::PreCmdInsertDebugUtilsLabelEXT(VkCommandBuffer wrappedCommandBuffer, VkCommandBuffer commandBuffer, VkDebugUtilsLabelEXT const* pLabelInfo)
-{
-  tracker_.TrackPreCmdInsertDebugUtilsLabelEXT(wrappedCommandBuffer, pLabelInfo);
-  if (true) {
-    WriteBeginCommandExecutionMarker(tracker_.GetCommands().back().id);
-  }
-}
-
-void CommandBuffer::PostCmdInsertDebugUtilsLabelEXT(VkCommandBuffer wrappedCommandBuffer, VkCommandBuffer commandBuffer, VkDebugUtilsLabelEXT const* pLabelInfo)
-{
-  tracker_.TrackPostCmdInsertDebugUtilsLabelEXT(wrappedCommandBuffer, pLabelInfo);
-  if (true) {
-    WriteEndCommandExecutionMarker(tracker_.GetCommands().back().id);
-  }
-}
-
-void CommandBuffer::PreCmdSetDeviceMaskKHR(VkCommandBuffer wrappedCommandBuffer, VkCommandBuffer commandBuffer, uint32_t deviceMask)
-{
-  tracker_.TrackPreCmdSetDeviceMaskKHR(wrappedCommandBuffer, deviceMask);
+  tracker_.TrackPreCmdWriteBufferMarkerAMD(commandBuffer, pipelineStage, dstBuffer, dstOffset, marker);
   if (instrument_all_commands_) {
     WriteBeginCommandExecutionMarker(tracker_.GetCommands().back().id);
   }
 }
 
-void CommandBuffer::PostCmdSetDeviceMaskKHR(VkCommandBuffer wrappedCommandBuffer, VkCommandBuffer commandBuffer, uint32_t deviceMask)
+void CommandBuffer::PostCmdWriteBufferMarkerAMD(VkCommandBuffer commandBuffer, VkPipelineStageFlagBits pipelineStage, VkBuffer dstBuffer, VkDeviceSize dstOffset, uint32_t marker)
 {
-  tracker_.TrackPostCmdSetDeviceMaskKHR(wrappedCommandBuffer, deviceMask);
+  tracker_.TrackPostCmdWriteBufferMarkerAMD(commandBuffer, pipelineStage, dstBuffer, dstOffset, marker);
   if (instrument_all_commands_) {
     WriteEndCommandExecutionMarker(tracker_.GetCommands().back().id);
   }
 }
 
-void CommandBuffer::PreCmdSetDeviceMask(VkCommandBuffer wrappedCommandBuffer, VkCommandBuffer commandBuffer, uint32_t deviceMask)
+void CommandBuffer::PreCmdDrawIndirectCountAMD(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset, VkBuffer countBuffer, VkDeviceSize countOffset, uint32_t maxDrawCount, uint32_t stride)
 {
-  tracker_.TrackPreCmdSetDeviceMask(wrappedCommandBuffer, deviceMask);
+  tracker_.TrackPreCmdDrawIndirectCountAMD(commandBuffer, buffer, offset, countBuffer, countOffset, maxDrawCount, stride);
   if (instrument_all_commands_) {
     WriteBeginCommandExecutionMarker(tracker_.GetCommands().back().id);
   }
 }
 
-void CommandBuffer::PostCmdSetDeviceMask(VkCommandBuffer wrappedCommandBuffer, VkCommandBuffer commandBuffer, uint32_t deviceMask)
+void CommandBuffer::PostCmdDrawIndirectCountAMD(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset, VkBuffer countBuffer, VkDeviceSize countOffset, uint32_t maxDrawCount, uint32_t stride)
 {
-  tracker_.TrackPostCmdSetDeviceMask(wrappedCommandBuffer, deviceMask);
+  tracker_.TrackPostCmdDrawIndirectCountAMD(commandBuffer, buffer, offset, countBuffer, countOffset, maxDrawCount, stride);
   if (instrument_all_commands_) {
     WriteEndCommandExecutionMarker(tracker_.GetCommands().back().id);
   }
 }
 
-void CommandBuffer::PreCmdDispatchBaseKHR(VkCommandBuffer wrappedCommandBuffer, VkCommandBuffer commandBuffer, uint32_t baseGroupX, uint32_t baseGroupY, uint32_t baseGroupZ, uint32_t groupCountX, uint32_t groupCountY, uint32_t groupCountZ)
+void CommandBuffer::PreCmdDrawIndexedIndirectCountAMD(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset, VkBuffer countBuffer, VkDeviceSize countOffset, uint32_t maxDrawCount, uint32_t stride)
 {
-  tracker_.TrackPreCmdDispatchBaseKHR(wrappedCommandBuffer, baseGroupX, baseGroupY, baseGroupZ, groupCountX, groupCountY, groupCountZ);
+  tracker_.TrackPreCmdDrawIndexedIndirectCountAMD(commandBuffer, buffer, offset, countBuffer, countOffset, maxDrawCount, stride);
   if (instrument_all_commands_) {
     WriteBeginCommandExecutionMarker(tracker_.GetCommands().back().id);
   }
 }
 
-void CommandBuffer::PostCmdDispatchBaseKHR(VkCommandBuffer wrappedCommandBuffer, VkCommandBuffer commandBuffer, uint32_t baseGroupX, uint32_t baseGroupY, uint32_t baseGroupZ, uint32_t groupCountX, uint32_t groupCountY, uint32_t groupCountZ)
+void CommandBuffer::PostCmdDrawIndexedIndirectCountAMD(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset, VkBuffer countBuffer, VkDeviceSize countOffset, uint32_t maxDrawCount, uint32_t stride)
 {
-  tracker_.TrackPostCmdDispatchBaseKHR(wrappedCommandBuffer, baseGroupX, baseGroupY, baseGroupZ, groupCountX, groupCountY, groupCountZ);
+  tracker_.TrackPostCmdDrawIndexedIndirectCountAMD(commandBuffer, buffer, offset, countBuffer, countOffset, maxDrawCount, stride);
   if (instrument_all_commands_) {
     WriteEndCommandExecutionMarker(tracker_.GetCommands().back().id);
   }
 }
 
-void CommandBuffer::PreCmdDispatchBase(VkCommandBuffer wrappedCommandBuffer, VkCommandBuffer commandBuffer, uint32_t baseGroupX, uint32_t baseGroupY, uint32_t baseGroupZ, uint32_t groupCountX, uint32_t groupCountY, uint32_t groupCountZ)
+void CommandBuffer::PreCmdBeginConditionalRenderingEXT(VkCommandBuffer commandBuffer, VkConditionalRenderingBeginInfoEXT const* pConditinalRenderingBegin)
 {
-  tracker_.TrackPreCmdDispatchBase(wrappedCommandBuffer, baseGroupX, baseGroupY, baseGroupZ, groupCountX, groupCountY, groupCountZ);
+  tracker_.TrackPreCmdBeginConditionalRenderingEXT(commandBuffer, pConditinalRenderingBegin);
   if (instrument_all_commands_) {
     WriteBeginCommandExecutionMarker(tracker_.GetCommands().back().id);
   }
 }
 
-void CommandBuffer::PostCmdDispatchBase(VkCommandBuffer wrappedCommandBuffer, VkCommandBuffer commandBuffer, uint32_t baseGroupX, uint32_t baseGroupY, uint32_t baseGroupZ, uint32_t groupCountX, uint32_t groupCountY, uint32_t groupCountZ)
+void CommandBuffer::PostCmdBeginConditionalRenderingEXT(VkCommandBuffer commandBuffer, VkConditionalRenderingBeginInfoEXT const* pConditinalRenderingBegin)
 {
-  tracker_.TrackPostCmdDispatchBase(wrappedCommandBuffer, baseGroupX, baseGroupY, baseGroupZ, groupCountX, groupCountY, groupCountZ);
+  tracker_.TrackPostCmdBeginConditionalRenderingEXT(commandBuffer, pConditinalRenderingBegin);
   if (instrument_all_commands_) {
     WriteEndCommandExecutionMarker(tracker_.GetCommands().back().id);
   }
 }
 
-void CommandBuffer::PreCmdDrawIndirectCountKHR(VkCommandBuffer wrappedCommandBuffer, VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset, VkBuffer countBuffer, VkDeviceSize countOffset, uint32_t maxDrawCount, uint32_t stride)
+void CommandBuffer::PreCmdEndConditionalRenderingEXT(VkCommandBuffer commandBuffer)
 {
-  tracker_.TrackPreCmdDrawIndirectCountKHR(wrappedCommandBuffer, buffer, offset, countBuffer, countOffset, maxDrawCount, stride);
+  tracker_.TrackPreCmdEndConditionalRenderingEXT(commandBuffer);
   if (instrument_all_commands_) {
     WriteBeginCommandExecutionMarker(tracker_.GetCommands().back().id);
   }
 }
 
-void CommandBuffer::PostCmdDrawIndirectCountKHR(VkCommandBuffer wrappedCommandBuffer, VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset, VkBuffer countBuffer, VkDeviceSize countOffset, uint32_t maxDrawCount, uint32_t stride)
+void CommandBuffer::PostCmdEndConditionalRenderingEXT(VkCommandBuffer commandBuffer)
 {
-  tracker_.TrackPostCmdDrawIndirectCountKHR(wrappedCommandBuffer, buffer, offset, countBuffer, countOffset, maxDrawCount, stride);
+  tracker_.TrackPostCmdEndConditionalRenderingEXT(commandBuffer);
   if (instrument_all_commands_) {
     WriteEndCommandExecutionMarker(tracker_.GetCommands().back().id);
   }
 }
 
-void CommandBuffer::PreCmdDrawIndexedIndirectCountKHR(VkCommandBuffer wrappedCommandBuffer, VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset, VkBuffer countBuffer, VkDeviceSize countOffset, uint32_t maxDrawCount, uint32_t stride)
+void CommandBuffer::PreCmdDebugMarkerBeginEXT(VkCommandBuffer commandBuffer, VkDebugMarkerMarkerInfoEXT const* pMarkerInfo)
 {
-  tracker_.TrackPreCmdDrawIndexedIndirectCountKHR(wrappedCommandBuffer, buffer, offset, countBuffer, countOffset, maxDrawCount, stride);
+  tracker_.TrackPreCmdDebugMarkerBeginEXT(commandBuffer, pMarkerInfo);
+  if (true) {
+    WriteBeginCommandExecutionMarker(tracker_.GetCommands().back().id);
+  }
+}
+
+void CommandBuffer::PostCmdDebugMarkerBeginEXT(VkCommandBuffer commandBuffer, VkDebugMarkerMarkerInfoEXT const* pMarkerInfo)
+{
+  tracker_.TrackPostCmdDebugMarkerBeginEXT(commandBuffer, pMarkerInfo);
+  if (true) {
+    WriteEndCommandExecutionMarker(tracker_.GetCommands().back().id);
+  }
+}
+
+void CommandBuffer::PreCmdDebugMarkerEndEXT(VkCommandBuffer commandBuffer)
+{
+  tracker_.TrackPreCmdDebugMarkerEndEXT(commandBuffer);
+  if (true) {
+    WriteBeginCommandExecutionMarker(tracker_.GetCommands().back().id);
+  }
+}
+
+void CommandBuffer::PostCmdDebugMarkerEndEXT(VkCommandBuffer commandBuffer)
+{
+  tracker_.TrackPostCmdDebugMarkerEndEXT(commandBuffer);
+  if (true) {
+    WriteEndCommandExecutionMarker(tracker_.GetCommands().back().id);
+  }
+}
+
+void CommandBuffer::PreCmdDebugMarkerInsertEXT(VkCommandBuffer commandBuffer, VkDebugMarkerMarkerInfoEXT const* pMarkerInfo)
+{
+  tracker_.TrackPreCmdDebugMarkerInsertEXT(commandBuffer, pMarkerInfo);
+  if (true) {
+    WriteBeginCommandExecutionMarker(tracker_.GetCommands().back().id);
+  }
+}
+
+void CommandBuffer::PostCmdDebugMarkerInsertEXT(VkCommandBuffer commandBuffer, VkDebugMarkerMarkerInfoEXT const* pMarkerInfo)
+{
+  tracker_.TrackPostCmdDebugMarkerInsertEXT(commandBuffer, pMarkerInfo);
+  if (true) {
+    WriteEndCommandExecutionMarker(tracker_.GetCommands().back().id);
+  }
+}
+
+void CommandBuffer::PreCmdBeginDebugUtilsLabelEXT(VkCommandBuffer commandBuffer, VkDebugUtilsLabelEXT const* pLabelInfo)
+{
+  tracker_.TrackPreCmdBeginDebugUtilsLabelEXT(commandBuffer, pLabelInfo);
+  if (true) {
+    WriteBeginCommandExecutionMarker(tracker_.GetCommands().back().id);
+  }
+}
+
+void CommandBuffer::PostCmdBeginDebugUtilsLabelEXT(VkCommandBuffer commandBuffer, VkDebugUtilsLabelEXT const* pLabelInfo)
+{
+  tracker_.TrackPostCmdBeginDebugUtilsLabelEXT(commandBuffer, pLabelInfo);
+  if (true) {
+    WriteEndCommandExecutionMarker(tracker_.GetCommands().back().id);
+  }
+}
+
+void CommandBuffer::PreCmdEndDebugUtilsLabelEXT(VkCommandBuffer commandBuffer)
+{
+  tracker_.TrackPreCmdEndDebugUtilsLabelEXT(commandBuffer);
+  if (true) {
+    WriteBeginCommandExecutionMarker(tracker_.GetCommands().back().id);
+  }
+}
+
+void CommandBuffer::PostCmdEndDebugUtilsLabelEXT(VkCommandBuffer commandBuffer)
+{
+  tracker_.TrackPostCmdEndDebugUtilsLabelEXT(commandBuffer);
+  if (true) {
+    WriteEndCommandExecutionMarker(tracker_.GetCommands().back().id);
+  }
+}
+
+void CommandBuffer::PreCmdInsertDebugUtilsLabelEXT(VkCommandBuffer commandBuffer, VkDebugUtilsLabelEXT const* pLabelInfo)
+{
+  tracker_.TrackPreCmdInsertDebugUtilsLabelEXT(commandBuffer, pLabelInfo);
+  if (true) {
+    WriteBeginCommandExecutionMarker(tracker_.GetCommands().back().id);
+  }
+}
+
+void CommandBuffer::PostCmdInsertDebugUtilsLabelEXT(VkCommandBuffer commandBuffer, VkDebugUtilsLabelEXT const* pLabelInfo)
+{
+  tracker_.TrackPostCmdInsertDebugUtilsLabelEXT(commandBuffer, pLabelInfo);
+  if (true) {
+    WriteEndCommandExecutionMarker(tracker_.GetCommands().back().id);
+  }
+}
+
+void CommandBuffer::PreCmdSetDeviceMaskKHR(VkCommandBuffer commandBuffer, uint32_t deviceMask)
+{
+  tracker_.TrackPreCmdSetDeviceMaskKHR(commandBuffer, deviceMask);
   if (instrument_all_commands_) {
     WriteBeginCommandExecutionMarker(tracker_.GetCommands().back().id);
   }
 }
 
-void CommandBuffer::PostCmdDrawIndexedIndirectCountKHR(VkCommandBuffer wrappedCommandBuffer, VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset, VkBuffer countBuffer, VkDeviceSize countOffset, uint32_t maxDrawCount, uint32_t stride)
+void CommandBuffer::PostCmdSetDeviceMaskKHR(VkCommandBuffer commandBuffer, uint32_t deviceMask)
 {
-  tracker_.TrackPostCmdDrawIndexedIndirectCountKHR(wrappedCommandBuffer, buffer, offset, countBuffer, countOffset, maxDrawCount, stride);
+  tracker_.TrackPostCmdSetDeviceMaskKHR(commandBuffer, deviceMask);
+  if (instrument_all_commands_) {
+    WriteEndCommandExecutionMarker(tracker_.GetCommands().back().id);
+  }
+}
+
+void CommandBuffer::PreCmdSetDeviceMask(VkCommandBuffer commandBuffer, uint32_t deviceMask)
+{
+  tracker_.TrackPreCmdSetDeviceMask(commandBuffer, deviceMask);
+  if (instrument_all_commands_) {
+    WriteBeginCommandExecutionMarker(tracker_.GetCommands().back().id);
+  }
+}
+
+void CommandBuffer::PostCmdSetDeviceMask(VkCommandBuffer commandBuffer, uint32_t deviceMask)
+{
+  tracker_.TrackPostCmdSetDeviceMask(commandBuffer, deviceMask);
+  if (instrument_all_commands_) {
+    WriteEndCommandExecutionMarker(tracker_.GetCommands().back().id);
+  }
+}
+
+void CommandBuffer::PreCmdDispatchBaseKHR(VkCommandBuffer commandBuffer, uint32_t baseGroupX, uint32_t baseGroupY, uint32_t baseGroupZ, uint32_t groupCountX, uint32_t groupCountY, uint32_t groupCountZ)
+{
+  tracker_.TrackPreCmdDispatchBaseKHR(commandBuffer, baseGroupX, baseGroupY, baseGroupZ, groupCountX, groupCountY, groupCountZ);
+  if (instrument_all_commands_) {
+    WriteBeginCommandExecutionMarker(tracker_.GetCommands().back().id);
+  }
+}
+
+void CommandBuffer::PostCmdDispatchBaseKHR(VkCommandBuffer commandBuffer, uint32_t baseGroupX, uint32_t baseGroupY, uint32_t baseGroupZ, uint32_t groupCountX, uint32_t groupCountY, uint32_t groupCountZ)
+{
+  tracker_.TrackPostCmdDispatchBaseKHR(commandBuffer, baseGroupX, baseGroupY, baseGroupZ, groupCountX, groupCountY, groupCountZ);
+  if (instrument_all_commands_) {
+    WriteEndCommandExecutionMarker(tracker_.GetCommands().back().id);
+  }
+}
+
+void CommandBuffer::PreCmdDispatchBase(VkCommandBuffer commandBuffer, uint32_t baseGroupX, uint32_t baseGroupY, uint32_t baseGroupZ, uint32_t groupCountX, uint32_t groupCountY, uint32_t groupCountZ)
+{
+  tracker_.TrackPreCmdDispatchBase(commandBuffer, baseGroupX, baseGroupY, baseGroupZ, groupCountX, groupCountY, groupCountZ);
+  if (instrument_all_commands_) {
+    WriteBeginCommandExecutionMarker(tracker_.GetCommands().back().id);
+  }
+}
+
+void CommandBuffer::PostCmdDispatchBase(VkCommandBuffer commandBuffer, uint32_t baseGroupX, uint32_t baseGroupY, uint32_t baseGroupZ, uint32_t groupCountX, uint32_t groupCountY, uint32_t groupCountZ)
+{
+  tracker_.TrackPostCmdDispatchBase(commandBuffer, baseGroupX, baseGroupY, baseGroupZ, groupCountX, groupCountY, groupCountZ);
+  if (instrument_all_commands_) {
+    WriteEndCommandExecutionMarker(tracker_.GetCommands().back().id);
+  }
+}
+
+void CommandBuffer::PreCmdDrawIndirectCountKHR(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset, VkBuffer countBuffer, VkDeviceSize countOffset, uint32_t maxDrawCount, uint32_t stride)
+{
+  tracker_.TrackPreCmdDrawIndirectCountKHR(commandBuffer, buffer, offset, countBuffer, countOffset, maxDrawCount, stride);
+  if (instrument_all_commands_) {
+    WriteBeginCommandExecutionMarker(tracker_.GetCommands().back().id);
+  }
+}
+
+void CommandBuffer::PostCmdDrawIndirectCountKHR(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset, VkBuffer countBuffer, VkDeviceSize countOffset, uint32_t maxDrawCount, uint32_t stride)
+{
+  tracker_.TrackPostCmdDrawIndirectCountKHR(commandBuffer, buffer, offset, countBuffer, countOffset, maxDrawCount, stride);
+  if (instrument_all_commands_) {
+    WriteEndCommandExecutionMarker(tracker_.GetCommands().back().id);
+  }
+}
+
+void CommandBuffer::PreCmdDrawIndexedIndirectCountKHR(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset, VkBuffer countBuffer, VkDeviceSize countOffset, uint32_t maxDrawCount, uint32_t stride)
+{
+  tracker_.TrackPreCmdDrawIndexedIndirectCountKHR(commandBuffer, buffer, offset, countBuffer, countOffset, maxDrawCount, stride);
+  if (instrument_all_commands_) {
+    WriteBeginCommandExecutionMarker(tracker_.GetCommands().back().id);
+  }
+}
+
+void CommandBuffer::PostCmdDrawIndexedIndirectCountKHR(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset, VkBuffer countBuffer, VkDeviceSize countOffset, uint32_t maxDrawCount, uint32_t stride)
+{
+  tracker_.TrackPostCmdDrawIndexedIndirectCountKHR(commandBuffer, buffer, offset, countBuffer, countOffset, maxDrawCount, stride);
   if (instrument_all_commands_) {
     WriteEndCommandExecutionMarker(tracker_.GetCommands().back().id);
   }

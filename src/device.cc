@@ -162,7 +162,6 @@ Device::Device(GfrContext* p_gfr, VkPhysicalDevice vk_gpu, VkDevice device,
   intercept::GetPhysicalDeviceProperties(vk_gpu, &physical_device_properties_);
 
   // Get proc address for vkCmdWriteBufferMarkerAMD
-  // We call the unwrapped version so grab from the dispatch table
   if (has_buffer_marker) {
     pfn_vkCmdWriteBufferMarkerAMD_ =
         (PFN_vkCmdWriteBufferMarkerAMD)intercept::GetDeviceDispatchTable(device)
@@ -326,28 +325,11 @@ void Device::CmdWriteBufferMarkerAMD(VkCommandBuffer commandBuffer,
                                  dstOffset, marker);
 }
 
-void Device::SetCommandBuffer(VkCommandBuffer vk_command_buffer,
-                              CommandBufferPtr command_buffer) {
+void Device::AddCommandBuffer(VkCommandBuffer vk_command_buffer) {
   std::lock_guard<std::recursive_mutex> lock(command_buffers_mutex_);
-  assert(command_buffers_.find(vk_command_buffer) == command_buffers_.end());
-  command_buffers_[vk_command_buffer] = std::move(command_buffer);
-}
-
-void Device::DumpSecondaryCommandBuffer(VkCommandBuffer vk_command_buffer,
-                                        uint64_t submit_info_id,
-                                        std::ostream& os,
-                                        CommandBufferDumpOptions options,
-                                        const std::string& indent) {
-  WrappedVkCommandBuffer* wrapped_command_buffer =
-      reinterpret_cast<WrappedVkCommandBuffer*>(vk_command_buffer);
-  VkCommandBuffer unwrapped_command_buffer =
-      wrapped_command_buffer->wrapped_object;
-  std::lock_guard<std::recursive_mutex> lock(command_buffers_mutex_);
-  if (command_buffers_.find(unwrapped_command_buffer) !=
-      command_buffers_.end()) {
-    command_buffers_[unwrapped_command_buffer]->DumpContents(
-        os, options, indent, submit_info_id);
-  }
+  assert(std::find(command_buffers_.begin(), command_buffers_.end(),
+                   vk_command_buffer) == command_buffers_.end());
+  command_buffers_.push_back(vk_command_buffer);
 }
 
 void Device::DumpCommandBuffers(std::ostream& os,
@@ -357,9 +339,9 @@ void Device::DumpCommandBuffers(std::ostream& os,
   std::map<uint64_t /* submit_info_id*/, std::vector<CommandBuffer*>>
       sorted_command_buffers;
   std::lock_guard<std::recursive_mutex> lock(command_buffers_mutex_);
-  for (auto& it : command_buffers_) {
-    auto p_cmd = it.second.get();
-    if (p_cmd->IsPrimaryCommandBuffer()) {
+  for (auto cb : command_buffers_) {
+    auto p_cmd = gfr::GetGfrCommandBuffer(cb);
+    if (p_cmd && p_cmd->IsPrimaryCommandBuffer()) {
       if (dump_all_command_buffers ||
           (p_cmd->HasBufferMarker() && p_cmd->WasSubmittedToQueue() &&
            !p_cmd->CompletedExecution())) {
@@ -385,26 +367,6 @@ void Device::DumpIncompleteCommandBuffers(
     std::ostream& os, CommandBufferDumpOptions options) const {
   os << "IncompleteCommandBuffers:";
   DumpCommandBuffers(os, options, false /* dump_all_command_buffers */);
-}
-
-void Device::SetWrappedCommandBuffer(
-    VkCommandBuffer vk_command_buffer,
-    WrappedVkCommandBufferPtr wrapped_command_buffer) {
-  std::lock_guard<std::mutex> lock(wrapped_command_buffers_mutex_);
-  assert(wrapped_command_buffers_.find(vk_command_buffer) ==
-         wrapped_command_buffers_.end());
-  wrapped_command_buffers_[vk_command_buffer] =
-      std::move(wrapped_command_buffer);
-}
-
-const WrappedVkCommandBuffer* Device::GetWrappedCommandBuffer(
-    VkCommandBuffer vk_command_buffer) {
-  std::lock_guard<std::mutex> lock(wrapped_command_buffers_mutex_);
-  if (wrapped_command_buffers_.find(vk_command_buffer) ==
-      wrapped_command_buffers_.end()) {
-    return nullptr;
-  }
-  return wrapped_command_buffers_[vk_command_buffer].get();
 }
 
 void Device::SetCommandPool(VkCommandPool vk_command_pool,
@@ -435,8 +397,6 @@ void Device::AllocateCommandBuffers(
 // Write out information about an invalid command buffer reset.
 void Device::DumpCommandBufferStateOnScreen(CommandBuffer* p_cmd,
                                             std::ostream& os) const {
-  auto wcb = p_cmd->GetWrappedCommandBuffer();
-
   std::cout
       << "----------------------------------------------------------------\n";
   std::cout
@@ -444,7 +404,8 @@ void Device::DumpCommandBufferStateOnScreen(CommandBuffer* p_cmd,
   std::cout
       << "----------------------------------------------------------------\n\n";
   std::cout << "Reset of VkCommandBuffer in use by GPU: "
-            << GetObjectName((uint64_t)wcb) << std::endl;
+            << GetObjectName((uint64_t)p_cmd->GetVkCommandBuffer())
+            << std::endl;
   auto submitted_fence = p_cmd->GetSubmittedFence();
 
   // If there is a fence associated with this command buffer, we check
@@ -491,8 +452,7 @@ bool Device::ValidateCommandBufferNotInUse(CommandBuffer* p_cmd,
 
 bool Device::ValidateCommandBufferNotInUse(VkCommandBuffer vk_command_buffer,
                                            std::ostream& os) {
-  std::lock_guard<std::recursive_mutex> lock_commands(command_buffers_mutex_);
-  auto p_cmd = command_buffers_[vk_command_buffer].get();
+  auto p_cmd = gfr::GetGfrCommandBuffer(vk_command_buffer);
   assert(p_cmd != nullptr);
   if (p_cmd != nullptr) {
     return ValidateCommandBufferNotInUse(p_cmd, os);
@@ -505,7 +465,6 @@ bool Device::ValidateCommandBufferNotInUse(VkCommandBuffer vk_command_buffer,
 void Device::ValidateCommandPoolState(VkCommandPool vk_command_pool,
                                       std::ostream& os) {
   std::lock_guard<std::mutex> lock(command_pools_mutex_);
-  std::lock_guard<std::recursive_mutex> lock_commands(command_buffers_mutex_);
   assert(command_pools_.find(vk_command_pool) != command_pools_.end());
   // Only validate primary command buffers. If a secondary command buffer is
   // hung, GFR catches the primary command buffer that the hung cb was recorded
@@ -513,7 +472,7 @@ void Device::ValidateCommandPoolState(VkCommandPool vk_command_pool,
   auto command_buffers = command_pools_[vk_command_pool]->GetCommandBuffers(
       VK_COMMAND_BUFFER_LEVEL_PRIMARY);
   for (auto vk_cmd : command_buffers) {
-    auto p_cmd = command_buffers_[vk_cmd].get();
+    auto p_cmd = gfr::GetGfrCommandBuffer(vk_cmd);
     if (p_cmd != nullptr) {
       ValidateCommandBufferNotInUse(p_cmd, os);
     }
@@ -522,7 +481,6 @@ void Device::ValidateCommandPoolState(VkCommandPool vk_command_pool,
 
 void Device::ResetCommandPool(VkCommandPool vk_command_pool) {
   std::lock_guard<std::mutex> lock(command_pools_mutex_);
-  std::lock_guard<std::recursive_mutex> lock_commands(command_buffers_mutex_);
   assert(command_pools_.find(vk_command_pool) != command_pools_.end());
   std::vector<VkCommandBufferLevel> cb_levels{
       VK_COMMAND_BUFFER_LEVEL_PRIMARY, VK_COMMAND_BUFFER_LEVEL_SECONDARY};
@@ -530,7 +488,7 @@ void Device::ResetCommandPool(VkCommandPool vk_command_pool) {
     auto command_buffers =
         command_pools_[vk_command_pool]->GetCommandBuffers(cb_level);
     for (auto vk_cmd : command_buffers) {
-      auto p_cmd = command_buffers_[vk_cmd].get();
+      auto p_cmd = gfr::GetGfrCommandBuffer(vk_cmd);
       if (p_cmd != nullptr) {
         p_cmd->Reset();
       }
@@ -548,10 +506,12 @@ void Device::DeleteCommandPool(VkCommandPool vk_command_pool) {
     auto command_buffers =
         command_pools_[vk_command_pool]->GetCommandBuffers(cb_level);
     for (auto vk_cmd : command_buffers) {
-      auto p_cmd = command_buffers_[vk_cmd].get();
+      auto p_cmd = gfr::GetGfrCommandBuffer(vk_cmd);
       if (p_cmd != nullptr) {
-        command_buffers_.erase(vk_cmd);
-        wrapped_command_buffers_.erase(vk_cmd);
+        command_buffers_.erase(std::remove(command_buffers_.begin(),
+                                           command_buffers_.end(), vk_cmd),
+                               command_buffers_.end());
+        gfr::DeleteGfrCommandBuffer(vk_cmd);
       }
     }
   }
@@ -563,13 +523,10 @@ void Device::DeleteCommandBuffers(const VkCommandBuffer* vk_cmds,
   {
     std::lock_guard<std::recursive_mutex> lock(command_buffers_mutex_);
     for (uint32_t i = 0; i < cb_count; ++i) {
-      command_buffers_.erase(vk_cmds[i]);
-    }
-  }
-  {
-    std::lock_guard<std::mutex> lock(wrapped_command_buffers_mutex_);
-    for (uint32_t i = 0; i < cb_count; ++i) {
-      wrapped_command_buffers_.erase(vk_cmds[i]);
+      command_buffers_.erase(std::remove(command_buffers_.begin(),
+                                         command_buffers_.end(), vk_cmds[i]),
+                             command_buffers_.end());
+      gfr::DeleteGfrCommandBuffer(vk_cmds[i]);
     }
   }
 }

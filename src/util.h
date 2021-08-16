@@ -28,6 +28,15 @@ inline void ToUpper(std::string& s) {
   std::transform(std::begin(s), std::end(s), std::begin(s), ::toupper);
 }
 
+inline std::string Uint32ToStr(uint32_t value) {
+  std::stringstream ss;
+  ss << std::setw(8) << std::setfill('0') << std::hex << value;
+  std::string s = ss.str();
+  ToUpper(s);
+  s = "0x" + s;
+  return s;
+}
+
 inline std::string Uint64ToStr(uint64_t value) {
   std::stringstream ss;
   ss << std::setw(16) << std::setfill('0') << std::hex << value;
