@@ -46,6 +46,7 @@
 namespace gfr {
 
 const char* kGfrVersion = "1.0.2";
+const char* kGpuHangDaemonSocketName = "/run/gpuhangd";
 
 const char* k_env_var_output_path = "GFR_OUTPUT_PATH";
 const char* k_env_var_output_name = "GFR_OUTPUT_NAME";
@@ -69,7 +70,9 @@ const char* k_env_var_debug_buffers_dump_indirect = "GFR_BUFFERS_DUMP_INDIRECT";
 
 const char* k_env_var_watchdog_timeout = "GFR_WATCHDOG_TIMEOUT_MS";
 
-const char* k_env_var_driver_hang = "GFR_DRIVER_HANG";
+const char* k_env_var_disable_driver_hang = "GFR_DISABLE_DRIVER_HANG";
+
+constexpr int kMessageHangDetected = 0x8badf00d;
 
 #if defined(WIN32)
 const char* k_path_separator = "\\";
@@ -96,6 +99,7 @@ void MakeDir(const std::string& path) {
 // GfrContext
 // =============================================================================
 GfrContext::GfrContext() : intercept::BaseInterceptor() {
+  std::cerr << "GFR: Version " << kGfrVersion << " enabled." << std::endl;
   // output path
   {
     char* p_env_value = getenv(k_env_var_output_path);
@@ -113,7 +117,7 @@ GfrContext::GfrContext() : intercept::BaseInterceptor() {
 #endif
 
       output_path_ += k_path_separator;
-      output_path_ += "gfr";
+      output_path_ += +"gfr";
       output_path_ += k_path_separator;
     }
 
@@ -190,16 +194,20 @@ GfrContext::GfrContext() : intercept::BaseInterceptor() {
 
     if (watchdog_timer_ms_ > 0) {
       StartWatchdogTimer();
+      std::cerr << "GFR: Begin Watchdog: " << watchdog_timer_ms_ << "ms"
+                << std::endl;
     }
   }
 
   // Manage the gpuhangd listener thread.
   {
-    bool enable_driver_hang_thread = false;
-    GetEnvVal<bool>(k_env_var_driver_hang, &enable_driver_hang_thread);
+    bool disable_driver_hang_thread = false;
+    GetEnvVal<bool>(k_env_var_disable_driver_hang, &disable_driver_hang_thread);
 
-    if (enable_driver_hang_thread) {
+    if (!disable_driver_hang_thread) {
       StartGpuHangdListener();
+      std::cerr << "GFR: gpuhangd listener started: "
+                << kGpuHangDaemonSocketName << std::endl;
     }
   }
 }
@@ -241,9 +249,6 @@ void GfrContext::StopWatchdogTimer() {
 }
 
 void GfrContext::WatchdogTimer() {
-  std::cerr << "GFR: Begin Watchdog: " << watchdog_timer_ms_ << "ms"
-            << std::endl;
-
   uint64_t test_interval_us =
       std::min((uint64_t)(1000 * 1000), watchdog_timer_ms_ * 500);
   while (watchdog_running_) {
@@ -293,9 +298,6 @@ void GfrContext::StopGpuHangdListener() {
 
 void GfrContext::GpuHangdListener() {
 #ifdef __linux__
-  const char* kSocketName = "/run/gpuhangd";
-  std::cerr << "GFR: Begin Listener: " << kSocketName << std::endl;
-
   gpuhangd_socket_ = socket(AF_LOCAL, SOCK_STREAM, 0);
   if (gpuhangd_socket_ < 0) {
     std::cerr << "GFR: Could not create socket: " << strerror(errno)
@@ -306,7 +308,8 @@ void GfrContext::GpuHangdListener() {
   struct sockaddr_un addr = {};
   addr.sun_family = AF_LOCAL;
   addr.sun_path[0] = '\0';
-  strncpy(addr.sun_path + 1, kSocketName, sizeof(addr.sun_path) - 2);
+  strncpy(addr.sun_path + 1, kGpuHangDaemonSocketName,
+          sizeof(addr.sun_path) - 2);
 
   int connect_ret = connect(gpuhangd_socket_, (const struct sockaddr*)&addr,
                             sizeof(struct sockaddr_un));
@@ -328,8 +331,16 @@ void GfrContext::GpuHangdListener() {
       break;
     }
 
-    if (0x8badf00d == msg) {
+    if (kMessageHangDetected == msg) {
       std::cerr << "GFR: Driver signalled a hang." << std::endl;
+      read_ret = read(gpuhangd_socket_, &gpuhang_event_id_, sizeof(int));
+      if (read_ret > 0) {
+        std::cerr << "GFR: Hang event ID: " << gpuhang_event_id_ << std::endl;
+      } else {
+        std::cerr
+            << "GFR Warning: Hang event ID not received from the hang daemon."
+            << std::endl;
+      }
       DumpAllDevicesExecutionState(CrashSource::kHangDaemon);
     }
   }
@@ -613,6 +624,7 @@ void GfrContext::DumpDeviceExecutionStateValidationFailed(const Device* device,
   error_report << os.rdbuf();
   DumpDeviceExecutionState(device, error_report.str(), true /* dump_prologue */,
                            CrashSource::kDeviceLostError, &os);
+  WriteReport(os, CrashSource::kDeviceLostError);
   debug_dump_all_command_buffers_ = dump_all;
 }
 
@@ -620,6 +632,10 @@ void GfrContext::DumpReportPrologue(std::ostream& os, const Device* device) {
   os << "#----------------------------------------------------------------\n";
   os << "#-                    GRAPHICS FLIGHT RECORDER                  -\n";
   os << "#----------------------------------------------------------------\n";
+
+  if (gpuhang_event_id_) {
+    os << "# internal_use_gpu_hang_event_id " << gpuhang_event_id_ << "\n\n";
+  }
 
   auto now = std::chrono::system_clock::now();
   auto in_time_t = std::chrono::system_clock::to_time_t(now);
@@ -694,8 +710,8 @@ void GfrContext::WriteReport(std::ostream& os, CrashSource crash_source) {
   }
 
 #if !defined(WIN32)
-  // Create a symlink from the generated log file
-  auto symlink_path = base_output_path_ + "gfr.log.symlink";
+  // Create a symlink from the generated log file.
+  std::string symlink_path = base_output_path_ + "gfr.log.symlink";
   remove(symlink_path.c_str());
   symlink(output_path.c_str(), symlink_path.c_str());
 #endif
@@ -1001,11 +1017,8 @@ VkResult GfrContext::PreQueueSubmit(VkQueue queue, uint32_t submitCount,
     for (uint32_t command_buffer_index = 0;
          command_buffer_index < submit_info.commandBufferCount;
          ++command_buffer_index) {
-      const auto wrapped_command_buffer =
-          reinterpret_cast<WrappedVkCommandBuffer*>(
-              submit_info.pCommandBuffers[command_buffer_index]);
-
-      CommandBuffer* p_cmd = wrapped_command_buffer->custom_data;
+      auto p_cmd = gfr::GetGfrCommandBuffer(
+          submit_info.pCommandBuffers[command_buffer_index]);
       if (p_cmd != nullptr) {
         p_cmd->QueueSubmit(queue, fence);
       }
@@ -1306,27 +1319,16 @@ VkResult GfrContext::PostAllocateCommandBuffers(
     auto has_buffer_markers =
         p_device->GetCommandPool(vk_pool)->HasBufferMarkers();
 
-    // wrap command buffers and create our tracking data
+    // create command buffers tracking data
     for (uint32_t i = 0; i < pAllocateInfo->commandBufferCount; ++i) {
       VkCommandBuffer vk_cmd = pCommandBuffers[i];
 
-      auto wcb = std::make_unique<WrappedVkCommandBuffer>();
-      pCommandBuffers[i] = reinterpret_cast<VkCommandBuffer>(wcb.get());
-
       auto cmd = std::make_unique<CommandBuffer>(
-          p_device, vk_pool, vk_cmd, pCommandBuffers[i], pAllocateInfo,
-          has_buffer_markers);
+          p_device, vk_pool, vk_cmd, pAllocateInfo, has_buffer_markers);
       cmd->SetInstrumentAllCommands(instrument_all_commands_);
 
-      wcb->wrapped_object = vk_cmd;
-      wcb->custom_data = cmd.get();
-
-      // manually initialize the dispatch table of the wrapped CB
-      // because the loader won't do it for us because it's hidden
-      intercept::SetDeviceLoaderData(device, pCommandBuffers[i]);
-
-      p_device->SetCommandBuffer(vk_cmd, std::move(cmd));
-      p_device->SetWrappedCommandBuffer(vk_cmd, std::move(wcb));
+      gfr::SetGfrCommandBuffer(vk_cmd, std::move(cmd));
+      p_device->AddCommandBuffer(vk_cmd);
     }
   }
   return callResult;
@@ -1343,20 +1345,12 @@ void GfrContext::PostFreeCommandBuffers(
     const VkCommandBuffer* pCommandBuffers) {
   PostApiFunction("vkFreeCommandBuffers");
 
-  // Unwrap command buffers to validate and remove them from the pool.
-  VkCommandBuffer* unwrapped_cbs =
-      (VkCommandBuffer*)alloca(commandBufferCount * sizeof(VkCommandBuffer));
-
   std::lock_guard<std::mutex> lock_devices(devices_mutex_);
   std::stringstream os;
   bool all_cb_ok = true;
   for (uint32_t i = 0; i < commandBufferCount; ++i) {
-    WrappedVkCommandBuffer* wcb =
-        reinterpret_cast<WrappedVkCommandBuffer*>(pCommandBuffers[i]);
-    auto vk_cmd = wcb->wrapped_object;
-    unwrapped_cbs[i] = vk_cmd;
-    all_cb_ok = all_cb_ok &&
-                devices_[device]->ValidateCommandBufferNotInUse(vk_cmd, os);
+    all_cb_ok = all_cb_ok && devices_[device]->ValidateCommandBufferNotInUse(
+                                 pCommandBuffers[i], os);
   }
   if (!all_cb_ok) {
     DumpDeviceExecutionStateValidationFailed(devices_[device].get(), os);
@@ -1364,10 +1358,10 @@ void GfrContext::PostFreeCommandBuffers(
 
   devices_[device]
       ->GetCommandPool(commandPool)
-      ->FreeCommandBuffers(commandBufferCount, unwrapped_cbs);
+      ->FreeCommandBuffers(commandBufferCount, pCommandBuffers);
 
   // Free the command buffer objects.
-  devices_[device]->DeleteCommandBuffers(unwrapped_cbs, commandBufferCount);
+  devices_[device]->DeleteCommandBuffers(pCommandBuffers, commandBufferCount);
 }
 
 void GfrContext::PreUpdateDescriptorSets(
@@ -1629,93 +1623,66 @@ VkResult GfrContext::PostSetDebugUtilsObjectNameEXT(
 // =============================================================================
 // Declare the custom intercepted commands
 // =============================================================================
-void GfrContext::PreCmdBindPipeline(WrappedVkCommandBuffer* commandBuffer,
+void GfrContext::PreCmdBindPipeline(VkCommandBuffer commandBuffer,
                                     VkPipelineBindPoint pipelineBindPoint,
                                     VkPipeline pipeline) {
-  WrappedVkCommandBuffer* wrappedCommandBuffer =
-      reinterpret_cast<WrappedVkCommandBuffer*>(commandBuffer);
-  VkCommandBuffer unwrappedCommandBuffer = wrappedCommandBuffer->wrapped_object;
-
+  auto p_cmd = gfr::GetGfrCommandBuffer(commandBuffer);
   if (DumpShadersOnBind()) {
-    commandBuffer->custom_data->GetDevice()->DumpShaderFromPipeline(pipeline);
+    p_cmd->GetDevice()->DumpShaderFromPipeline(pipeline);
   }
 
-  commandBuffer->custom_data->PreCmdBindPipeline((VkCommandBuffer)commandBuffer,
-                                                 unwrappedCommandBuffer,
-                                                 pipelineBindPoint, pipeline);
+  p_cmd->PreCmdBindPipeline(commandBuffer, pipelineBindPoint, pipeline);
 }
 
-void GfrContext::PostCmdBindPipeline(WrappedVkCommandBuffer* commandBuffer,
+void GfrContext::PostCmdBindPipeline(VkCommandBuffer commandBuffer,
                                      VkPipelineBindPoint pipelineBindPoint,
                                      VkPipeline pipeline) {
-  WrappedVkCommandBuffer* wrappedCommandBuffer =
-      reinterpret_cast<WrappedVkCommandBuffer*>(commandBuffer);
-  VkCommandBuffer unwrappedCommandBuffer = wrappedCommandBuffer->wrapped_object;
-  commandBuffer->custom_data->PostCmdBindPipeline(
-      (VkCommandBuffer)commandBuffer, unwrappedCommandBuffer, pipelineBindPoint,
-      pipeline);
+  auto p_cmd = gfr::GetGfrCommandBuffer(commandBuffer);
+  p_cmd->PostCmdBindPipeline(commandBuffer, pipelineBindPoint, pipeline);
 }
 
 VkResult GfrContext::PreBeginCommandBuffer(
-    WrappedVkCommandBuffer* commandBuffer,
-    VkCommandBufferBeginInfo const* pBeginInfo) {
-  WrappedVkCommandBuffer* wrappedCommandBuffer =
-      reinterpret_cast<WrappedVkCommandBuffer*>(commandBuffer);
-  VkCommandBuffer unwrappedCommandBuffer = wrappedCommandBuffer->wrapped_object;
-
+    VkCommandBuffer commandBuffer, VkCommandBufferBeginInfo const* pBeginInfo) {
+  auto p_cmd = gfr::GetGfrCommandBuffer(commandBuffer);
   {
     std::lock_guard<std::mutex> lock(devices_mutex_);
-    auto device = commandBuffer->custom_data->GetDevice();
-    auto vk_cmd = commandBuffer->custom_data->GetVkCommandBuffer();
+    auto device = p_cmd->GetDevice();
     std::stringstream os;
-    if (!device->ValidateCommandBufferNotInUse(vk_cmd, os)) {
+    if (!device->ValidateCommandBufferNotInUse(commandBuffer, os)) {
       DumpDeviceExecutionStateValidationFailed(device, os);
     }
   }
 
-  return commandBuffer->custom_data->PreBeginCommandBuffer(
-      (VkCommandBuffer)commandBuffer, unwrappedCommandBuffer, pBeginInfo);
+  return p_cmd->PreBeginCommandBuffer(commandBuffer, pBeginInfo);
 }
 
 VkResult GfrContext::PostBeginCommandBuffer(
-    WrappedVkCommandBuffer* commandBuffer,
-    VkCommandBufferBeginInfo const* pBeginInfo, VkResult result) {
-  WrappedVkCommandBuffer* wrappedCommandBuffer =
-      reinterpret_cast<WrappedVkCommandBuffer*>(commandBuffer);
-  VkCommandBuffer unwrappedCommandBuffer = wrappedCommandBuffer->wrapped_object;
-  return commandBuffer->custom_data->PostBeginCommandBuffer(
-      (VkCommandBuffer)commandBuffer, unwrappedCommandBuffer, pBeginInfo,
-      result);
+    VkCommandBuffer commandBuffer, VkCommandBufferBeginInfo const* pBeginInfo,
+    VkResult result) {
+  auto p_cmd = gfr::GetGfrCommandBuffer(commandBuffer);
+  return p_cmd->PostBeginCommandBuffer(commandBuffer, pBeginInfo, result);
 }
 
-VkResult GfrContext::PreResetCommandBuffer(
-    WrappedVkCommandBuffer* commandBuffer, VkCommandBufferResetFlags flags) {
-  WrappedVkCommandBuffer* wrappedCommandBuffer =
-      reinterpret_cast<WrappedVkCommandBuffer*>(commandBuffer);
-  VkCommandBuffer unwrappedCommandBuffer = wrappedCommandBuffer->wrapped_object;
-
+VkResult GfrContext::PreResetCommandBuffer(VkCommandBuffer commandBuffer,
+                                           VkCommandBufferResetFlags flags) {
+  auto p_cmd = gfr::GetGfrCommandBuffer(commandBuffer);
   {
     std::lock_guard<std::mutex> lock(devices_mutex_);
-    auto device = commandBuffer->custom_data->GetDevice();
-    auto vk_cmd = commandBuffer->custom_data->GetVkCommandBuffer();
+    auto device = p_cmd->GetDevice();
     std::stringstream os;
-    if (!device->ValidateCommandBufferNotInUse(vk_cmd, os)) {
+    if (!device->ValidateCommandBufferNotInUse(commandBuffer, os)) {
       DumpDeviceExecutionStateValidationFailed(device, os);
     }
   }
 
-  return commandBuffer->custom_data->PreResetCommandBuffer(
-      (VkCommandBuffer)commandBuffer, unwrappedCommandBuffer, flags);
+  return p_cmd->PreResetCommandBuffer(commandBuffer, flags);
 }
 
-VkResult GfrContext::PostResetCommandBuffer(
-    WrappedVkCommandBuffer* commandBuffer, VkCommandBufferResetFlags flags,
-    VkResult result) {
-  WrappedVkCommandBuffer* wrappedCommandBuffer =
-      reinterpret_cast<WrappedVkCommandBuffer*>(commandBuffer);
-  VkCommandBuffer unwrappedCommandBuffer = wrappedCommandBuffer->wrapped_object;
-  return commandBuffer->custom_data->PostResetCommandBuffer(
-      (VkCommandBuffer)commandBuffer, unwrappedCommandBuffer, flags, result);
+VkResult GfrContext::PostResetCommandBuffer(VkCommandBuffer commandBuffer,
+                                            VkCommandBufferResetFlags flags,
+                                            VkResult result) {
+  auto p_cmd = gfr::GetGfrCommandBuffer(commandBuffer);
+  return p_cmd->PostResetCommandBuffer(commandBuffer, flags, result);
 }
 
 }  // namespace gfr
@@ -1723,185 +1690,165 @@ VkResult GfrContext::PostResetCommandBuffer(
 // =============================================================================
 // Custom Vulkan entry points
 // =============================================================================
-
-// Because we're wrapping VkCommandBuffer objects we need to unwrap them
-// when calling down the layer stack.  When the object is a direct parameter to
-// a Vulkan API function the unwrapping code is generated automatically.
-//
-// However not all code can be automatically unwrapped currently so these
-// methods handle those cases.
-
-// TODO(b/153649107): instead of using base interceptor, we want to
-// allow list, deny list or may be regex the intercepted functions.
 gfr::GfrContext* g_interceptor = new gfr::GfrContext();
 intercept::BaseInterceptor* GetInterceptor() { return g_interceptor; }
 
 namespace intercept {
-VKAPI_ATTR void VKAPI_CALL FreeCommandBuffers(
-    VkDevice device, VkCommandPool commandPool, uint32_t commandBufferCount,
-    VkCommandBuffer const* pCommandBuffers) {
-  auto dispatch_table = intercept::GetDeviceDispatchTable(device);
 
-  g_interceptor->PreFreeCommandBuffers(device, commandPool, commandBufferCount,
-                                       pCommandBuffers);
-
-  // unwrap command buffers
-  VkCommandBuffer* unwrapped_cbs =
-      (VkCommandBuffer*)alloca(commandBufferCount * sizeof(VkCommandBuffer));
-
-  for (uint32_t i = 0; i < commandBufferCount; ++i) {
-    WrappedVkCommandBuffer* wcb =
-        reinterpret_cast<WrappedVkCommandBuffer*>(pCommandBuffers[i]);
-    unwrapped_cbs[i] = wcb->wrapped_object;
+VkResult QueueSubmitWithoutTrackingSemaphores(VkQueue queue,
+                                              uint32_t submitCount,
+                                              VkSubmitInfo const* pSubmits,
+                                              VkFence fence,
+                                              bool callPreQueueSubmit = true) {
+  if (callPreQueueSubmit) {
+    g_interceptor->PreQueueSubmit(queue, submitCount, pSubmits, fence);
   }
 
-  if (dispatch_table->FreeCommandBuffers) {
-    dispatch_table->FreeCommandBuffers(device, commandPool, commandBufferCount,
-                                       unwrapped_cbs);
+  VkResult res = VK_SUCCESS;
+  auto dispatch_table = intercept::GetDeviceDispatchTable(queue);
+  if (dispatch_table && dispatch_table->QueueSubmit) {
+    res = dispatch_table->QueueSubmit(queue, submitCount, pSubmits, fence);
   }
 
-  g_interceptor->PostFreeCommandBuffers(device, commandPool, commandBufferCount,
-                                        pCommandBuffers);
+  g_interceptor->PostQueueSubmit(queue, submitCount, pSubmits, fence, res);
+
+  return res;
 }
 
 VKAPI_ATTR VkResult VKAPI_CALL QueueSubmit(VkQueue queue, uint32_t submitCount,
                                            VkSubmitInfo const* pSubmits,
                                            VkFence fence) {
-  auto dispatch_table = intercept::GetDeviceDispatchTable(queue);
-
-  g_interceptor->PreQueueSubmit(queue, submitCount, pSubmits, fence);
-
-  // We need to modify the submit info to reference our unwrapped command
-  // buffers, then submit the modified submit info down the layer chain.
-  auto unwrapped_submits = reinterpret_cast<VkSubmitInfo*>(
-      alloca(sizeof(VkSubmitInfo) * submitCount));
-
   bool track_semaphores = g_interceptor->TrackingSemaphores();
+  if (!track_semaphores) {
+    return QueueSubmitWithoutTrackingSemaphores(queue, submitCount, pSubmits,
+                                                fence);
+  }
+
+  // Track semaphore values before and after each queue submit.
+  g_interceptor->PreQueueSubmit(queue, submitCount, pSubmits, fence);
+  bool call_pre_queue_submit = false;
+
+  // Define common variables and structs used for each extended queue submit
+  VkDevice vk_device = g_interceptor->GetQueueDevice(queue);
+  auto dispatch_table = intercept::GetDeviceDispatchTable(vk_device);
+  VkCommandPool vk_pool = g_interceptor->GetHelperCommandPool(vk_device, queue);
+  if (vk_pool == VK_NULL_HANDLE) {
+    std::cerr << "GFR Error: failed to find the helper command pool to "
+                 "allocate helper command buffers for "
+                 "tracking queue submit state. Not tracking semaphores.";
+    return QueueSubmitWithoutTrackingSemaphores(queue, submitCount, pSubmits,
+                                                fence, call_pre_queue_submit);
+  }
+
   bool trace_all_semaphores = g_interceptor->TracingAllSemaphores();
   auto queue_submit_id = g_interceptor->GetNextQueueSubmitId();
+  auto semaphore_tracking_submits = reinterpret_cast<VkSubmitInfo*>(
+      alloca(sizeof(VkSubmitInfo) * submitCount));
+
+  // VkCommandBufferAllocateInfo for helper command buffers. Two extra CBs used
+  // to track the state of submits and semaphores. We create the extra CBs from
+  // the same pool used to create the original CBs of the submit. These extra
+  // CBs are used to record vkCmdWriteBufferMarkerAMD commands into.
+  VkCommandBufferAllocateInfo cb_allocate_info = {};
+  cb_allocate_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+  cb_allocate_info.pNext = nullptr;
+  cb_allocate_info.commandPool = vk_pool;
+  cb_allocate_info.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+  cb_allocate_info.commandBufferCount = 2;
+
   for (uint32_t submit_index = 0; submit_index < submitCount; ++submit_index) {
-    unwrapped_submits[submit_index] = pSubmits[submit_index];
+    // TODO b/152057973: Recycle state tracking CBs
+    VkCommandBuffer* new_buffers = gfr::GfrNewArray<VkCommandBuffer>(2);
+    auto result = dispatch_table->AllocateCommandBuffers(
+        vk_device, &cb_allocate_info, new_buffers);
+    assert(result == VK_SUCCESS);
+    if (result != VK_SUCCESS) {
+      std::cerr << "GFR Warning: failed to allocate helper command buffers for "
+                   "tracking queue submit state. vkAllocateCommandBuffers() "
+                   "returned "
+                << result;
+      return QueueSubmitWithoutTrackingSemaphores(queue, submitCount, pSubmits,
+                                                  fence, call_pre_queue_submit);
+    }
 
+    // Add the semaphore tracking command buffers to the beginning and the end
+    // of the queue submit info.
+    semaphore_tracking_submits[submit_index] = pSubmits[submit_index];
     auto cb_count = pSubmits[submit_index].commandBufferCount;
-    VkCommandBuffer* unwrapped_cbs = nullptr;
-    if (track_semaphores) {
-      // We need two extra command buffers to track the state of the submit and
-      // its semaphores.
-      unwrapped_cbs =
-          (VkCommandBuffer*)alloca((cb_count + 2) * sizeof(VkCommandBuffer));
-      unwrapped_submits[submit_index].pCommandBuffers = unwrapped_cbs;
-      unwrapped_submits[submit_index].commandBufferCount = cb_count + 2;
-    } else {
-      unwrapped_cbs =
-          (VkCommandBuffer*)alloca((cb_count) * sizeof(VkCommandBuffer));
-      unwrapped_submits[submit_index].pCommandBuffers = unwrapped_cbs;
-      unwrapped_submits[submit_index].commandBufferCount = cb_count;
-    }
+    VkCommandBuffer* extended_cbs =
+        (VkCommandBuffer*)alloca((cb_count + 2) * sizeof(VkCommandBuffer));
+    semaphore_tracking_submits[submit_index].pCommandBuffers = extended_cbs;
+    semaphore_tracking_submits[submit_index].commandBufferCount = cb_count + 2;
 
-    auto reserve_index_for_semaphores_cb = track_semaphores ? 1 : 0;
+    extended_cbs[0] = new_buffers[0];
     for (uint32_t cb_index = 0; cb_index < cb_count; ++cb_index) {
-      WrappedVkCommandBuffer* wcb = reinterpret_cast<WrappedVkCommandBuffer*>(
+      extended_cbs[cb_index + 1] =
+          pSubmits[submit_index].pCommandBuffers[cb_index];
+    }
+    extended_cbs[cb_count + 1] = new_buffers[1];
+
+    intercept::SetDeviceLoaderData(vk_device, extended_cbs[0]);
+    intercept::SetDeviceLoaderData(vk_device, extended_cbs[cb_count + 1]);
+
+    auto submit_info_id = g_interceptor->RegisterSubmitInfo(
+        vk_device, queue_submit_id, &semaphore_tracking_submits[submit_index]);
+    g_interceptor->StoreSubmitHelperCommandBuffersInfo(
+        vk_device, submit_info_id, vk_pool, extended_cbs[0],
+        extended_cbs[cb_count + 1]);
+    for (uint32_t cb_index = 0; cb_index < cb_count; ++cb_index) {
+      auto gfr_command_buffer = gfr::GetGfrCommandBuffer(
           pSubmits[submit_index].pCommandBuffers[cb_index]);
-      unwrapped_cbs[cb_index + reserve_index_for_semaphores_cb] =
-          wcb->wrapped_object;
+      assert(gfr_command_buffer != nullptr);
+      if (gfr_command_buffer) {
+        gfr_command_buffer->SetSubmitInfoId(submit_info_id);
+      }
     }
 
-    if (track_semaphores) {
-      // Create the two extra CBs used to track the state of submits and
-      // semaphores. We create the extra CBs from the same pool used to create
-      // the original CBs of the submit. These extra CBs are used to record
-      // vkCmdWriteBufferMarkerAMD commands into.
-      VkDevice vk_device = g_interceptor->GetQueueDevice(queue);
-      VkCommandPool vk_pool =
-          g_interceptor->GetHelperCommandPool(vk_device, queue);
-      if (vk_pool == VK_NULL_HANDLE) {
-        break;
-      }
-      auto dispatch_table = intercept::GetDeviceDispatchTable(vk_device);
-
-      VkCommandBufferAllocateInfo cb_allocate_info = {};
-      cb_allocate_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
-      cb_allocate_info.pNext = nullptr;
-      cb_allocate_info.commandPool = vk_pool;
-      cb_allocate_info.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-      cb_allocate_info.commandBufferCount = 2;
-
-      // TODO b/152057973: Recycle state tracking CBs
-      VkCommandBuffer* new_buffers = gfr::GfrNewArray<VkCommandBuffer>(2);
-      auto result = dispatch_table->AllocateCommandBuffers(
-          vk_device, &cb_allocate_info, new_buffers);
+    // Record the two semaphore tracking command buffers.
+    VkCommandBufferBeginInfo commandBufferBeginInfo = {};
+    commandBufferBeginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+    commandBufferBeginInfo.flags = 0;
+    result = dispatch_table->BeginCommandBuffer(extended_cbs[0],
+                                                &commandBufferBeginInfo);
+    assert(result == VK_SUCCESS);
+    if (result != VK_SUCCESS) {
+      std::cerr << "GFR Warning: failed to begin helper command buffer. "
+                   "vkBeginCommandBuffer() returned "
+                << result;
+    } else {
+      g_interceptor->RecordSubmitStart(vk_device, queue_submit_id,
+                                       submit_info_id, extended_cbs[0]);
+      result = dispatch_table->EndCommandBuffer(extended_cbs[0]);
       assert(result == VK_SUCCESS);
-      if (result != VK_SUCCESS) {
-        std::cerr
-            << "GFR Warning: failed to allocate helper command buffers for "
-               "tracking queue submit state. vkAllocateCommandBuffers() "
-               "returned "
-            << result;
-        break;
-      }
-      unwrapped_cbs[0] = new_buffers[0];
-      unwrapped_cbs[cb_count + 1] = new_buffers[1];
-      intercept::SetDeviceLoaderData(vk_device, unwrapped_cbs[0]);
-      intercept::SetDeviceLoaderData(vk_device, unwrapped_cbs[cb_count + 1]);
+    }
 
-      VkCommandBufferBeginInfo commandBufferBeginInfo = {};
-      commandBufferBeginInfo.sType =
-          VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-      commandBufferBeginInfo.flags = 0;
-
-      auto submit_info_id = g_interceptor->RegisterSubmitInfo(
-          vk_device, queue_submit_id, &unwrapped_submits[submit_index]);
-      g_interceptor->StoreSubmitHelperCommandBuffersInfo(
-          vk_device, submit_info_id, vk_pool, unwrapped_cbs[0],
-          unwrapped_cbs[cb_count + 1]);
-      for (uint32_t cb_index = 0; cb_index < cb_count; ++cb_index) {
-        WrappedVkCommandBuffer* wcb = reinterpret_cast<WrappedVkCommandBuffer*>(
-            pSubmits[submit_index].pCommandBuffers[cb_index]);
-        wcb->custom_data->SetSubmitInfoId(submit_info_id);
-      }
-      result = dispatch_table->BeginCommandBuffer(unwrapped_cbs[0],
-                                                  &commandBufferBeginInfo);
+    result = dispatch_table->BeginCommandBuffer(extended_cbs[cb_count + 1],
+                                                &commandBufferBeginInfo);
+    assert(result == VK_SUCCESS);
+    if (result != VK_SUCCESS) {
+      std::cerr << "GFR Warning: failed to begin helper command buffer. "
+                   "vkBeginCommandBuffer() returned "
+                << result;
+    } else {
+      g_interceptor->RecordSubmitFinish(vk_device, queue_submit_id,
+                                        submit_info_id,
+                                        extended_cbs[cb_count + 1]);
+      result = dispatch_table->EndCommandBuffer(extended_cbs[cb_count + 1]);
       assert(result == VK_SUCCESS);
-      if (result != VK_SUCCESS) {
-        std::cerr << "GFR Warning: failed to begin helper command buffer. "
-                     "vkBeginCommandBuffer() returned "
-                  << result;
-      } else {
-        g_interceptor->RecordSubmitStart(vk_device, queue_submit_id,
-                                         submit_info_id, unwrapped_cbs[0]);
-        result = dispatch_table->EndCommandBuffer(unwrapped_cbs[0]);
-        assert(result == VK_SUCCESS);
-      }
-
-      result = dispatch_table->BeginCommandBuffer(unwrapped_cbs[cb_count + 1],
-                                                  &commandBufferBeginInfo);
-      assert(result == VK_SUCCESS);
-      if (result != VK_SUCCESS) {
-        std::cerr << "GFR Warning: failed to begin helper command buffer. "
-                     "vkBeginCommandBuffer() returned "
-                  << result;
-      } else {
-        g_interceptor->RecordSubmitFinish(vk_device, queue_submit_id,
-                                          submit_info_id,
-                                          unwrapped_cbs[cb_count + 1]);
-        result = dispatch_table->EndCommandBuffer(unwrapped_cbs[cb_count + 1]);
-        assert(result == VK_SUCCESS);
-      }
-      if (trace_all_semaphores) {
-        g_interceptor->LogSubmitInfoSemaphores(vk_device, queue,
-                                               submit_info_id);
-      }
+    }
+    if (trace_all_semaphores) {
+      g_interceptor->LogSubmitInfoSemaphores(vk_device, queue, submit_info_id);
     }
   }
 
   VkResult res = VK_SUCCESS;
   if (dispatch_table->QueueSubmit) {
-    res = dispatch_table->QueueSubmit(queue, submitCount, unwrapped_submits,
-                                      fence);
+    res = dispatch_table->QueueSubmit(queue, submitCount,
+                                      semaphore_tracking_submits, fence);
   }
 
-  g_interceptor->PostQueueSubmit(queue, submitCount, pSubmits, fence, res);
-
+  g_interceptor->PostQueueSubmit(queue, submitCount, semaphore_tracking_submits,
+                                 fence, res);
   return res;
 }
 
@@ -1913,20 +1860,19 @@ QueueBindSparse(VkQueue queue, uint32_t bindInfoCount,
     return VK_ERROR_FEATURE_NOT_PRESENT;
   }
 
-  auto qbind_sparse_id = g_interceptor->GetNextQueueBindSparseId();
   bool track_semaphores = g_interceptor->TrackingSemaphores();
-  bool trace_all_semaphores = g_interceptor->TracingAllSemaphores();
-
-  if (track_semaphores && trace_all_semaphores) {
-    g_interceptor->LogBindSparseInfosSemaphores(queue, bindInfoCount,
-                                                pBindInfo);
-  }
-
   // If semaphore tracking is not requested, pass the call to the dispatch table
   // as is.
   if (!track_semaphores) {
     return dispatch_table->QueueBindSparse(queue, bindInfoCount, pBindInfo,
                                            fence);
+  }
+
+  auto qbind_sparse_id = g_interceptor->GetNextQueueBindSparseId();
+  bool trace_all_semaphores = g_interceptor->TracingAllSemaphores();
+  if (track_semaphores && trace_all_semaphores) {
+    g_interceptor->LogBindSparseInfosSemaphores(queue, bindInfoCount,
+                                                pBindInfo);
   }
 
   // Ensure the queue is registered before and we know which command pool use
@@ -2112,35 +2058,6 @@ QueueBindSparse(VkQueue queue, uint32_t bindInfoCount,
         &pBindInfo[next_bind_sparse_info_index], fence);
   }
   return last_bind_result;
-}
-
-VKAPI_ATTR void VKAPI_CALL
-CmdExecuteCommands(VkCommandBuffer commandBuffer, uint32_t commandBufferCount,
-                   VkCommandBuffer const* pCommandBuffers) {
-  auto& dispatch_table = *GetDeviceDispatchTable(commandBuffer);
-  WrappedVkCommandBuffer* wrapped_command_buffer =
-      reinterpret_cast<WrappedVkCommandBuffer*>(commandBuffer);
-
-  g_interceptor->PreCmdExecuteCommands(wrapped_command_buffer,
-                                       commandBufferCount, pCommandBuffers);
-
-  if (dispatch_table.CmdExecuteCommands && commandBufferCount > 0) {
-    // Unwrap command buffers before passing them down the layer chain.
-    VkCommandBuffer unwrapped_command_buffer =
-        wrapped_command_buffer->wrapped_object;
-    auto unwrapped_cbs = reinterpret_cast<VkCommandBuffer*>(
-        alloca(sizeof(VkCommandBuffer) * commandBufferCount));
-    for (uint32_t i = 0; i < commandBufferCount; ++i) {
-      WrappedVkCommandBuffer* wcb =
-          reinterpret_cast<WrappedVkCommandBuffer*>(pCommandBuffers[i]);
-      unwrapped_cbs[i] = wcb->wrapped_object;
-    }
-    dispatch_table.CmdExecuteCommands(unwrapped_command_buffer,
-                                      commandBufferCount, unwrapped_cbs);
-  }
-
-  g_interceptor->PostCmdExecuteCommands(wrapped_command_buffer,
-                                        commandBufferCount, pCommandBuffers);
 }
 
 }  // namespace intercept

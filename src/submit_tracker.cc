@@ -432,8 +432,7 @@ void SubmitTracker::DumpWaitingSubmits(std::ostream& os) {
             auto lindex = index;
             os << indents[++lindex] << "-";
             os << indents[++lindex];
-            os << "vkSemaphore: "
-               << device_->GetObjectInfo((uint64_t)it->semaphore,
+            os << device_->GetObjectInfo((uint64_t)it->semaphore,
                                          indents[lindex])
                << indents[lindex] << "type: ";
             if (it->semaphore_type == VK_SEMAPHORE_TYPE_BINARY_KHR)
@@ -466,7 +465,7 @@ void SubmitTracker::DumpWaitingSubmits(std::ostream& os) {
             else
               os << "Timeline";
             os << indents[lindex]
-               << "waitValue: " << it->semaphore_operation_value;
+               << "signalValue: " << it->semaphore_operation_value;
           }
         }
       }

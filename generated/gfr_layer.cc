@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015 Google Inc.
+ * Copyright (C) 2019 Google Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -341,59 +341,77 @@ VKAPI_ATTR VkResult VKAPI_CALL AllocateCommandBuffers(VkDevice device, VkCommand
   GetInterceptor()->PostAllocateCommandBuffers(device, pAllocateInfo, pCommandBuffers, result);
   return result; 
 }
-VKAPI_ATTR void VKAPI_CALL FreeCommandBuffers(VkDevice device, VkCommandPool commandPool, uint32_t commandBufferCount, VkCommandBuffer const* pCommandBuffers);
+
+VKAPI_ATTR void VKAPI_CALL FreeCommandBuffers(VkDevice device, VkCommandPool commandPool, uint32_t commandBufferCount, VkCommandBuffer const* pCommandBuffers)
+{
+  auto &dispatch_table = *GetDeviceDispatchTable(device);
+
+  GetInterceptor()->PreFreeCommandBuffers(device, commandPool, commandBufferCount, pCommandBuffers);
+
+  if (dispatch_table.FreeCommandBuffers) {
+    dispatch_table.FreeCommandBuffers(device, commandPool, commandBufferCount, pCommandBuffers);
+  }
+
+  GetInterceptor()->PostFreeCommandBuffers(device, commandPool, commandBufferCount, pCommandBuffers);
+}
 
 VKAPI_ATTR VkResult VKAPI_CALL BeginCommandBuffer(VkCommandBuffer commandBuffer, VkCommandBufferBeginInfo const* pBeginInfo)
 {
   auto &dispatch_table = *GetDeviceDispatchTable(commandBuffer);
-  WrappedVkCommandBuffer *wrappedcommandBuffer = reinterpret_cast<WrappedVkCommandBuffer *>(commandBuffer);
-  VkCommandBuffer unwrappedcommandBuffer = wrappedcommandBuffer->wrapped_object;
   VkResult result = VkResult::VK_SUCCESS; 
 
-  result = GetInterceptor()->PreBeginCommandBuffer(wrappedcommandBuffer, pBeginInfo);
+  result = GetInterceptor()->PreBeginCommandBuffer(commandBuffer, pBeginInfo);
 
   if (dispatch_table.BeginCommandBuffer) {
-    result = dispatch_table.BeginCommandBuffer(unwrappedcommandBuffer, pBeginInfo);
+    result = dispatch_table.BeginCommandBuffer(commandBuffer, pBeginInfo);
   }
 
-  GetInterceptor()->PostBeginCommandBuffer(wrappedcommandBuffer, pBeginInfo, result);
+  GetInterceptor()->PostBeginCommandBuffer(commandBuffer, pBeginInfo, result);
   return result; 
 }
 
 VKAPI_ATTR VkResult VKAPI_CALL EndCommandBuffer(VkCommandBuffer commandBuffer)
 {
   auto &dispatch_table = *GetDeviceDispatchTable(commandBuffer);
-  WrappedVkCommandBuffer *wrappedcommandBuffer = reinterpret_cast<WrappedVkCommandBuffer *>(commandBuffer);
-  VkCommandBuffer unwrappedcommandBuffer = wrappedcommandBuffer->wrapped_object;
   VkResult result = VkResult::VK_SUCCESS; 
 
-  result = GetInterceptor()->PreEndCommandBuffer(wrappedcommandBuffer);
+  result = GetInterceptor()->PreEndCommandBuffer(commandBuffer);
 
   if (dispatch_table.EndCommandBuffer) {
-    result = dispatch_table.EndCommandBuffer(unwrappedcommandBuffer);
+    result = dispatch_table.EndCommandBuffer(commandBuffer);
   }
 
-  GetInterceptor()->PostEndCommandBuffer(wrappedcommandBuffer, result);
+  GetInterceptor()->PostEndCommandBuffer(commandBuffer, result);
   return result; 
 }
 
 VKAPI_ATTR VkResult VKAPI_CALL ResetCommandBuffer(VkCommandBuffer commandBuffer, VkCommandBufferResetFlags flags)
 {
   auto &dispatch_table = *GetDeviceDispatchTable(commandBuffer);
-  WrappedVkCommandBuffer *wrappedcommandBuffer = reinterpret_cast<WrappedVkCommandBuffer *>(commandBuffer);
-  VkCommandBuffer unwrappedcommandBuffer = wrappedcommandBuffer->wrapped_object;
   VkResult result = VkResult::VK_SUCCESS; 
 
-  result = GetInterceptor()->PreResetCommandBuffer(wrappedcommandBuffer, flags);
+  result = GetInterceptor()->PreResetCommandBuffer(commandBuffer, flags);
 
   if (dispatch_table.ResetCommandBuffer) {
-    result = dispatch_table.ResetCommandBuffer(unwrappedcommandBuffer, flags);
+    result = dispatch_table.ResetCommandBuffer(commandBuffer, flags);
   }
 
-  GetInterceptor()->PostResetCommandBuffer(wrappedcommandBuffer, flags, result);
+  GetInterceptor()->PostResetCommandBuffer(commandBuffer, flags, result);
   return result; 
 }
-VKAPI_ATTR void VKAPI_CALL CmdExecuteCommands(VkCommandBuffer commandBuffer, uint32_t commandBufferCount, VkCommandBuffer const* pCommandBuffers);
+
+VKAPI_ATTR void VKAPI_CALL CmdExecuteCommands(VkCommandBuffer commandBuffer, uint32_t commandBufferCount, VkCommandBuffer const* pCommandBuffers)
+{
+  auto &dispatch_table = *GetDeviceDispatchTable(commandBuffer);
+
+  GetInterceptor()->PreCmdExecuteCommands(commandBuffer, commandBufferCount, pCommandBuffers);
+
+  if (dispatch_table.CmdExecuteCommands) {
+    dispatch_table.CmdExecuteCommands(commandBuffer, commandBufferCount, pCommandBuffers);
+  }
+
+  GetInterceptor()->PostCmdExecuteCommands(commandBuffer, commandBufferCount, pCommandBuffers);
+}
 
 VKAPI_ATTR void VKAPI_CALL TrimCommandPool(VkDevice device, VkCommandPool commandPool, VkCommandPoolTrimFlags flags)
 {
@@ -407,166 +425,144 @@ VKAPI_ATTR void VKAPI_CALL TrimCommandPool(VkDevice device, VkCommandPool comman
 VKAPI_ATTR void VKAPI_CALL CmdCopyBuffer(VkCommandBuffer commandBuffer, VkBuffer srcBuffer, VkBuffer dstBuffer, uint32_t regionCount, VkBufferCopy const* pRegions)
 {
   auto &dispatch_table = *GetDeviceDispatchTable(commandBuffer);
-  WrappedVkCommandBuffer *wrappedcommandBuffer = reinterpret_cast<WrappedVkCommandBuffer *>(commandBuffer);
-  VkCommandBuffer unwrappedcommandBuffer = wrappedcommandBuffer->wrapped_object;
 
-  GetInterceptor()->PreCmdCopyBuffer(wrappedcommandBuffer, srcBuffer, dstBuffer, regionCount, pRegions);
+  GetInterceptor()->PreCmdCopyBuffer(commandBuffer, srcBuffer, dstBuffer, regionCount, pRegions);
 
   if (dispatch_table.CmdCopyBuffer) {
-    dispatch_table.CmdCopyBuffer(unwrappedcommandBuffer, srcBuffer, dstBuffer, regionCount, pRegions);
+    dispatch_table.CmdCopyBuffer(commandBuffer, srcBuffer, dstBuffer, regionCount, pRegions);
   }
 
-  GetInterceptor()->PostCmdCopyBuffer(wrappedcommandBuffer, srcBuffer, dstBuffer, regionCount, pRegions);
+  GetInterceptor()->PostCmdCopyBuffer(commandBuffer, srcBuffer, dstBuffer, regionCount, pRegions);
 }
 
 VKAPI_ATTR void VKAPI_CALL CmdCopyImage(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout, VkImage dstImage, VkImageLayout dstImageLayout, uint32_t regionCount, VkImageCopy const* pRegions)
 {
   auto &dispatch_table = *GetDeviceDispatchTable(commandBuffer);
-  WrappedVkCommandBuffer *wrappedcommandBuffer = reinterpret_cast<WrappedVkCommandBuffer *>(commandBuffer);
-  VkCommandBuffer unwrappedcommandBuffer = wrappedcommandBuffer->wrapped_object;
 
-  GetInterceptor()->PreCmdCopyImage(wrappedcommandBuffer, srcImage, srcImageLayout, dstImage, dstImageLayout, regionCount, pRegions);
+  GetInterceptor()->PreCmdCopyImage(commandBuffer, srcImage, srcImageLayout, dstImage, dstImageLayout, regionCount, pRegions);
 
   if (dispatch_table.CmdCopyImage) {
-    dispatch_table.CmdCopyImage(unwrappedcommandBuffer, srcImage, srcImageLayout, dstImage, dstImageLayout, regionCount, pRegions);
+    dispatch_table.CmdCopyImage(commandBuffer, srcImage, srcImageLayout, dstImage, dstImageLayout, regionCount, pRegions);
   }
 
-  GetInterceptor()->PostCmdCopyImage(wrappedcommandBuffer, srcImage, srcImageLayout, dstImage, dstImageLayout, regionCount, pRegions);
+  GetInterceptor()->PostCmdCopyImage(commandBuffer, srcImage, srcImageLayout, dstImage, dstImageLayout, regionCount, pRegions);
 }
 
 VKAPI_ATTR void VKAPI_CALL CmdBlitImage(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout, VkImage dstImage, VkImageLayout dstImageLayout, uint32_t regionCount, VkImageBlit const* pRegions, VkFilter filter)
 {
   auto &dispatch_table = *GetDeviceDispatchTable(commandBuffer);
-  WrappedVkCommandBuffer *wrappedcommandBuffer = reinterpret_cast<WrappedVkCommandBuffer *>(commandBuffer);
-  VkCommandBuffer unwrappedcommandBuffer = wrappedcommandBuffer->wrapped_object;
 
-  GetInterceptor()->PreCmdBlitImage(wrappedcommandBuffer, srcImage, srcImageLayout, dstImage, dstImageLayout, regionCount, pRegions, filter);
+  GetInterceptor()->PreCmdBlitImage(commandBuffer, srcImage, srcImageLayout, dstImage, dstImageLayout, regionCount, pRegions, filter);
 
   if (dispatch_table.CmdBlitImage) {
-    dispatch_table.CmdBlitImage(unwrappedcommandBuffer, srcImage, srcImageLayout, dstImage, dstImageLayout, regionCount, pRegions, filter);
+    dispatch_table.CmdBlitImage(commandBuffer, srcImage, srcImageLayout, dstImage, dstImageLayout, regionCount, pRegions, filter);
   }
 
-  GetInterceptor()->PostCmdBlitImage(wrappedcommandBuffer, srcImage, srcImageLayout, dstImage, dstImageLayout, regionCount, pRegions, filter);
+  GetInterceptor()->PostCmdBlitImage(commandBuffer, srcImage, srcImageLayout, dstImage, dstImageLayout, regionCount, pRegions, filter);
 }
 
 VKAPI_ATTR void VKAPI_CALL CmdCopyBufferToImage(VkCommandBuffer commandBuffer, VkBuffer srcBuffer, VkImage dstImage, VkImageLayout dstImageLayout, uint32_t regionCount, VkBufferImageCopy const* pRegions)
 {
   auto &dispatch_table = *GetDeviceDispatchTable(commandBuffer);
-  WrappedVkCommandBuffer *wrappedcommandBuffer = reinterpret_cast<WrappedVkCommandBuffer *>(commandBuffer);
-  VkCommandBuffer unwrappedcommandBuffer = wrappedcommandBuffer->wrapped_object;
 
-  GetInterceptor()->PreCmdCopyBufferToImage(wrappedcommandBuffer, srcBuffer, dstImage, dstImageLayout, regionCount, pRegions);
+  GetInterceptor()->PreCmdCopyBufferToImage(commandBuffer, srcBuffer, dstImage, dstImageLayout, regionCount, pRegions);
 
   if (dispatch_table.CmdCopyBufferToImage) {
-    dispatch_table.CmdCopyBufferToImage(unwrappedcommandBuffer, srcBuffer, dstImage, dstImageLayout, regionCount, pRegions);
+    dispatch_table.CmdCopyBufferToImage(commandBuffer, srcBuffer, dstImage, dstImageLayout, regionCount, pRegions);
   }
 
-  GetInterceptor()->PostCmdCopyBufferToImage(wrappedcommandBuffer, srcBuffer, dstImage, dstImageLayout, regionCount, pRegions);
+  GetInterceptor()->PostCmdCopyBufferToImage(commandBuffer, srcBuffer, dstImage, dstImageLayout, regionCount, pRegions);
 }
 
 VKAPI_ATTR void VKAPI_CALL CmdCopyImageToBuffer(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout, VkBuffer dstBuffer, uint32_t regionCount, VkBufferImageCopy const* pRegions)
 {
   auto &dispatch_table = *GetDeviceDispatchTable(commandBuffer);
-  WrappedVkCommandBuffer *wrappedcommandBuffer = reinterpret_cast<WrappedVkCommandBuffer *>(commandBuffer);
-  VkCommandBuffer unwrappedcommandBuffer = wrappedcommandBuffer->wrapped_object;
 
-  GetInterceptor()->PreCmdCopyImageToBuffer(wrappedcommandBuffer, srcImage, srcImageLayout, dstBuffer, regionCount, pRegions);
+  GetInterceptor()->PreCmdCopyImageToBuffer(commandBuffer, srcImage, srcImageLayout, dstBuffer, regionCount, pRegions);
 
   if (dispatch_table.CmdCopyImageToBuffer) {
-    dispatch_table.CmdCopyImageToBuffer(unwrappedcommandBuffer, srcImage, srcImageLayout, dstBuffer, regionCount, pRegions);
+    dispatch_table.CmdCopyImageToBuffer(commandBuffer, srcImage, srcImageLayout, dstBuffer, regionCount, pRegions);
   }
 
-  GetInterceptor()->PostCmdCopyImageToBuffer(wrappedcommandBuffer, srcImage, srcImageLayout, dstBuffer, regionCount, pRegions);
+  GetInterceptor()->PostCmdCopyImageToBuffer(commandBuffer, srcImage, srcImageLayout, dstBuffer, regionCount, pRegions);
 }
 
 VKAPI_ATTR void VKAPI_CALL CmdUpdateBuffer(VkCommandBuffer commandBuffer, VkBuffer dstBuffer, VkDeviceSize dstOffset, VkDeviceSize dataSize, void const* pData)
 {
   auto &dispatch_table = *GetDeviceDispatchTable(commandBuffer);
-  WrappedVkCommandBuffer *wrappedcommandBuffer = reinterpret_cast<WrappedVkCommandBuffer *>(commandBuffer);
-  VkCommandBuffer unwrappedcommandBuffer = wrappedcommandBuffer->wrapped_object;
 
-  GetInterceptor()->PreCmdUpdateBuffer(wrappedcommandBuffer, dstBuffer, dstOffset, dataSize, pData);
+  GetInterceptor()->PreCmdUpdateBuffer(commandBuffer, dstBuffer, dstOffset, dataSize, pData);
 
   if (dispatch_table.CmdUpdateBuffer) {
-    dispatch_table.CmdUpdateBuffer(unwrappedcommandBuffer, dstBuffer, dstOffset, dataSize, pData);
+    dispatch_table.CmdUpdateBuffer(commandBuffer, dstBuffer, dstOffset, dataSize, pData);
   }
 
-  GetInterceptor()->PostCmdUpdateBuffer(wrappedcommandBuffer, dstBuffer, dstOffset, dataSize, pData);
+  GetInterceptor()->PostCmdUpdateBuffer(commandBuffer, dstBuffer, dstOffset, dataSize, pData);
 }
 
 VKAPI_ATTR void VKAPI_CALL CmdFillBuffer(VkCommandBuffer commandBuffer, VkBuffer dstBuffer, VkDeviceSize dstOffset, VkDeviceSize size, uint32_t data)
 {
   auto &dispatch_table = *GetDeviceDispatchTable(commandBuffer);
-  WrappedVkCommandBuffer *wrappedcommandBuffer = reinterpret_cast<WrappedVkCommandBuffer *>(commandBuffer);
-  VkCommandBuffer unwrappedcommandBuffer = wrappedcommandBuffer->wrapped_object;
 
-  GetInterceptor()->PreCmdFillBuffer(wrappedcommandBuffer, dstBuffer, dstOffset, size, data);
+  GetInterceptor()->PreCmdFillBuffer(commandBuffer, dstBuffer, dstOffset, size, data);
 
   if (dispatch_table.CmdFillBuffer) {
-    dispatch_table.CmdFillBuffer(unwrappedcommandBuffer, dstBuffer, dstOffset, size, data);
+    dispatch_table.CmdFillBuffer(commandBuffer, dstBuffer, dstOffset, size, data);
   }
 
-  GetInterceptor()->PostCmdFillBuffer(wrappedcommandBuffer, dstBuffer, dstOffset, size, data);
+  GetInterceptor()->PostCmdFillBuffer(commandBuffer, dstBuffer, dstOffset, size, data);
 }
 
 VKAPI_ATTR void VKAPI_CALL CmdClearColorImage(VkCommandBuffer commandBuffer, VkImage image, VkImageLayout imageLayout, VkClearColorValue const* pColor, uint32_t rangeCount, VkImageSubresourceRange const* pRanges)
 {
   auto &dispatch_table = *GetDeviceDispatchTable(commandBuffer);
-  WrappedVkCommandBuffer *wrappedcommandBuffer = reinterpret_cast<WrappedVkCommandBuffer *>(commandBuffer);
-  VkCommandBuffer unwrappedcommandBuffer = wrappedcommandBuffer->wrapped_object;
 
-  GetInterceptor()->PreCmdClearColorImage(wrappedcommandBuffer, image, imageLayout, pColor, rangeCount, pRanges);
+  GetInterceptor()->PreCmdClearColorImage(commandBuffer, image, imageLayout, pColor, rangeCount, pRanges);
 
   if (dispatch_table.CmdClearColorImage) {
-    dispatch_table.CmdClearColorImage(unwrappedcommandBuffer, image, imageLayout, pColor, rangeCount, pRanges);
+    dispatch_table.CmdClearColorImage(commandBuffer, image, imageLayout, pColor, rangeCount, pRanges);
   }
 
-  GetInterceptor()->PostCmdClearColorImage(wrappedcommandBuffer, image, imageLayout, pColor, rangeCount, pRanges);
+  GetInterceptor()->PostCmdClearColorImage(commandBuffer, image, imageLayout, pColor, rangeCount, pRanges);
 }
 
 VKAPI_ATTR void VKAPI_CALL CmdClearDepthStencilImage(VkCommandBuffer commandBuffer, VkImage image, VkImageLayout imageLayout, VkClearDepthStencilValue const* pDepthStencil, uint32_t rangeCount, VkImageSubresourceRange const* pRanges)
 {
   auto &dispatch_table = *GetDeviceDispatchTable(commandBuffer);
-  WrappedVkCommandBuffer *wrappedcommandBuffer = reinterpret_cast<WrappedVkCommandBuffer *>(commandBuffer);
-  VkCommandBuffer unwrappedcommandBuffer = wrappedcommandBuffer->wrapped_object;
 
-  GetInterceptor()->PreCmdClearDepthStencilImage(wrappedcommandBuffer, image, imageLayout, pDepthStencil, rangeCount, pRanges);
+  GetInterceptor()->PreCmdClearDepthStencilImage(commandBuffer, image, imageLayout, pDepthStencil, rangeCount, pRanges);
 
   if (dispatch_table.CmdClearDepthStencilImage) {
-    dispatch_table.CmdClearDepthStencilImage(unwrappedcommandBuffer, image, imageLayout, pDepthStencil, rangeCount, pRanges);
+    dispatch_table.CmdClearDepthStencilImage(commandBuffer, image, imageLayout, pDepthStencil, rangeCount, pRanges);
   }
 
-  GetInterceptor()->PostCmdClearDepthStencilImage(wrappedcommandBuffer, image, imageLayout, pDepthStencil, rangeCount, pRanges);
+  GetInterceptor()->PostCmdClearDepthStencilImage(commandBuffer, image, imageLayout, pDepthStencil, rangeCount, pRanges);
 }
 
 VKAPI_ATTR void VKAPI_CALL CmdClearAttachments(VkCommandBuffer commandBuffer, uint32_t attachmentCount, VkClearAttachment const* pAttachments, uint32_t rectCount, VkClearRect const* pRects)
 {
   auto &dispatch_table = *GetDeviceDispatchTable(commandBuffer);
-  WrappedVkCommandBuffer *wrappedcommandBuffer = reinterpret_cast<WrappedVkCommandBuffer *>(commandBuffer);
-  VkCommandBuffer unwrappedcommandBuffer = wrappedcommandBuffer->wrapped_object;
 
-  GetInterceptor()->PreCmdClearAttachments(wrappedcommandBuffer, attachmentCount, pAttachments, rectCount, pRects);
+  GetInterceptor()->PreCmdClearAttachments(commandBuffer, attachmentCount, pAttachments, rectCount, pRects);
 
   if (dispatch_table.CmdClearAttachments) {
-    dispatch_table.CmdClearAttachments(unwrappedcommandBuffer, attachmentCount, pAttachments, rectCount, pRects);
+    dispatch_table.CmdClearAttachments(commandBuffer, attachmentCount, pAttachments, rectCount, pRects);
   }
 
-  GetInterceptor()->PostCmdClearAttachments(wrappedcommandBuffer, attachmentCount, pAttachments, rectCount, pRects);
+  GetInterceptor()->PostCmdClearAttachments(commandBuffer, attachmentCount, pAttachments, rectCount, pRects);
 }
 
 VKAPI_ATTR void VKAPI_CALL CmdResolveImage(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout, VkImage dstImage, VkImageLayout dstImageLayout, uint32_t regionCount, VkImageResolve const* pRegions)
 {
   auto &dispatch_table = *GetDeviceDispatchTable(commandBuffer);
-  WrappedVkCommandBuffer *wrappedcommandBuffer = reinterpret_cast<WrappedVkCommandBuffer *>(commandBuffer);
-  VkCommandBuffer unwrappedcommandBuffer = wrappedcommandBuffer->wrapped_object;
 
-  GetInterceptor()->PreCmdResolveImage(wrappedcommandBuffer, srcImage, srcImageLayout, dstImage, dstImageLayout, regionCount, pRegions);
+  GetInterceptor()->PreCmdResolveImage(commandBuffer, srcImage, srcImageLayout, dstImage, dstImageLayout, regionCount, pRegions);
 
   if (dispatch_table.CmdResolveImage) {
-    dispatch_table.CmdResolveImage(unwrappedcommandBuffer, srcImage, srcImageLayout, dstImage, dstImageLayout, regionCount, pRegions);
+    dispatch_table.CmdResolveImage(commandBuffer, srcImage, srcImageLayout, dstImage, dstImageLayout, regionCount, pRegions);
   }
 
-  GetInterceptor()->PostCmdResolveImage(wrappedcommandBuffer, srcImage, srcImageLayout, dstImage, dstImageLayout, regionCount, pRegions);
+  GetInterceptor()->PostCmdResolveImage(commandBuffer, srcImage, srcImageLayout, dstImage, dstImageLayout, regionCount, pRegions);
 }
 
 VKAPI_ATTR VkResult VKAPI_CALL CreateDescriptorSetLayout(VkDevice device, VkDescriptorSetLayoutCreateInfo const* pCreateInfo, AllocationCallbacks pAllocator, VkDescriptorSetLayout* pSetLayout)
@@ -658,31 +654,27 @@ VKAPI_ATTR void VKAPI_CALL UpdateDescriptorSets(VkDevice device, uint32_t descri
 VKAPI_ATTR void VKAPI_CALL CmdBindDescriptorSets(VkCommandBuffer commandBuffer, VkPipelineBindPoint pipelineBindPoint, VkPipelineLayout layout, uint32_t firstSet, uint32_t descriptorSetCount, VkDescriptorSet const* pDescriptorSets, uint32_t dynamicOffsetCount, uint32_t const* pDynamicOffsets)
 {
   auto &dispatch_table = *GetDeviceDispatchTable(commandBuffer);
-  WrappedVkCommandBuffer *wrappedcommandBuffer = reinterpret_cast<WrappedVkCommandBuffer *>(commandBuffer);
-  VkCommandBuffer unwrappedcommandBuffer = wrappedcommandBuffer->wrapped_object;
 
-  GetInterceptor()->PreCmdBindDescriptorSets(wrappedcommandBuffer, pipelineBindPoint, layout, firstSet, descriptorSetCount, pDescriptorSets, dynamicOffsetCount, pDynamicOffsets);
+  GetInterceptor()->PreCmdBindDescriptorSets(commandBuffer, pipelineBindPoint, layout, firstSet, descriptorSetCount, pDescriptorSets, dynamicOffsetCount, pDynamicOffsets);
 
   if (dispatch_table.CmdBindDescriptorSets) {
-    dispatch_table.CmdBindDescriptorSets(unwrappedcommandBuffer, pipelineBindPoint, layout, firstSet, descriptorSetCount, pDescriptorSets, dynamicOffsetCount, pDynamicOffsets);
+    dispatch_table.CmdBindDescriptorSets(commandBuffer, pipelineBindPoint, layout, firstSet, descriptorSetCount, pDescriptorSets, dynamicOffsetCount, pDynamicOffsets);
   }
 
-  GetInterceptor()->PostCmdBindDescriptorSets(wrappedcommandBuffer, pipelineBindPoint, layout, firstSet, descriptorSetCount, pDescriptorSets, dynamicOffsetCount, pDynamicOffsets);
+  GetInterceptor()->PostCmdBindDescriptorSets(commandBuffer, pipelineBindPoint, layout, firstSet, descriptorSetCount, pDescriptorSets, dynamicOffsetCount, pDynamicOffsets);
 }
 
 VKAPI_ATTR void VKAPI_CALL CmdPushConstants(VkCommandBuffer commandBuffer, VkPipelineLayout layout, VkShaderStageFlags stageFlags, uint32_t offset, uint32_t size, void const* pValues)
 {
   auto &dispatch_table = *GetDeviceDispatchTable(commandBuffer);
-  WrappedVkCommandBuffer *wrappedcommandBuffer = reinterpret_cast<WrappedVkCommandBuffer *>(commandBuffer);
-  VkCommandBuffer unwrappedcommandBuffer = wrappedcommandBuffer->wrapped_object;
 
-  GetInterceptor()->PreCmdPushConstants(wrappedcommandBuffer, layout, stageFlags, offset, size, pValues);
+  GetInterceptor()->PreCmdPushConstants(commandBuffer, layout, stageFlags, offset, size, pValues);
 
   if (dispatch_table.CmdPushConstants) {
-    dispatch_table.CmdPushConstants(unwrappedcommandBuffer, layout, stageFlags, offset, size, pValues);
+    dispatch_table.CmdPushConstants(commandBuffer, layout, stageFlags, offset, size, pValues);
   }
 
-  GetInterceptor()->PostCmdPushConstants(wrappedcommandBuffer, layout, stageFlags, offset, size, pValues);
+  GetInterceptor()->PostCmdPushConstants(commandBuffer, layout, stageFlags, offset, size, pValues);
 }
 
 VKAPI_ATTR void VKAPI_CALL GetDescriptorSetLayoutSupport(VkDevice device, VkDescriptorSetLayoutCreateInfo const* pCreateInfo, VkDescriptorSetLayoutSupport* pSupport)
@@ -710,121 +702,105 @@ VKAPI_ATTR VkResult VKAPI_CALL DeviceWaitIdle(VkDevice device)
 VKAPI_ATTR void VKAPI_CALL CmdBindIndexBuffer(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset, VkIndexType indexType)
 {
   auto &dispatch_table = *GetDeviceDispatchTable(commandBuffer);
-  WrappedVkCommandBuffer *wrappedcommandBuffer = reinterpret_cast<WrappedVkCommandBuffer *>(commandBuffer);
-  VkCommandBuffer unwrappedcommandBuffer = wrappedcommandBuffer->wrapped_object;
 
-  GetInterceptor()->PreCmdBindIndexBuffer(wrappedcommandBuffer, buffer, offset, indexType);
+  GetInterceptor()->PreCmdBindIndexBuffer(commandBuffer, buffer, offset, indexType);
 
   if (dispatch_table.CmdBindIndexBuffer) {
-    dispatch_table.CmdBindIndexBuffer(unwrappedcommandBuffer, buffer, offset, indexType);
+    dispatch_table.CmdBindIndexBuffer(commandBuffer, buffer, offset, indexType);
   }
 
-  GetInterceptor()->PostCmdBindIndexBuffer(wrappedcommandBuffer, buffer, offset, indexType);
+  GetInterceptor()->PostCmdBindIndexBuffer(commandBuffer, buffer, offset, indexType);
 }
 
 VKAPI_ATTR void VKAPI_CALL CmdBindVertexBuffers(VkCommandBuffer commandBuffer, uint32_t firstBinding, uint32_t bindingCount, VkBuffer const* pBuffers, VkDeviceSize const* pOffsets)
 {
   auto &dispatch_table = *GetDeviceDispatchTable(commandBuffer);
-  WrappedVkCommandBuffer *wrappedcommandBuffer = reinterpret_cast<WrappedVkCommandBuffer *>(commandBuffer);
-  VkCommandBuffer unwrappedcommandBuffer = wrappedcommandBuffer->wrapped_object;
 
-  GetInterceptor()->PreCmdBindVertexBuffers(wrappedcommandBuffer, firstBinding, bindingCount, pBuffers, pOffsets);
+  GetInterceptor()->PreCmdBindVertexBuffers(commandBuffer, firstBinding, bindingCount, pBuffers, pOffsets);
 
   if (dispatch_table.CmdBindVertexBuffers) {
-    dispatch_table.CmdBindVertexBuffers(unwrappedcommandBuffer, firstBinding, bindingCount, pBuffers, pOffsets);
+    dispatch_table.CmdBindVertexBuffers(commandBuffer, firstBinding, bindingCount, pBuffers, pOffsets);
   }
 
-  GetInterceptor()->PostCmdBindVertexBuffers(wrappedcommandBuffer, firstBinding, bindingCount, pBuffers, pOffsets);
+  GetInterceptor()->PostCmdBindVertexBuffers(commandBuffer, firstBinding, bindingCount, pBuffers, pOffsets);
 }
 
 VKAPI_ATTR void VKAPI_CALL CmdDraw(VkCommandBuffer commandBuffer, uint32_t vertexCount, uint32_t instanceCount, uint32_t firstVertex, uint32_t firstInstance)
 {
   auto &dispatch_table = *GetDeviceDispatchTable(commandBuffer);
-  WrappedVkCommandBuffer *wrappedcommandBuffer = reinterpret_cast<WrappedVkCommandBuffer *>(commandBuffer);
-  VkCommandBuffer unwrappedcommandBuffer = wrappedcommandBuffer->wrapped_object;
 
-  GetInterceptor()->PreCmdDraw(wrappedcommandBuffer, vertexCount, instanceCount, firstVertex, firstInstance);
+  GetInterceptor()->PreCmdDraw(commandBuffer, vertexCount, instanceCount, firstVertex, firstInstance);
 
   if (dispatch_table.CmdDraw) {
-    dispatch_table.CmdDraw(unwrappedcommandBuffer, vertexCount, instanceCount, firstVertex, firstInstance);
+    dispatch_table.CmdDraw(commandBuffer, vertexCount, instanceCount, firstVertex, firstInstance);
   }
 
-  GetInterceptor()->PostCmdDraw(wrappedcommandBuffer, vertexCount, instanceCount, firstVertex, firstInstance);
+  GetInterceptor()->PostCmdDraw(commandBuffer, vertexCount, instanceCount, firstVertex, firstInstance);
 }
 
 VKAPI_ATTR void VKAPI_CALL CmdDrawIndexed(VkCommandBuffer commandBuffer, uint32_t indexCount, uint32_t instanceCount, uint32_t firstIndex, int32_t vertexOffset, uint32_t firstInstance)
 {
   auto &dispatch_table = *GetDeviceDispatchTable(commandBuffer);
-  WrappedVkCommandBuffer *wrappedcommandBuffer = reinterpret_cast<WrappedVkCommandBuffer *>(commandBuffer);
-  VkCommandBuffer unwrappedcommandBuffer = wrappedcommandBuffer->wrapped_object;
 
-  GetInterceptor()->PreCmdDrawIndexed(wrappedcommandBuffer, indexCount, instanceCount, firstIndex, vertexOffset, firstInstance);
+  GetInterceptor()->PreCmdDrawIndexed(commandBuffer, indexCount, instanceCount, firstIndex, vertexOffset, firstInstance);
 
   if (dispatch_table.CmdDrawIndexed) {
-    dispatch_table.CmdDrawIndexed(unwrappedcommandBuffer, indexCount, instanceCount, firstIndex, vertexOffset, firstInstance);
+    dispatch_table.CmdDrawIndexed(commandBuffer, indexCount, instanceCount, firstIndex, vertexOffset, firstInstance);
   }
 
-  GetInterceptor()->PostCmdDrawIndexed(wrappedcommandBuffer, indexCount, instanceCount, firstIndex, vertexOffset, firstInstance);
+  GetInterceptor()->PostCmdDrawIndexed(commandBuffer, indexCount, instanceCount, firstIndex, vertexOffset, firstInstance);
 }
 
 VKAPI_ATTR void VKAPI_CALL CmdDrawIndirect(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset, uint32_t drawCount, uint32_t stride)
 {
   auto &dispatch_table = *GetDeviceDispatchTable(commandBuffer);
-  WrappedVkCommandBuffer *wrappedcommandBuffer = reinterpret_cast<WrappedVkCommandBuffer *>(commandBuffer);
-  VkCommandBuffer unwrappedcommandBuffer = wrappedcommandBuffer->wrapped_object;
 
-  GetInterceptor()->PreCmdDrawIndirect(wrappedcommandBuffer, buffer, offset, drawCount, stride);
+  GetInterceptor()->PreCmdDrawIndirect(commandBuffer, buffer, offset, drawCount, stride);
 
   if (dispatch_table.CmdDrawIndirect) {
-    dispatch_table.CmdDrawIndirect(unwrappedcommandBuffer, buffer, offset, drawCount, stride);
+    dispatch_table.CmdDrawIndirect(commandBuffer, buffer, offset, drawCount, stride);
   }
 
-  GetInterceptor()->PostCmdDrawIndirect(wrappedcommandBuffer, buffer, offset, drawCount, stride);
+  GetInterceptor()->PostCmdDrawIndirect(commandBuffer, buffer, offset, drawCount, stride);
 }
 
 VKAPI_ATTR void VKAPI_CALL CmdDrawIndexedIndirect(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset, uint32_t drawCount, uint32_t stride)
 {
   auto &dispatch_table = *GetDeviceDispatchTable(commandBuffer);
-  WrappedVkCommandBuffer *wrappedcommandBuffer = reinterpret_cast<WrappedVkCommandBuffer *>(commandBuffer);
-  VkCommandBuffer unwrappedcommandBuffer = wrappedcommandBuffer->wrapped_object;
 
-  GetInterceptor()->PreCmdDrawIndexedIndirect(wrappedcommandBuffer, buffer, offset, drawCount, stride);
+  GetInterceptor()->PreCmdDrawIndexedIndirect(commandBuffer, buffer, offset, drawCount, stride);
 
   if (dispatch_table.CmdDrawIndexedIndirect) {
-    dispatch_table.CmdDrawIndexedIndirect(unwrappedcommandBuffer, buffer, offset, drawCount, stride);
+    dispatch_table.CmdDrawIndexedIndirect(commandBuffer, buffer, offset, drawCount, stride);
   }
 
-  GetInterceptor()->PostCmdDrawIndexedIndirect(wrappedcommandBuffer, buffer, offset, drawCount, stride);
+  GetInterceptor()->PostCmdDrawIndexedIndirect(commandBuffer, buffer, offset, drawCount, stride);
 }
 
 VKAPI_ATTR void VKAPI_CALL CmdDispatch(VkCommandBuffer commandBuffer, uint32_t groupCountX, uint32_t groupCountY, uint32_t groupCountZ)
 {
   auto &dispatch_table = *GetDeviceDispatchTable(commandBuffer);
-  WrappedVkCommandBuffer *wrappedcommandBuffer = reinterpret_cast<WrappedVkCommandBuffer *>(commandBuffer);
-  VkCommandBuffer unwrappedcommandBuffer = wrappedcommandBuffer->wrapped_object;
 
-  GetInterceptor()->PreCmdDispatch(wrappedcommandBuffer, groupCountX, groupCountY, groupCountZ);
+  GetInterceptor()->PreCmdDispatch(commandBuffer, groupCountX, groupCountY, groupCountZ);
 
   if (dispatch_table.CmdDispatch) {
-    dispatch_table.CmdDispatch(unwrappedcommandBuffer, groupCountX, groupCountY, groupCountZ);
+    dispatch_table.CmdDispatch(commandBuffer, groupCountX, groupCountY, groupCountZ);
   }
 
-  GetInterceptor()->PostCmdDispatch(wrappedcommandBuffer, groupCountX, groupCountY, groupCountZ);
+  GetInterceptor()->PostCmdDispatch(commandBuffer, groupCountX, groupCountY, groupCountZ);
 }
 
 VKAPI_ATTR void VKAPI_CALL CmdDispatchIndirect(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset)
 {
   auto &dispatch_table = *GetDeviceDispatchTable(commandBuffer);
-  WrappedVkCommandBuffer *wrappedcommandBuffer = reinterpret_cast<WrappedVkCommandBuffer *>(commandBuffer);
-  VkCommandBuffer unwrappedcommandBuffer = wrappedcommandBuffer->wrapped_object;
 
-  GetInterceptor()->PreCmdDispatchIndirect(wrappedcommandBuffer, buffer, offset);
+  GetInterceptor()->PreCmdDispatchIndirect(commandBuffer, buffer, offset);
 
   if (dispatch_table.CmdDispatchIndirect) {
-    dispatch_table.CmdDispatchIndirect(unwrappedcommandBuffer, buffer, offset);
+    dispatch_table.CmdDispatchIndirect(commandBuffer, buffer, offset);
   }
 
-  GetInterceptor()->PostCmdDispatchIndirect(wrappedcommandBuffer, buffer, offset);
+  GetInterceptor()->PostCmdDispatchIndirect(commandBuffer, buffer, offset);
 }
 
 VKAPI_ATTR VkResult VKAPI_CALL CreateImage(VkDevice device, VkImageCreateInfo const* pCreateInfo, AllocationCallbacks pAllocator, VkImage* pImage)
@@ -1156,151 +1132,131 @@ VKAPI_ATTR VkResult VKAPI_CALL MergePipelineCaches(VkDevice device, VkPipelineCa
 VKAPI_ATTR void VKAPI_CALL CmdBindPipeline(VkCommandBuffer commandBuffer, VkPipelineBindPoint pipelineBindPoint, VkPipeline pipeline)
 {
   auto &dispatch_table = *GetDeviceDispatchTable(commandBuffer);
-  WrappedVkCommandBuffer *wrappedcommandBuffer = reinterpret_cast<WrappedVkCommandBuffer *>(commandBuffer);
-  VkCommandBuffer unwrappedcommandBuffer = wrappedcommandBuffer->wrapped_object;
 
-  GetInterceptor()->PreCmdBindPipeline(wrappedcommandBuffer, pipelineBindPoint, pipeline);
+  GetInterceptor()->PreCmdBindPipeline(commandBuffer, pipelineBindPoint, pipeline);
 
   if (dispatch_table.CmdBindPipeline) {
-    dispatch_table.CmdBindPipeline(unwrappedcommandBuffer, pipelineBindPoint, pipeline);
+    dispatch_table.CmdBindPipeline(commandBuffer, pipelineBindPoint, pipeline);
   }
 
-  GetInterceptor()->PostCmdBindPipeline(wrappedcommandBuffer, pipelineBindPoint, pipeline);
+  GetInterceptor()->PostCmdBindPipeline(commandBuffer, pipelineBindPoint, pipeline);
 }
 
 VKAPI_ATTR void VKAPI_CALL CmdSetViewport(VkCommandBuffer commandBuffer, uint32_t firstViewport, uint32_t viewportCount, VkViewport const* pViewports)
 {
   auto &dispatch_table = *GetDeviceDispatchTable(commandBuffer);
-  WrappedVkCommandBuffer *wrappedcommandBuffer = reinterpret_cast<WrappedVkCommandBuffer *>(commandBuffer);
-  VkCommandBuffer unwrappedcommandBuffer = wrappedcommandBuffer->wrapped_object;
 
-  GetInterceptor()->PreCmdSetViewport(wrappedcommandBuffer, firstViewport, viewportCount, pViewports);
+  GetInterceptor()->PreCmdSetViewport(commandBuffer, firstViewport, viewportCount, pViewports);
 
   if (dispatch_table.CmdSetViewport) {
-    dispatch_table.CmdSetViewport(unwrappedcommandBuffer, firstViewport, viewportCount, pViewports);
+    dispatch_table.CmdSetViewport(commandBuffer, firstViewport, viewportCount, pViewports);
   }
 
-  GetInterceptor()->PostCmdSetViewport(wrappedcommandBuffer, firstViewport, viewportCount, pViewports);
+  GetInterceptor()->PostCmdSetViewport(commandBuffer, firstViewport, viewportCount, pViewports);
 }
 
 VKAPI_ATTR void VKAPI_CALL CmdSetScissor(VkCommandBuffer commandBuffer, uint32_t firstScissor, uint32_t scissorCount, VkRect2D const* pScissors)
 {
   auto &dispatch_table = *GetDeviceDispatchTable(commandBuffer);
-  WrappedVkCommandBuffer *wrappedcommandBuffer = reinterpret_cast<WrappedVkCommandBuffer *>(commandBuffer);
-  VkCommandBuffer unwrappedcommandBuffer = wrappedcommandBuffer->wrapped_object;
 
-  GetInterceptor()->PreCmdSetScissor(wrappedcommandBuffer, firstScissor, scissorCount, pScissors);
+  GetInterceptor()->PreCmdSetScissor(commandBuffer, firstScissor, scissorCount, pScissors);
 
   if (dispatch_table.CmdSetScissor) {
-    dispatch_table.CmdSetScissor(unwrappedcommandBuffer, firstScissor, scissorCount, pScissors);
+    dispatch_table.CmdSetScissor(commandBuffer, firstScissor, scissorCount, pScissors);
   }
 
-  GetInterceptor()->PostCmdSetScissor(wrappedcommandBuffer, firstScissor, scissorCount, pScissors);
+  GetInterceptor()->PostCmdSetScissor(commandBuffer, firstScissor, scissorCount, pScissors);
 }
 
 VKAPI_ATTR void VKAPI_CALL CmdSetLineWidth(VkCommandBuffer commandBuffer, float lineWidth)
 {
   auto &dispatch_table = *GetDeviceDispatchTable(commandBuffer);
-  WrappedVkCommandBuffer *wrappedcommandBuffer = reinterpret_cast<WrappedVkCommandBuffer *>(commandBuffer);
-  VkCommandBuffer unwrappedcommandBuffer = wrappedcommandBuffer->wrapped_object;
 
-  GetInterceptor()->PreCmdSetLineWidth(wrappedcommandBuffer, lineWidth);
+  GetInterceptor()->PreCmdSetLineWidth(commandBuffer, lineWidth);
 
   if (dispatch_table.CmdSetLineWidth) {
-    dispatch_table.CmdSetLineWidth(unwrappedcommandBuffer, lineWidth);
+    dispatch_table.CmdSetLineWidth(commandBuffer, lineWidth);
   }
 
-  GetInterceptor()->PostCmdSetLineWidth(wrappedcommandBuffer, lineWidth);
+  GetInterceptor()->PostCmdSetLineWidth(commandBuffer, lineWidth);
 }
 
 VKAPI_ATTR void VKAPI_CALL CmdSetDepthBias(VkCommandBuffer commandBuffer, float depthBiasConstantFactor, float depthBiasClamp, float depthBiasSlopeFactor)
 {
   auto &dispatch_table = *GetDeviceDispatchTable(commandBuffer);
-  WrappedVkCommandBuffer *wrappedcommandBuffer = reinterpret_cast<WrappedVkCommandBuffer *>(commandBuffer);
-  VkCommandBuffer unwrappedcommandBuffer = wrappedcommandBuffer->wrapped_object;
 
-  GetInterceptor()->PreCmdSetDepthBias(wrappedcommandBuffer, depthBiasConstantFactor, depthBiasClamp, depthBiasSlopeFactor);
+  GetInterceptor()->PreCmdSetDepthBias(commandBuffer, depthBiasConstantFactor, depthBiasClamp, depthBiasSlopeFactor);
 
   if (dispatch_table.CmdSetDepthBias) {
-    dispatch_table.CmdSetDepthBias(unwrappedcommandBuffer, depthBiasConstantFactor, depthBiasClamp, depthBiasSlopeFactor);
+    dispatch_table.CmdSetDepthBias(commandBuffer, depthBiasConstantFactor, depthBiasClamp, depthBiasSlopeFactor);
   }
 
-  GetInterceptor()->PostCmdSetDepthBias(wrappedcommandBuffer, depthBiasConstantFactor, depthBiasClamp, depthBiasSlopeFactor);
+  GetInterceptor()->PostCmdSetDepthBias(commandBuffer, depthBiasConstantFactor, depthBiasClamp, depthBiasSlopeFactor);
 }
 
 VKAPI_ATTR void VKAPI_CALL CmdSetBlendConstants(VkCommandBuffer commandBuffer, float blendConstants[4])
 {
   auto &dispatch_table = *GetDeviceDispatchTable(commandBuffer);
-  WrappedVkCommandBuffer *wrappedcommandBuffer = reinterpret_cast<WrappedVkCommandBuffer *>(commandBuffer);
-  VkCommandBuffer unwrappedcommandBuffer = wrappedcommandBuffer->wrapped_object;
 
-  GetInterceptor()->PreCmdSetBlendConstants(wrappedcommandBuffer, blendConstants);
+  GetInterceptor()->PreCmdSetBlendConstants(commandBuffer, blendConstants);
 
   if (dispatch_table.CmdSetBlendConstants) {
-    dispatch_table.CmdSetBlendConstants(unwrappedcommandBuffer, blendConstants);
+    dispatch_table.CmdSetBlendConstants(commandBuffer, blendConstants);
   }
 
-  GetInterceptor()->PostCmdSetBlendConstants(wrappedcommandBuffer, blendConstants);
+  GetInterceptor()->PostCmdSetBlendConstants(commandBuffer, blendConstants);
 }
 
 VKAPI_ATTR void VKAPI_CALL CmdSetDepthBounds(VkCommandBuffer commandBuffer, float minDepthBounds, float maxDepthBounds)
 {
   auto &dispatch_table = *GetDeviceDispatchTable(commandBuffer);
-  WrappedVkCommandBuffer *wrappedcommandBuffer = reinterpret_cast<WrappedVkCommandBuffer *>(commandBuffer);
-  VkCommandBuffer unwrappedcommandBuffer = wrappedcommandBuffer->wrapped_object;
 
-  GetInterceptor()->PreCmdSetDepthBounds(wrappedcommandBuffer, minDepthBounds, maxDepthBounds);
+  GetInterceptor()->PreCmdSetDepthBounds(commandBuffer, minDepthBounds, maxDepthBounds);
 
   if (dispatch_table.CmdSetDepthBounds) {
-    dispatch_table.CmdSetDepthBounds(unwrappedcommandBuffer, minDepthBounds, maxDepthBounds);
+    dispatch_table.CmdSetDepthBounds(commandBuffer, minDepthBounds, maxDepthBounds);
   }
 
-  GetInterceptor()->PostCmdSetDepthBounds(wrappedcommandBuffer, minDepthBounds, maxDepthBounds);
+  GetInterceptor()->PostCmdSetDepthBounds(commandBuffer, minDepthBounds, maxDepthBounds);
 }
 
 VKAPI_ATTR void VKAPI_CALL CmdSetStencilCompareMask(VkCommandBuffer commandBuffer, VkStencilFaceFlags faceMask, uint32_t compareMask)
 {
   auto &dispatch_table = *GetDeviceDispatchTable(commandBuffer);
-  WrappedVkCommandBuffer *wrappedcommandBuffer = reinterpret_cast<WrappedVkCommandBuffer *>(commandBuffer);
-  VkCommandBuffer unwrappedcommandBuffer = wrappedcommandBuffer->wrapped_object;
 
-  GetInterceptor()->PreCmdSetStencilCompareMask(wrappedcommandBuffer, faceMask, compareMask);
+  GetInterceptor()->PreCmdSetStencilCompareMask(commandBuffer, faceMask, compareMask);
 
   if (dispatch_table.CmdSetStencilCompareMask) {
-    dispatch_table.CmdSetStencilCompareMask(unwrappedcommandBuffer, faceMask, compareMask);
+    dispatch_table.CmdSetStencilCompareMask(commandBuffer, faceMask, compareMask);
   }
 
-  GetInterceptor()->PostCmdSetStencilCompareMask(wrappedcommandBuffer, faceMask, compareMask);
+  GetInterceptor()->PostCmdSetStencilCompareMask(commandBuffer, faceMask, compareMask);
 }
 
 VKAPI_ATTR void VKAPI_CALL CmdSetStencilWriteMask(VkCommandBuffer commandBuffer, VkStencilFaceFlags faceMask, uint32_t writeMask)
 {
   auto &dispatch_table = *GetDeviceDispatchTable(commandBuffer);
-  WrappedVkCommandBuffer *wrappedcommandBuffer = reinterpret_cast<WrappedVkCommandBuffer *>(commandBuffer);
-  VkCommandBuffer unwrappedcommandBuffer = wrappedcommandBuffer->wrapped_object;
 
-  GetInterceptor()->PreCmdSetStencilWriteMask(wrappedcommandBuffer, faceMask, writeMask);
+  GetInterceptor()->PreCmdSetStencilWriteMask(commandBuffer, faceMask, writeMask);
 
   if (dispatch_table.CmdSetStencilWriteMask) {
-    dispatch_table.CmdSetStencilWriteMask(unwrappedcommandBuffer, faceMask, writeMask);
+    dispatch_table.CmdSetStencilWriteMask(commandBuffer, faceMask, writeMask);
   }
 
-  GetInterceptor()->PostCmdSetStencilWriteMask(wrappedcommandBuffer, faceMask, writeMask);
+  GetInterceptor()->PostCmdSetStencilWriteMask(commandBuffer, faceMask, writeMask);
 }
 
 VKAPI_ATTR void VKAPI_CALL CmdSetStencilReference(VkCommandBuffer commandBuffer, VkStencilFaceFlags faceMask, uint32_t reference)
 {
   auto &dispatch_table = *GetDeviceDispatchTable(commandBuffer);
-  WrappedVkCommandBuffer *wrappedcommandBuffer = reinterpret_cast<WrappedVkCommandBuffer *>(commandBuffer);
-  VkCommandBuffer unwrappedcommandBuffer = wrappedcommandBuffer->wrapped_object;
 
-  GetInterceptor()->PreCmdSetStencilReference(wrappedcommandBuffer, faceMask, reference);
+  GetInterceptor()->PreCmdSetStencilReference(commandBuffer, faceMask, reference);
 
   if (dispatch_table.CmdSetStencilReference) {
-    dispatch_table.CmdSetStencilReference(unwrappedcommandBuffer, faceMask, reference);
+    dispatch_table.CmdSetStencilReference(commandBuffer, faceMask, reference);
   }
 
-  GetInterceptor()->PostCmdSetStencilReference(wrappedcommandBuffer, faceMask, reference);
+  GetInterceptor()->PostCmdSetStencilReference(commandBuffer, faceMask, reference);
 }
 
 VKAPI_ATTR void VKAPI_CALL GetPhysicalDeviceFeatures(VkPhysicalDevice physicalDevice, VkPhysicalDeviceFeatures* pFeatures)
@@ -1561,76 +1517,66 @@ VKAPI_ATTR VkResult VKAPI_CALL GetQueryPoolResults(VkDevice device, VkQueryPool 
 VKAPI_ATTR void VKAPI_CALL CmdBeginQuery(VkCommandBuffer commandBuffer, VkQueryPool queryPool, uint32_t query, VkQueryControlFlags flags)
 {
   auto &dispatch_table = *GetDeviceDispatchTable(commandBuffer);
-  WrappedVkCommandBuffer *wrappedcommandBuffer = reinterpret_cast<WrappedVkCommandBuffer *>(commandBuffer);
-  VkCommandBuffer unwrappedcommandBuffer = wrappedcommandBuffer->wrapped_object;
 
-  GetInterceptor()->PreCmdBeginQuery(wrappedcommandBuffer, queryPool, query, flags);
+  GetInterceptor()->PreCmdBeginQuery(commandBuffer, queryPool, query, flags);
 
   if (dispatch_table.CmdBeginQuery) {
-    dispatch_table.CmdBeginQuery(unwrappedcommandBuffer, queryPool, query, flags);
+    dispatch_table.CmdBeginQuery(commandBuffer, queryPool, query, flags);
   }
 
-  GetInterceptor()->PostCmdBeginQuery(wrappedcommandBuffer, queryPool, query, flags);
+  GetInterceptor()->PostCmdBeginQuery(commandBuffer, queryPool, query, flags);
 }
 
 VKAPI_ATTR void VKAPI_CALL CmdEndQuery(VkCommandBuffer commandBuffer, VkQueryPool queryPool, uint32_t query)
 {
   auto &dispatch_table = *GetDeviceDispatchTable(commandBuffer);
-  WrappedVkCommandBuffer *wrappedcommandBuffer = reinterpret_cast<WrappedVkCommandBuffer *>(commandBuffer);
-  VkCommandBuffer unwrappedcommandBuffer = wrappedcommandBuffer->wrapped_object;
 
-  GetInterceptor()->PreCmdEndQuery(wrappedcommandBuffer, queryPool, query);
+  GetInterceptor()->PreCmdEndQuery(commandBuffer, queryPool, query);
 
   if (dispatch_table.CmdEndQuery) {
-    dispatch_table.CmdEndQuery(unwrappedcommandBuffer, queryPool, query);
+    dispatch_table.CmdEndQuery(commandBuffer, queryPool, query);
   }
 
-  GetInterceptor()->PostCmdEndQuery(wrappedcommandBuffer, queryPool, query);
+  GetInterceptor()->PostCmdEndQuery(commandBuffer, queryPool, query);
 }
 
 VKAPI_ATTR void VKAPI_CALL CmdResetQueryPool(VkCommandBuffer commandBuffer, VkQueryPool queryPool, uint32_t firstQuery, uint32_t queryCount)
 {
   auto &dispatch_table = *GetDeviceDispatchTable(commandBuffer);
-  WrappedVkCommandBuffer *wrappedcommandBuffer = reinterpret_cast<WrappedVkCommandBuffer *>(commandBuffer);
-  VkCommandBuffer unwrappedcommandBuffer = wrappedcommandBuffer->wrapped_object;
 
-  GetInterceptor()->PreCmdResetQueryPool(wrappedcommandBuffer, queryPool, firstQuery, queryCount);
+  GetInterceptor()->PreCmdResetQueryPool(commandBuffer, queryPool, firstQuery, queryCount);
 
   if (dispatch_table.CmdResetQueryPool) {
-    dispatch_table.CmdResetQueryPool(unwrappedcommandBuffer, queryPool, firstQuery, queryCount);
+    dispatch_table.CmdResetQueryPool(commandBuffer, queryPool, firstQuery, queryCount);
   }
 
-  GetInterceptor()->PostCmdResetQueryPool(wrappedcommandBuffer, queryPool, firstQuery, queryCount);
+  GetInterceptor()->PostCmdResetQueryPool(commandBuffer, queryPool, firstQuery, queryCount);
 }
 
 VKAPI_ATTR void VKAPI_CALL CmdWriteTimestamp(VkCommandBuffer commandBuffer, VkPipelineStageFlagBits pipelineStage, VkQueryPool queryPool, uint32_t query)
 {
   auto &dispatch_table = *GetDeviceDispatchTable(commandBuffer);
-  WrappedVkCommandBuffer *wrappedcommandBuffer = reinterpret_cast<WrappedVkCommandBuffer *>(commandBuffer);
-  VkCommandBuffer unwrappedcommandBuffer = wrappedcommandBuffer->wrapped_object;
 
-  GetInterceptor()->PreCmdWriteTimestamp(wrappedcommandBuffer, pipelineStage, queryPool, query);
+  GetInterceptor()->PreCmdWriteTimestamp(commandBuffer, pipelineStage, queryPool, query);
 
   if (dispatch_table.CmdWriteTimestamp) {
-    dispatch_table.CmdWriteTimestamp(unwrappedcommandBuffer, pipelineStage, queryPool, query);
+    dispatch_table.CmdWriteTimestamp(commandBuffer, pipelineStage, queryPool, query);
   }
 
-  GetInterceptor()->PostCmdWriteTimestamp(wrappedcommandBuffer, pipelineStage, queryPool, query);
+  GetInterceptor()->PostCmdWriteTimestamp(commandBuffer, pipelineStage, queryPool, query);
 }
 
 VKAPI_ATTR void VKAPI_CALL CmdCopyQueryPoolResults(VkCommandBuffer commandBuffer, VkQueryPool queryPool, uint32_t firstQuery, uint32_t queryCount, VkBuffer dstBuffer, VkDeviceSize dstOffset, VkDeviceSize stride, VkQueryResultFlags flags)
 {
   auto &dispatch_table = *GetDeviceDispatchTable(commandBuffer);
-  WrappedVkCommandBuffer *wrappedcommandBuffer = reinterpret_cast<WrappedVkCommandBuffer *>(commandBuffer);
-  VkCommandBuffer unwrappedcommandBuffer = wrappedcommandBuffer->wrapped_object;
 
-  GetInterceptor()->PreCmdCopyQueryPoolResults(wrappedcommandBuffer, queryPool, firstQuery, queryCount, dstBuffer, dstOffset, stride, flags);
+  GetInterceptor()->PreCmdCopyQueryPoolResults(commandBuffer, queryPool, firstQuery, queryCount, dstBuffer, dstOffset, stride, flags);
 
   if (dispatch_table.CmdCopyQueryPoolResults) {
-    dispatch_table.CmdCopyQueryPoolResults(unwrappedcommandBuffer, queryPool, firstQuery, queryCount, dstBuffer, dstOffset, stride, flags);
+    dispatch_table.CmdCopyQueryPoolResults(commandBuffer, queryPool, firstQuery, queryCount, dstBuffer, dstOffset, stride, flags);
   }
 
-  GetInterceptor()->PostCmdCopyQueryPoolResults(wrappedcommandBuffer, queryPool, firstQuery, queryCount, dstBuffer, dstOffset, stride, flags);
+  GetInterceptor()->PostCmdCopyQueryPoolResults(commandBuffer, queryPool, firstQuery, queryCount, dstBuffer, dstOffset, stride, flags);
 }
 
 VKAPI_ATTR void VKAPI_CALL GetDeviceQueue(VkDevice device, uint32_t queueFamilyIndex, uint32_t queueIndex, VkQueue* pQueue)
@@ -1720,46 +1666,40 @@ VKAPI_ATTR void VKAPI_CALL GetRenderAreaGranularity(VkDevice device, VkRenderPas
 VKAPI_ATTR void VKAPI_CALL CmdBeginRenderPass(VkCommandBuffer commandBuffer, VkRenderPassBeginInfo const* pRenderPassBegin, VkSubpassContents contents)
 {
   auto &dispatch_table = *GetDeviceDispatchTable(commandBuffer);
-  WrappedVkCommandBuffer *wrappedcommandBuffer = reinterpret_cast<WrappedVkCommandBuffer *>(commandBuffer);
-  VkCommandBuffer unwrappedcommandBuffer = wrappedcommandBuffer->wrapped_object;
 
-  GetInterceptor()->PreCmdBeginRenderPass(wrappedcommandBuffer, pRenderPassBegin, contents);
+  GetInterceptor()->PreCmdBeginRenderPass(commandBuffer, pRenderPassBegin, contents);
 
   if (dispatch_table.CmdBeginRenderPass) {
-    dispatch_table.CmdBeginRenderPass(unwrappedcommandBuffer, pRenderPassBegin, contents);
+    dispatch_table.CmdBeginRenderPass(commandBuffer, pRenderPassBegin, contents);
   }
 
-  GetInterceptor()->PostCmdBeginRenderPass(wrappedcommandBuffer, pRenderPassBegin, contents);
+  GetInterceptor()->PostCmdBeginRenderPass(commandBuffer, pRenderPassBegin, contents);
 }
 
 VKAPI_ATTR void VKAPI_CALL CmdNextSubpass(VkCommandBuffer commandBuffer, VkSubpassContents contents)
 {
   auto &dispatch_table = *GetDeviceDispatchTable(commandBuffer);
-  WrappedVkCommandBuffer *wrappedcommandBuffer = reinterpret_cast<WrappedVkCommandBuffer *>(commandBuffer);
-  VkCommandBuffer unwrappedcommandBuffer = wrappedcommandBuffer->wrapped_object;
 
-  GetInterceptor()->PreCmdNextSubpass(wrappedcommandBuffer, contents);
+  GetInterceptor()->PreCmdNextSubpass(commandBuffer, contents);
 
   if (dispatch_table.CmdNextSubpass) {
-    dispatch_table.CmdNextSubpass(unwrappedcommandBuffer, contents);
+    dispatch_table.CmdNextSubpass(commandBuffer, contents);
   }
 
-  GetInterceptor()->PostCmdNextSubpass(wrappedcommandBuffer, contents);
+  GetInterceptor()->PostCmdNextSubpass(commandBuffer, contents);
 }
 
 VKAPI_ATTR void VKAPI_CALL CmdEndRenderPass(VkCommandBuffer commandBuffer)
 {
   auto &dispatch_table = *GetDeviceDispatchTable(commandBuffer);
-  WrappedVkCommandBuffer *wrappedcommandBuffer = reinterpret_cast<WrappedVkCommandBuffer *>(commandBuffer);
-  VkCommandBuffer unwrappedcommandBuffer = wrappedcommandBuffer->wrapped_object;
 
-  GetInterceptor()->PreCmdEndRenderPass(wrappedcommandBuffer);
+  GetInterceptor()->PreCmdEndRenderPass(commandBuffer);
 
   if (dispatch_table.CmdEndRenderPass) {
-    dispatch_table.CmdEndRenderPass(unwrappedcommandBuffer);
+    dispatch_table.CmdEndRenderPass(commandBuffer);
   }
 
-  GetInterceptor()->PostCmdEndRenderPass(wrappedcommandBuffer);
+  GetInterceptor()->PostCmdEndRenderPass(commandBuffer);
 }
 
 VKAPI_ATTR VkResult VKAPI_CALL CreateFence(VkDevice device, VkFenceCreateInfo const* pCreateInfo, AllocationCallbacks pAllocator, VkFence* pFence)
@@ -1899,136 +1839,118 @@ VKAPI_ATTR VkResult VKAPI_CALL ResetEvent(VkDevice device, VkEvent event)
 VKAPI_ATTR void VKAPI_CALL CmdSetEvent(VkCommandBuffer commandBuffer, VkEvent event, VkPipelineStageFlags stageMask)
 {
   auto &dispatch_table = *GetDeviceDispatchTable(commandBuffer);
-  WrappedVkCommandBuffer *wrappedcommandBuffer = reinterpret_cast<WrappedVkCommandBuffer *>(commandBuffer);
-  VkCommandBuffer unwrappedcommandBuffer = wrappedcommandBuffer->wrapped_object;
 
-  GetInterceptor()->PreCmdSetEvent(wrappedcommandBuffer, event, stageMask);
+  GetInterceptor()->PreCmdSetEvent(commandBuffer, event, stageMask);
 
   if (dispatch_table.CmdSetEvent) {
-    dispatch_table.CmdSetEvent(unwrappedcommandBuffer, event, stageMask);
+    dispatch_table.CmdSetEvent(commandBuffer, event, stageMask);
   }
 
-  GetInterceptor()->PostCmdSetEvent(wrappedcommandBuffer, event, stageMask);
+  GetInterceptor()->PostCmdSetEvent(commandBuffer, event, stageMask);
 }
 
 VKAPI_ATTR void VKAPI_CALL CmdResetEvent(VkCommandBuffer commandBuffer, VkEvent event, VkPipelineStageFlags stageMask)
 {
   auto &dispatch_table = *GetDeviceDispatchTable(commandBuffer);
-  WrappedVkCommandBuffer *wrappedcommandBuffer = reinterpret_cast<WrappedVkCommandBuffer *>(commandBuffer);
-  VkCommandBuffer unwrappedcommandBuffer = wrappedcommandBuffer->wrapped_object;
 
-  GetInterceptor()->PreCmdResetEvent(wrappedcommandBuffer, event, stageMask);
+  GetInterceptor()->PreCmdResetEvent(commandBuffer, event, stageMask);
 
   if (dispatch_table.CmdResetEvent) {
-    dispatch_table.CmdResetEvent(unwrappedcommandBuffer, event, stageMask);
+    dispatch_table.CmdResetEvent(commandBuffer, event, stageMask);
   }
 
-  GetInterceptor()->PostCmdResetEvent(wrappedcommandBuffer, event, stageMask);
+  GetInterceptor()->PostCmdResetEvent(commandBuffer, event, stageMask);
 }
 
 VKAPI_ATTR void VKAPI_CALL CmdWaitEvents(VkCommandBuffer commandBuffer, uint32_t eventCount, VkEvent const* pEvents, VkPipelineStageFlags srcStageMask, VkPipelineStageFlags dstStageMask, uint32_t memoryBarrierCount, VkMemoryBarrier const* pMemoryBarriers, uint32_t bufferMemoryBarrierCount, VkBufferMemoryBarrier const* pBufferMemoryBarriers, uint32_t imageMemoryBarrierCount, VkImageMemoryBarrier const* pImageMemoryBarriers)
 {
   auto &dispatch_table = *GetDeviceDispatchTable(commandBuffer);
-  WrappedVkCommandBuffer *wrappedcommandBuffer = reinterpret_cast<WrappedVkCommandBuffer *>(commandBuffer);
-  VkCommandBuffer unwrappedcommandBuffer = wrappedcommandBuffer->wrapped_object;
 
-  GetInterceptor()->PreCmdWaitEvents(wrappedcommandBuffer, eventCount, pEvents, srcStageMask, dstStageMask, memoryBarrierCount, pMemoryBarriers, bufferMemoryBarrierCount, pBufferMemoryBarriers, imageMemoryBarrierCount, pImageMemoryBarriers);
+  GetInterceptor()->PreCmdWaitEvents(commandBuffer, eventCount, pEvents, srcStageMask, dstStageMask, memoryBarrierCount, pMemoryBarriers, bufferMemoryBarrierCount, pBufferMemoryBarriers, imageMemoryBarrierCount, pImageMemoryBarriers);
 
   if (dispatch_table.CmdWaitEvents) {
-    dispatch_table.CmdWaitEvents(unwrappedcommandBuffer, eventCount, pEvents, srcStageMask, dstStageMask, memoryBarrierCount, pMemoryBarriers, bufferMemoryBarrierCount, pBufferMemoryBarriers, imageMemoryBarrierCount, pImageMemoryBarriers);
+    dispatch_table.CmdWaitEvents(commandBuffer, eventCount, pEvents, srcStageMask, dstStageMask, memoryBarrierCount, pMemoryBarriers, bufferMemoryBarrierCount, pBufferMemoryBarriers, imageMemoryBarrierCount, pImageMemoryBarriers);
   }
 
-  GetInterceptor()->PostCmdWaitEvents(wrappedcommandBuffer, eventCount, pEvents, srcStageMask, dstStageMask, memoryBarrierCount, pMemoryBarriers, bufferMemoryBarrierCount, pBufferMemoryBarriers, imageMemoryBarrierCount, pImageMemoryBarriers);
+  GetInterceptor()->PostCmdWaitEvents(commandBuffer, eventCount, pEvents, srcStageMask, dstStageMask, memoryBarrierCount, pMemoryBarriers, bufferMemoryBarrierCount, pBufferMemoryBarriers, imageMemoryBarrierCount, pImageMemoryBarriers);
 }
 
 VKAPI_ATTR void VKAPI_CALL CmdPipelineBarrier(VkCommandBuffer commandBuffer, VkPipelineStageFlags srcStageMask, VkPipelineStageFlags dstStageMask, VkDependencyFlags dependencyFlags, uint32_t memoryBarrierCount, VkMemoryBarrier const* pMemoryBarriers, uint32_t bufferMemoryBarrierCount, VkBufferMemoryBarrier const* pBufferMemoryBarriers, uint32_t imageMemoryBarrierCount, VkImageMemoryBarrier const* pImageMemoryBarriers)
 {
   auto &dispatch_table = *GetDeviceDispatchTable(commandBuffer);
-  WrappedVkCommandBuffer *wrappedcommandBuffer = reinterpret_cast<WrappedVkCommandBuffer *>(commandBuffer);
-  VkCommandBuffer unwrappedcommandBuffer = wrappedcommandBuffer->wrapped_object;
 
-  GetInterceptor()->PreCmdPipelineBarrier(wrappedcommandBuffer, srcStageMask, dstStageMask, dependencyFlags, memoryBarrierCount, pMemoryBarriers, bufferMemoryBarrierCount, pBufferMemoryBarriers, imageMemoryBarrierCount, pImageMemoryBarriers);
+  GetInterceptor()->PreCmdPipelineBarrier(commandBuffer, srcStageMask, dstStageMask, dependencyFlags, memoryBarrierCount, pMemoryBarriers, bufferMemoryBarrierCount, pBufferMemoryBarriers, imageMemoryBarrierCount, pImageMemoryBarriers);
 
   if (dispatch_table.CmdPipelineBarrier) {
-    dispatch_table.CmdPipelineBarrier(unwrappedcommandBuffer, srcStageMask, dstStageMask, dependencyFlags, memoryBarrierCount, pMemoryBarriers, bufferMemoryBarrierCount, pBufferMemoryBarriers, imageMemoryBarrierCount, pImageMemoryBarriers);
+    dispatch_table.CmdPipelineBarrier(commandBuffer, srcStageMask, dstStageMask, dependencyFlags, memoryBarrierCount, pMemoryBarriers, bufferMemoryBarrierCount, pBufferMemoryBarriers, imageMemoryBarrierCount, pImageMemoryBarriers);
   }
 
-  GetInterceptor()->PostCmdPipelineBarrier(wrappedcommandBuffer, srcStageMask, dstStageMask, dependencyFlags, memoryBarrierCount, pMemoryBarriers, bufferMemoryBarrierCount, pBufferMemoryBarriers, imageMemoryBarrierCount, pImageMemoryBarriers);
+  GetInterceptor()->PostCmdPipelineBarrier(commandBuffer, srcStageMask, dstStageMask, dependencyFlags, memoryBarrierCount, pMemoryBarriers, bufferMemoryBarrierCount, pBufferMemoryBarriers, imageMemoryBarrierCount, pImageMemoryBarriers);
 }
 
 VKAPI_ATTR void VKAPI_CALL CmdWriteBufferMarkerAMD(VkCommandBuffer commandBuffer, VkPipelineStageFlagBits pipelineStage, VkBuffer dstBuffer, VkDeviceSize dstOffset, uint32_t marker)
 {
   auto &dispatch_table = *GetDeviceDispatchTable(commandBuffer);
-  WrappedVkCommandBuffer *wrappedcommandBuffer = reinterpret_cast<WrappedVkCommandBuffer *>(commandBuffer);
-  VkCommandBuffer unwrappedcommandBuffer = wrappedcommandBuffer->wrapped_object;
 
-  GetInterceptor()->PreCmdWriteBufferMarkerAMD(wrappedcommandBuffer, pipelineStage, dstBuffer, dstOffset, marker);
+  GetInterceptor()->PreCmdWriteBufferMarkerAMD(commandBuffer, pipelineStage, dstBuffer, dstOffset, marker);
 
   if (dispatch_table.CmdWriteBufferMarkerAMD) {
-    dispatch_table.CmdWriteBufferMarkerAMD(unwrappedcommandBuffer, pipelineStage, dstBuffer, dstOffset, marker);
+    dispatch_table.CmdWriteBufferMarkerAMD(commandBuffer, pipelineStage, dstBuffer, dstOffset, marker);
   }
 
-  GetInterceptor()->PostCmdWriteBufferMarkerAMD(wrappedcommandBuffer, pipelineStage, dstBuffer, dstOffset, marker);
+  GetInterceptor()->PostCmdWriteBufferMarkerAMD(commandBuffer, pipelineStage, dstBuffer, dstOffset, marker);
 }
 
 VKAPI_ATTR void VKAPI_CALL CmdDrawIndirectCountAMD(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset, VkBuffer countBuffer, VkDeviceSize countOffset, uint32_t maxDrawCount, uint32_t stride)
 {
   auto &dispatch_table = *GetDeviceDispatchTable(commandBuffer);
-  WrappedVkCommandBuffer *wrappedcommandBuffer = reinterpret_cast<WrappedVkCommandBuffer *>(commandBuffer);
-  VkCommandBuffer unwrappedcommandBuffer = wrappedcommandBuffer->wrapped_object;
 
-  GetInterceptor()->PreCmdDrawIndirectCountAMD(wrappedcommandBuffer, buffer, offset, countBuffer, countOffset, maxDrawCount, stride);
+  GetInterceptor()->PreCmdDrawIndirectCountAMD(commandBuffer, buffer, offset, countBuffer, countOffset, maxDrawCount, stride);
 
   if (dispatch_table.CmdDrawIndirectCountAMD) {
-    dispatch_table.CmdDrawIndirectCountAMD(unwrappedcommandBuffer, buffer, offset, countBuffer, countOffset, maxDrawCount, stride);
+    dispatch_table.CmdDrawIndirectCountAMD(commandBuffer, buffer, offset, countBuffer, countOffset, maxDrawCount, stride);
   }
 
-  GetInterceptor()->PostCmdDrawIndirectCountAMD(wrappedcommandBuffer, buffer, offset, countBuffer, countOffset, maxDrawCount, stride);
+  GetInterceptor()->PostCmdDrawIndirectCountAMD(commandBuffer, buffer, offset, countBuffer, countOffset, maxDrawCount, stride);
 }
 
 VKAPI_ATTR void VKAPI_CALL CmdDrawIndexedIndirectCountAMD(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset, VkBuffer countBuffer, VkDeviceSize countOffset, uint32_t maxDrawCount, uint32_t stride)
 {
   auto &dispatch_table = *GetDeviceDispatchTable(commandBuffer);
-  WrappedVkCommandBuffer *wrappedcommandBuffer = reinterpret_cast<WrappedVkCommandBuffer *>(commandBuffer);
-  VkCommandBuffer unwrappedcommandBuffer = wrappedcommandBuffer->wrapped_object;
 
-  GetInterceptor()->PreCmdDrawIndexedIndirectCountAMD(wrappedcommandBuffer, buffer, offset, countBuffer, countOffset, maxDrawCount, stride);
+  GetInterceptor()->PreCmdDrawIndexedIndirectCountAMD(commandBuffer, buffer, offset, countBuffer, countOffset, maxDrawCount, stride);
 
   if (dispatch_table.CmdDrawIndexedIndirectCountAMD) {
-    dispatch_table.CmdDrawIndexedIndirectCountAMD(unwrappedcommandBuffer, buffer, offset, countBuffer, countOffset, maxDrawCount, stride);
+    dispatch_table.CmdDrawIndexedIndirectCountAMD(commandBuffer, buffer, offset, countBuffer, countOffset, maxDrawCount, stride);
   }
 
-  GetInterceptor()->PostCmdDrawIndexedIndirectCountAMD(wrappedcommandBuffer, buffer, offset, countBuffer, countOffset, maxDrawCount, stride);
+  GetInterceptor()->PostCmdDrawIndexedIndirectCountAMD(commandBuffer, buffer, offset, countBuffer, countOffset, maxDrawCount, stride);
 }
 
 VKAPI_ATTR void VKAPI_CALL CmdBeginConditionalRenderingEXT(VkCommandBuffer commandBuffer, VkConditionalRenderingBeginInfoEXT const* pConditinalRenderingBegin)
 {
   auto &dispatch_table = *GetDeviceDispatchTable(commandBuffer);
-  WrappedVkCommandBuffer *wrappedcommandBuffer = reinterpret_cast<WrappedVkCommandBuffer *>(commandBuffer);
-  VkCommandBuffer unwrappedcommandBuffer = wrappedcommandBuffer->wrapped_object;
 
-  GetInterceptor()->PreCmdBeginConditionalRenderingEXT(wrappedcommandBuffer, pConditinalRenderingBegin);
+  GetInterceptor()->PreCmdBeginConditionalRenderingEXT(commandBuffer, pConditinalRenderingBegin);
 
   if (dispatch_table.CmdBeginConditionalRenderingEXT) {
-    dispatch_table.CmdBeginConditionalRenderingEXT(unwrappedcommandBuffer, pConditinalRenderingBegin);
+    dispatch_table.CmdBeginConditionalRenderingEXT(commandBuffer, pConditinalRenderingBegin);
   }
 
-  GetInterceptor()->PostCmdBeginConditionalRenderingEXT(wrappedcommandBuffer, pConditinalRenderingBegin);
+  GetInterceptor()->PostCmdBeginConditionalRenderingEXT(commandBuffer, pConditinalRenderingBegin);
 }
 
 VKAPI_ATTR void VKAPI_CALL CmdEndConditionalRenderingEXT(VkCommandBuffer commandBuffer)
 {
   auto &dispatch_table = *GetDeviceDispatchTable(commandBuffer);
-  WrappedVkCommandBuffer *wrappedcommandBuffer = reinterpret_cast<WrappedVkCommandBuffer *>(commandBuffer);
-  VkCommandBuffer unwrappedcommandBuffer = wrappedcommandBuffer->wrapped_object;
 
-  GetInterceptor()->PreCmdEndConditionalRenderingEXT(wrappedcommandBuffer);
+  GetInterceptor()->PreCmdEndConditionalRenderingEXT(commandBuffer);
 
   if (dispatch_table.CmdEndConditionalRenderingEXT) {
-    dispatch_table.CmdEndConditionalRenderingEXT(unwrappedcommandBuffer);
+    dispatch_table.CmdEndConditionalRenderingEXT(commandBuffer);
   }
 
-  GetInterceptor()->PostCmdEndConditionalRenderingEXT(wrappedcommandBuffer);
+  GetInterceptor()->PostCmdEndConditionalRenderingEXT(commandBuffer);
 }
 
 VKAPI_ATTR VkResult VKAPI_CALL DebugMarkerSetObjectTagEXT(VkDevice device, VkDebugMarkerObjectTagInfoEXT const* pTagInfo)
@@ -2060,46 +1982,40 @@ VKAPI_ATTR VkResult VKAPI_CALL DebugMarkerSetObjectNameEXT(VkDevice device, VkDe
 VKAPI_ATTR void VKAPI_CALL CmdDebugMarkerBeginEXT(VkCommandBuffer commandBuffer, VkDebugMarkerMarkerInfoEXT const* pMarkerInfo)
 {
   auto &dispatch_table = *GetDeviceDispatchTable(commandBuffer);
-  WrappedVkCommandBuffer *wrappedcommandBuffer = reinterpret_cast<WrappedVkCommandBuffer *>(commandBuffer);
-  VkCommandBuffer unwrappedcommandBuffer = wrappedcommandBuffer->wrapped_object;
 
-  GetInterceptor()->PreCmdDebugMarkerBeginEXT(wrappedcommandBuffer, pMarkerInfo);
+  GetInterceptor()->PreCmdDebugMarkerBeginEXT(commandBuffer, pMarkerInfo);
 
   if (dispatch_table.CmdDebugMarkerBeginEXT) {
-    dispatch_table.CmdDebugMarkerBeginEXT(unwrappedcommandBuffer, pMarkerInfo);
+    dispatch_table.CmdDebugMarkerBeginEXT(commandBuffer, pMarkerInfo);
   }
 
-  GetInterceptor()->PostCmdDebugMarkerBeginEXT(wrappedcommandBuffer, pMarkerInfo);
+  GetInterceptor()->PostCmdDebugMarkerBeginEXT(commandBuffer, pMarkerInfo);
 }
 
 VKAPI_ATTR void VKAPI_CALL CmdDebugMarkerEndEXT(VkCommandBuffer commandBuffer)
 {
   auto &dispatch_table = *GetDeviceDispatchTable(commandBuffer);
-  WrappedVkCommandBuffer *wrappedcommandBuffer = reinterpret_cast<WrappedVkCommandBuffer *>(commandBuffer);
-  VkCommandBuffer unwrappedcommandBuffer = wrappedcommandBuffer->wrapped_object;
 
-  GetInterceptor()->PreCmdDebugMarkerEndEXT(wrappedcommandBuffer);
+  GetInterceptor()->PreCmdDebugMarkerEndEXT(commandBuffer);
 
   if (dispatch_table.CmdDebugMarkerEndEXT) {
-    dispatch_table.CmdDebugMarkerEndEXT(unwrappedcommandBuffer);
+    dispatch_table.CmdDebugMarkerEndEXT(commandBuffer);
   }
 
-  GetInterceptor()->PostCmdDebugMarkerEndEXT(wrappedcommandBuffer);
+  GetInterceptor()->PostCmdDebugMarkerEndEXT(commandBuffer);
 }
 
 VKAPI_ATTR void VKAPI_CALL CmdDebugMarkerInsertEXT(VkCommandBuffer commandBuffer, VkDebugMarkerMarkerInfoEXT const* pMarkerInfo)
 {
   auto &dispatch_table = *GetDeviceDispatchTable(commandBuffer);
-  WrappedVkCommandBuffer *wrappedcommandBuffer = reinterpret_cast<WrappedVkCommandBuffer *>(commandBuffer);
-  VkCommandBuffer unwrappedcommandBuffer = wrappedcommandBuffer->wrapped_object;
 
-  GetInterceptor()->PreCmdDebugMarkerInsertEXT(wrappedcommandBuffer, pMarkerInfo);
+  GetInterceptor()->PreCmdDebugMarkerInsertEXT(commandBuffer, pMarkerInfo);
 
   if (dispatch_table.CmdDebugMarkerInsertEXT) {
-    dispatch_table.CmdDebugMarkerInsertEXT(unwrappedcommandBuffer, pMarkerInfo);
+    dispatch_table.CmdDebugMarkerInsertEXT(commandBuffer, pMarkerInfo);
   }
 
-  GetInterceptor()->PostCmdDebugMarkerInsertEXT(wrappedcommandBuffer, pMarkerInfo);
+  GetInterceptor()->PostCmdDebugMarkerInsertEXT(commandBuffer, pMarkerInfo);
 }
 
 VKAPI_ATTR VkResult VKAPI_CALL CreateDebugReportCallbackEXT(VkInstance instance, VkDebugReportCallbackCreateInfoEXT const* pCreateInfo, AllocationCallbacks pAllocator, VkDebugReportCallbackEXT* pCallback)
@@ -2160,46 +2076,40 @@ VKAPI_ATTR VkResult VKAPI_CALL SetDebugUtilsObjectTagEXT(VkDevice device, VkDebu
 VKAPI_ATTR void VKAPI_CALL CmdBeginDebugUtilsLabelEXT(VkCommandBuffer commandBuffer, VkDebugUtilsLabelEXT const* pLabelInfo)
 {
   auto &dispatch_table = *GetDeviceDispatchTable(commandBuffer);
-  WrappedVkCommandBuffer *wrappedcommandBuffer = reinterpret_cast<WrappedVkCommandBuffer *>(commandBuffer);
-  VkCommandBuffer unwrappedcommandBuffer = wrappedcommandBuffer->wrapped_object;
 
-  GetInterceptor()->PreCmdBeginDebugUtilsLabelEXT(wrappedcommandBuffer, pLabelInfo);
+  GetInterceptor()->PreCmdBeginDebugUtilsLabelEXT(commandBuffer, pLabelInfo);
 
   if (dispatch_table.CmdBeginDebugUtilsLabelEXT) {
-    dispatch_table.CmdBeginDebugUtilsLabelEXT(unwrappedcommandBuffer, pLabelInfo);
+    dispatch_table.CmdBeginDebugUtilsLabelEXT(commandBuffer, pLabelInfo);
   }
 
-  GetInterceptor()->PostCmdBeginDebugUtilsLabelEXT(wrappedcommandBuffer, pLabelInfo);
+  GetInterceptor()->PostCmdBeginDebugUtilsLabelEXT(commandBuffer, pLabelInfo);
 }
 
 VKAPI_ATTR void VKAPI_CALL CmdEndDebugUtilsLabelEXT(VkCommandBuffer commandBuffer)
 {
   auto &dispatch_table = *GetDeviceDispatchTable(commandBuffer);
-  WrappedVkCommandBuffer *wrappedcommandBuffer = reinterpret_cast<WrappedVkCommandBuffer *>(commandBuffer);
-  VkCommandBuffer unwrappedcommandBuffer = wrappedcommandBuffer->wrapped_object;
 
-  GetInterceptor()->PreCmdEndDebugUtilsLabelEXT(wrappedcommandBuffer);
+  GetInterceptor()->PreCmdEndDebugUtilsLabelEXT(commandBuffer);
 
   if (dispatch_table.CmdEndDebugUtilsLabelEXT) {
-    dispatch_table.CmdEndDebugUtilsLabelEXT(unwrappedcommandBuffer);
+    dispatch_table.CmdEndDebugUtilsLabelEXT(commandBuffer);
   }
 
-  GetInterceptor()->PostCmdEndDebugUtilsLabelEXT(wrappedcommandBuffer);
+  GetInterceptor()->PostCmdEndDebugUtilsLabelEXT(commandBuffer);
 }
 
 VKAPI_ATTR void VKAPI_CALL CmdInsertDebugUtilsLabelEXT(VkCommandBuffer commandBuffer, VkDebugUtilsLabelEXT const* pLabelInfo)
 {
   auto &dispatch_table = *GetDeviceDispatchTable(commandBuffer);
-  WrappedVkCommandBuffer *wrappedcommandBuffer = reinterpret_cast<WrappedVkCommandBuffer *>(commandBuffer);
-  VkCommandBuffer unwrappedcommandBuffer = wrappedcommandBuffer->wrapped_object;
 
-  GetInterceptor()->PreCmdInsertDebugUtilsLabelEXT(wrappedcommandBuffer, pLabelInfo);
+  GetInterceptor()->PreCmdInsertDebugUtilsLabelEXT(commandBuffer, pLabelInfo);
 
   if (dispatch_table.CmdInsertDebugUtilsLabelEXT) {
-    dispatch_table.CmdInsertDebugUtilsLabelEXT(unwrappedcommandBuffer, pLabelInfo);
+    dispatch_table.CmdInsertDebugUtilsLabelEXT(commandBuffer, pLabelInfo);
   }
 
-  GetInterceptor()->PostCmdInsertDebugUtilsLabelEXT(wrappedcommandBuffer, pLabelInfo);
+  GetInterceptor()->PostCmdInsertDebugUtilsLabelEXT(commandBuffer, pLabelInfo);
 }
 
 VKAPI_ATTR void VKAPI_CALL QueueBeginDebugUtilsLabelEXT(VkQueue queue, VkDebugUtilsLabelEXT const* pLabelInfo)
@@ -2399,61 +2309,53 @@ VKAPI_ATTR void VKAPI_CALL GetDeviceGroupPeerMemoryFeatures(VkDevice device, uin
 VKAPI_ATTR void VKAPI_CALL CmdSetDeviceMaskKHR(VkCommandBuffer commandBuffer, uint32_t deviceMask)
 {
   auto &dispatch_table = *GetDeviceDispatchTable(commandBuffer);
-  WrappedVkCommandBuffer *wrappedcommandBuffer = reinterpret_cast<WrappedVkCommandBuffer *>(commandBuffer);
-  VkCommandBuffer unwrappedcommandBuffer = wrappedcommandBuffer->wrapped_object;
 
-  GetInterceptor()->PreCmdSetDeviceMaskKHR(wrappedcommandBuffer, deviceMask);
+  GetInterceptor()->PreCmdSetDeviceMaskKHR(commandBuffer, deviceMask);
 
   if (dispatch_table.CmdSetDeviceMaskKHR) {
-    dispatch_table.CmdSetDeviceMaskKHR(unwrappedcommandBuffer, deviceMask);
+    dispatch_table.CmdSetDeviceMaskKHR(commandBuffer, deviceMask);
   }
 
-  GetInterceptor()->PostCmdSetDeviceMaskKHR(wrappedcommandBuffer, deviceMask);
+  GetInterceptor()->PostCmdSetDeviceMaskKHR(commandBuffer, deviceMask);
 }
 
 VKAPI_ATTR void VKAPI_CALL CmdSetDeviceMask(VkCommandBuffer commandBuffer, uint32_t deviceMask)
 {
   auto &dispatch_table = *GetDeviceDispatchTable(commandBuffer);
-  WrappedVkCommandBuffer *wrappedcommandBuffer = reinterpret_cast<WrappedVkCommandBuffer *>(commandBuffer);
-  VkCommandBuffer unwrappedcommandBuffer = wrappedcommandBuffer->wrapped_object;
 
-  GetInterceptor()->PreCmdSetDeviceMask(wrappedcommandBuffer, deviceMask);
+  GetInterceptor()->PreCmdSetDeviceMask(commandBuffer, deviceMask);
 
   if (dispatch_table.CmdSetDeviceMask) {
-    dispatch_table.CmdSetDeviceMask(unwrappedcommandBuffer, deviceMask);
+    dispatch_table.CmdSetDeviceMask(commandBuffer, deviceMask);
   }
 
-  GetInterceptor()->PostCmdSetDeviceMask(wrappedcommandBuffer, deviceMask);
+  GetInterceptor()->PostCmdSetDeviceMask(commandBuffer, deviceMask);
 }
 
 VKAPI_ATTR void VKAPI_CALL CmdDispatchBaseKHR(VkCommandBuffer commandBuffer, uint32_t baseGroupX, uint32_t baseGroupY, uint32_t baseGroupZ, uint32_t groupCountX, uint32_t groupCountY, uint32_t groupCountZ)
 {
   auto &dispatch_table = *GetDeviceDispatchTable(commandBuffer);
-  WrappedVkCommandBuffer *wrappedcommandBuffer = reinterpret_cast<WrappedVkCommandBuffer *>(commandBuffer);
-  VkCommandBuffer unwrappedcommandBuffer = wrappedcommandBuffer->wrapped_object;
 
-  GetInterceptor()->PreCmdDispatchBaseKHR(wrappedcommandBuffer, baseGroupX, baseGroupY, baseGroupZ, groupCountX, groupCountY, groupCountZ);
+  GetInterceptor()->PreCmdDispatchBaseKHR(commandBuffer, baseGroupX, baseGroupY, baseGroupZ, groupCountX, groupCountY, groupCountZ);
 
   if (dispatch_table.CmdDispatchBaseKHR) {
-    dispatch_table.CmdDispatchBaseKHR(unwrappedcommandBuffer, baseGroupX, baseGroupY, baseGroupZ, groupCountX, groupCountY, groupCountZ);
+    dispatch_table.CmdDispatchBaseKHR(commandBuffer, baseGroupX, baseGroupY, baseGroupZ, groupCountX, groupCountY, groupCountZ);
   }
 
-  GetInterceptor()->PostCmdDispatchBaseKHR(wrappedcommandBuffer, baseGroupX, baseGroupY, baseGroupZ, groupCountX, groupCountY, groupCountZ);
+  GetInterceptor()->PostCmdDispatchBaseKHR(commandBuffer, baseGroupX, baseGroupY, baseGroupZ, groupCountX, groupCountY, groupCountZ);
 }
 
 VKAPI_ATTR void VKAPI_CALL CmdDispatchBase(VkCommandBuffer commandBuffer, uint32_t baseGroupX, uint32_t baseGroupY, uint32_t baseGroupZ, uint32_t groupCountX, uint32_t groupCountY, uint32_t groupCountZ)
 {
   auto &dispatch_table = *GetDeviceDispatchTable(commandBuffer);
-  WrappedVkCommandBuffer *wrappedcommandBuffer = reinterpret_cast<WrappedVkCommandBuffer *>(commandBuffer);
-  VkCommandBuffer unwrappedcommandBuffer = wrappedcommandBuffer->wrapped_object;
 
-  GetInterceptor()->PreCmdDispatchBase(wrappedcommandBuffer, baseGroupX, baseGroupY, baseGroupZ, groupCountX, groupCountY, groupCountZ);
+  GetInterceptor()->PreCmdDispatchBase(commandBuffer, baseGroupX, baseGroupY, baseGroupZ, groupCountX, groupCountY, groupCountZ);
 
   if (dispatch_table.CmdDispatchBase) {
-    dispatch_table.CmdDispatchBase(unwrappedcommandBuffer, baseGroupX, baseGroupY, baseGroupZ, groupCountX, groupCountY, groupCountZ);
+    dispatch_table.CmdDispatchBase(commandBuffer, baseGroupX, baseGroupY, baseGroupZ, groupCountX, groupCountY, groupCountZ);
   }
 
-  GetInterceptor()->PostCmdDispatchBase(wrappedcommandBuffer, baseGroupX, baseGroupY, baseGroupZ, groupCountX, groupCountY, groupCountZ);
+  GetInterceptor()->PostCmdDispatchBase(commandBuffer, baseGroupX, baseGroupY, baseGroupZ, groupCountX, groupCountY, groupCountZ);
 }
 
 VKAPI_ATTR VkResult VKAPI_CALL GetDeviceGroupPresentCapabilitiesKHR(VkDevice device, VkDeviceGroupPresentCapabilitiesKHR* pDeviceGroupPresentCapabilities)
@@ -2613,31 +2515,27 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateSharedSwapchainsKHR(VkDevice device, uint32
 VKAPI_ATTR void VKAPI_CALL CmdDrawIndirectCountKHR(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset, VkBuffer countBuffer, VkDeviceSize countOffset, uint32_t maxDrawCount, uint32_t stride)
 {
   auto &dispatch_table = *GetDeviceDispatchTable(commandBuffer);
-  WrappedVkCommandBuffer *wrappedcommandBuffer = reinterpret_cast<WrappedVkCommandBuffer *>(commandBuffer);
-  VkCommandBuffer unwrappedcommandBuffer = wrappedcommandBuffer->wrapped_object;
 
-  GetInterceptor()->PreCmdDrawIndirectCountKHR(wrappedcommandBuffer, buffer, offset, countBuffer, countOffset, maxDrawCount, stride);
+  GetInterceptor()->PreCmdDrawIndirectCountKHR(commandBuffer, buffer, offset, countBuffer, countOffset, maxDrawCount, stride);
 
   if (dispatch_table.CmdDrawIndirectCountKHR) {
-    dispatch_table.CmdDrawIndirectCountKHR(unwrappedcommandBuffer, buffer, offset, countBuffer, countOffset, maxDrawCount, stride);
+    dispatch_table.CmdDrawIndirectCountKHR(commandBuffer, buffer, offset, countBuffer, countOffset, maxDrawCount, stride);
   }
 
-  GetInterceptor()->PostCmdDrawIndirectCountKHR(wrappedcommandBuffer, buffer, offset, countBuffer, countOffset, maxDrawCount, stride);
+  GetInterceptor()->PostCmdDrawIndirectCountKHR(commandBuffer, buffer, offset, countBuffer, countOffset, maxDrawCount, stride);
 }
 
 VKAPI_ATTR void VKAPI_CALL CmdDrawIndexedIndirectCountKHR(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset, VkBuffer countBuffer, VkDeviceSize countOffset, uint32_t maxDrawCount, uint32_t stride)
 {
   auto &dispatch_table = *GetDeviceDispatchTable(commandBuffer);
-  WrappedVkCommandBuffer *wrappedcommandBuffer = reinterpret_cast<WrappedVkCommandBuffer *>(commandBuffer);
-  VkCommandBuffer unwrappedcommandBuffer = wrappedcommandBuffer->wrapped_object;
 
-  GetInterceptor()->PreCmdDrawIndexedIndirectCountKHR(wrappedcommandBuffer, buffer, offset, countBuffer, countOffset, maxDrawCount, stride);
+  GetInterceptor()->PreCmdDrawIndexedIndirectCountKHR(commandBuffer, buffer, offset, countBuffer, countOffset, maxDrawCount, stride);
 
   if (dispatch_table.CmdDrawIndexedIndirectCountKHR) {
-    dispatch_table.CmdDrawIndexedIndirectCountKHR(unwrappedcommandBuffer, buffer, offset, countBuffer, countOffset, maxDrawCount, stride);
+    dispatch_table.CmdDrawIndexedIndirectCountKHR(commandBuffer, buffer, offset, countBuffer, countOffset, maxDrawCount, stride);
   }
 
-  GetInterceptor()->PostCmdDrawIndexedIndirectCountKHR(wrappedcommandBuffer, buffer, offset, countBuffer, countOffset, maxDrawCount, stride);
+  GetInterceptor()->PostCmdDrawIndexedIndirectCountKHR(commandBuffer, buffer, offset, countBuffer, countOffset, maxDrawCount, stride);
 }
 
 VKAPI_ATTR void VKAPI_CALL GetPhysicalDeviceExternalFencePropertiesKHR(VkPhysicalDevice physicalDevice, VkPhysicalDeviceExternalFenceInfo const* pExternalFenceInfo, VkExternalFenceProperties* pExternalFenceProperties)
@@ -3411,6 +3309,7 @@ const VkAllocationCallbacks *pAllocator, VkDevice *pDevice) {
 
   const VkDeviceCreateInfo* device_create_info = GetInterceptor()->GetModifiedDeviceCreateInfo(gpu, pCreateInfo);
   lock.unlock();
+
   // Force coherent memory
   VkDeviceCreateInfo local_create_info = *device_create_info;
 

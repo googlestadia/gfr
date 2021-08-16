@@ -42,9 +42,6 @@ const MarkerType kMarkerType = MarkerType::kUint32;
 class GfrContext;
 struct DeviceCreateInfo;
 
-using CommandBufferPtr = std::unique_ptr<CommandBuffer>;
-using WrappedVkCommandBufferPtr = std::unique_ptr<WrappedVkCommandBuffer>;
-
 // Options when dumping a command buffer to a log file.
 typedef uint32_t CommandBufferDumpOptions;
 struct CommandBufferDumpOption;
@@ -96,18 +93,13 @@ class Device {
                           uint32_t command_buffer_count,
                           const VkCommandBuffer* command_buffers);
 
-  void SetCommandBuffer(VkCommandBuffer vk_command_buffer,
-                        CommandBufferPtr command_buffer);
+  void AddCommandBuffer(VkCommandBuffer vk_command_buffer);
 
   bool ValidateCommandBufferNotInUse(CommandBuffer* p_cmd, std::ostream& os);
   bool ValidateCommandBufferNotInUse(VkCommandBuffer vk_command_buffer,
                                      std::ostream& os);
   void DeleteCommandBuffers(const VkCommandBuffer* vk_cmds, uint32_t cb_count);
 
-  void DumpSecondaryCommandBuffer(VkCommandBuffer vk_command_buffer,
-                                  uint64_t submit_info_id, std::ostream& os,
-                                  CommandBufferDumpOptions options,
-                                  const std::string& indent);
   void DumpCommandBuffers(std::ostream& os, CommandBufferDumpOptions options,
                           bool dump_all_command_buffers) const;
   void DumpAllCommandBuffers(std::ostream& os,
@@ -116,12 +108,6 @@ class Device {
                                     CommandBufferDumpOptions options) const;
   void DumpCommandBufferStateOnScreen(CommandBuffer* p_cmd,
                                       std::ostream& os) const;
-
-  void SetWrappedCommandBuffer(
-      VkCommandBuffer vk_command_buffer,
-      WrappedVkCommandBufferPtr wrapped_command_buffer);
-  const WrappedVkCommandBuffer* GetWrappedCommandBuffer(
-      VkCommandBuffer vk_command_buffer);
 
   void SetCommandPool(VkCommandPool vk_command_pool,
                       CommandPoolPtr command_pool);
@@ -180,11 +166,7 @@ class Device {
   ObjectInfoDB object_info_db_;
 
   mutable std::recursive_mutex command_buffers_mutex_;
-  std::unordered_map<VkCommandBuffer, CommandBufferPtr> command_buffers_;
-
-  std::mutex wrapped_command_buffers_mutex_;
-  std::unordered_map<VkCommandBuffer, WrappedVkCommandBufferPtr>
-      wrapped_command_buffers_;
+  std::vector<VkCommandBuffer> command_buffers_;
 
   std::mutex command_pools_mutex_;
   std::unordered_map<VkCommandPool, CommandPoolPtr> command_pools_;

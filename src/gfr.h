@@ -38,6 +38,7 @@
 
 #include "bind_sparse_utils.h"
 #include "command.h"
+#include "command_buffer_tracker.h"
 #include "device.h"
 #include "gfr_base_interceptor.h"
 #include "gfr_layer.h"
@@ -372,6 +373,7 @@ class GfrContext : public intercept::BaseInterceptor {
 #ifdef __linux__
   std::unique_ptr<std::thread> gpuhangd_thread_;
   int gpuhangd_socket_ = -1;
+  int gpuhang_event_id_ = 0;
 #endif  // __linux__
 };
 

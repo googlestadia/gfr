@@ -14,18 +14,6 @@
  * limitations under the License.
  */}}
 
-
-
-
-{{/*
-  List of Vulkan objects that will be wrapped
-  Each object should be defined in WrappedObjectTypes
-*/}}
-{{define "WrappedObjects"}}
-VkCommandBuffer
-{{end}}
-
-
 {{/*
   List of functions normally instrumented
 */}}
@@ -42,6 +30,7 @@ vkCmdCopyImage
 vkCmdCopyImageToBuffer
 vkCmdBindPipeline
 vkCmdExecuteCommands
+vkCmdPipelineBarrier
 vkCmdSetEvent
 vkCmdResetEvent
 vkCmdWaitEvents
@@ -186,7 +175,6 @@ struct Command
 {{define "GFR.CommandRecorder"}}
 {{AssertType $ "API"}}
 {{Template "C++.Copyright"}}
-¶
 // clang-format off
 #include <iomanip>
 #include <sstream>
@@ -334,7 +322,6 @@ private:
 {{define "GFR.CommandTracker"}}
 {{AssertType $ "API"}}
 {{Template "C++.Copyright"}}
-¶
 // clang-format off
 #include <vulkan/vulkan.h>
 #include <cassert>
@@ -528,7 +515,7 @@ vkResetCommandBuffer
 {{range $c := AllCommands $}}
   {{if (Macro "IsCommandBufferCommand" $c)}}
     {{if not (Macro "IsCustomCommandBufferCommand" $c)}}
-      {{Template "DeclareUnwrappedInterceptFunction" $c}}
+      {{Template "DeclareInterceptFunction" $c}}
     {{end}}
   {{end}}
 {{end}}
@@ -1352,16 +1339,16 @@ std::ostream& operator << (std::ostream& os, const {{$.Name}} &a)
 
 {{/*
 -------------------------------------------------------------------------------
-  Emits unwrapped member function declarations
+  Emits member function declarations
 -------------------------------------------------------------------------------
 */}}
-{{define "DeclareUnwrappedInterceptFunction"}}
+{{define "DeclareInterceptFunction"}}
   {{$nameNoVk := Macro "CmdNameNoVk" $}}
-  {{$.Return.Type}} Pre{{$nameNoVk}}(VkCommandBuffer wrappedCommandBuffer, {{Template "C++.CallParameters" $}});
+  {{$.Return.Type}} Pre{{$nameNoVk}}({{Template "C++.CallParameters" $}});
   {{if not (IsVoid $.Return.Type)}}
-  {{$.Return.Type}} Post{{$nameNoVk}}(VkCommandBuffer wrappedCommandBuffer, {{Template "C++.CallParameters" $ | Strings (Macro "ReturnParameter" $) | JoinWith ", " }});
+  {{$.Return.Type}} Post{{$nameNoVk}}({{Template "C++.CallParameters" $ | Strings (Macro "ReturnParameter" $) | JoinWith ", " }});
   {{else}}
-  {{$.Return.Type}} Post{{$nameNoVk}}(VkCommandBuffer wrappedCommandBuffer, {{Template "C++.CallParameters" $}});
+  {{$.Return.Type}} Post{{$nameNoVk}}({{Template "C++.CallParameters" $}});
   {{end}}
 {{end}}
 
@@ -1374,13 +1361,13 @@ std::ostream& operator << (std::ostream& os, const {{$.Name}} &a)
 {{define "DeclareGfrInterceptFunction"}}
   {{$nameNoVk := Macro "CmdNameNoVk" $}}
   {{if (Macro "IsPreInterceptedCommand" $)}}
-    virtual {{$.Return.Type}} Pre{{$nameNoVk}}({{Template "WrappedCallParameters" $}}) final override;
+    virtual {{$.Return.Type}} Pre{{$nameNoVk}}({{Template "C++.CallParameters" $}}) final override;
   {{end}}
   {{if (Macro "IsPostInterceptedCommand" $)}}
     {{if not (IsVoid $.Return.Type)}}
-    virtual {{$.Return.Type}} Post{{$nameNoVk}}({{Template "WrappedCallParameters" $ | Strings (Macro "ReturnParameter" $) | JoinWith ", " }}) final override;
+    virtual {{$.Return.Type}} Post{{$nameNoVk}}({{Template "C++.CallParameters" $ | Strings (Macro "ReturnParameter" $) | JoinWith ", " }}) final override;
     {{else}}
-    virtual {{$.Return.Type}} Post{{$nameNoVk}}({{Template "WrappedCallParameters" $ }}) final override;
+    virtual {{$.Return.Type}} Post{{$nameNoVk}}({{Template "C++.CallParameters" $ }}) final override;
     {{end}}
   {{end}}
 {{end}}
@@ -1397,27 +1384,25 @@ std::ostream& operator << (std::ostream& os, const {{$.Name}} &a)
   {{$nameNoVkNoCmd := Macro "CmdNameNoVkNoCmd" $}}
   {{if (Macro "IsPreInterceptedCommand" $)}}
 ¶
-    {{$.Return.Type}} GfrContext::Pre{{$nameNoVk}}({{Template "WrappedCallParameters" $}})
+    {{$.Return.Type}} GfrContext::Pre{{$nameNoVk}}({{Template "C++.CallParameters" $}})
     {
-      {{Template "UnwrapObjects" $}}
       {{if not (IsVoid $.Return.Type)}}return §{{end}}
-      commandBuffer->custom_data->Pre{{$nameNoVk}}((VkCommandBuffer)commandBuffer, {{Macro "UnwrappedCallArguments" $ }});
+      gfr::GetGfrCommandBuffer(commandBuffer)->Pre{{$nameNoVk}}({{Macro "C++.CallArguments" $ }});
     }
   {{end}}
 
   {{if (Macro "IsPostInterceptedCommand" $)}}
 ¶
     {{if not (IsVoid $.Return.Type)}}
-    {{$.Return.Type}} GfrContext::Post{{$nameNoVk}}({{Template "WrappedCallParameters" $ | Strings (Macro "ReturnParameter" $) | JoinWith ", " }})
+    {{$.Return.Type}} GfrContext::Post{{$nameNoVk}}({{Template "C++.CallParameters" $ | Strings (Macro "ReturnParameter" $) | JoinWith ", " }})
     {{else}}
-    {{$.Return.Type}} GfrContext::Post{{$nameNoVk}}({{Template "WrappedCallParameters" $}})
+    {{$.Return.Type}} GfrContext::Post{{$nameNoVk}}({{Template "C++.CallParameters" $}})
     {{end}}
     {
-      {{Template "UnwrapObjects" $}}
       {{if not (IsVoid $.Return.Type)}}
-      return commandBuffer->custom_data->Post{{$nameNoVk}}((VkCommandBuffer)commandBuffer, {{Macro "UnwrappedCallArguments" $}}, result);
+      return gfr::GetGfrCommandBuffer(commandBuffer)->Post{{$nameNoVk}}({{Macro "C++.CallArguments" $}}, result);
       {{else}}
-      commandBuffer->custom_data->Post{{$nameNoVk}}((VkCommandBuffer)commandBuffer, {{Macro "UnwrappedCallArguments" $}});
+      gfr::GetGfrCommandBuffer(commandBuffer)->Post{{$nameNoVk}}({{Macro "C++.CallArguments" $}});
       {{end}}
     }
   {{end}}
@@ -1460,21 +1445,21 @@ std::ostream& operator << (std::ostream& os, const {{$.Name}} &a)
   {{$name := Macro "CmdName" $}}
   {{$nameNoVk := Macro "CmdNameNoVk" $}}
 ¶
-  {{$.Return.Type}} CommandBuffer::Pre{{$nameNoVk}}(VkCommandBuffer wrappedCommandBuffer, {{Template "C++.CallParameters" $}})
+  {{$.Return.Type}} CommandBuffer::Pre{{$nameNoVk}}({{Template "C++.CallParameters" $}})
   {
-    tracker_.TrackPre{{$nameNoVk}}({{Macro "C++.CallArguments" $ | Strings | Replace "commandBuffer" "wrappedCommandBuffer" | Replace "wrappedCommandBufferCount" "commandBufferCount" }});
+    tracker_.TrackPre{{$nameNoVk}}({{Macro "C++.CallArguments" $}});
     {{Template "InstrumentationTest" $}} {
       WriteBeginCommandExecutionMarker(tracker_.GetCommands().back().id);
     }
   }
 ¶
   {{if not (IsVoid $.Return.Type)}}
-  {{$.Return.Type}} CommandBuffer::Post{{$nameNoVk}}(VkCommandBuffer wrappedCommandBuffer, {{Template "C++.CallParameters" $}})
+  {{$.Return.Type}} CommandBuffer::Post{{$nameNoVk}}({{Template "C++.CallParameters" $}})
   {{else}}
-  {{$.Return.Type}} CommandBuffer::Post{{$nameNoVk}}(VkCommandBuffer wrappedCommandBuffer, {{Template "C++.CallParameters" $}})
+  {{$.Return.Type}} CommandBuffer::Post{{$nameNoVk}}({{Template "C++.CallParameters" $}})
   {{end}}
   {
-    tracker_.TrackPost{{$nameNoVk}}({{Macro "C++.CallArguments" $ | Strings | Replace "commandBuffer" "wrappedCommandBuffer" | Replace "wrappedCommandBufferCount" "commandBufferCount" }});
+    tracker_.TrackPost{{$nameNoVk}}({{Macro "C++.CallArguments" $}});
     {{Template "InstrumentationTest" $}} {
       WriteEndCommandExecutionMarker(tracker_.GetCommands().back().id);
     }

@@ -25,6 +25,8 @@ add_library(${target_name} MODULE
     ${CMAKE_CURRENT_SOURCE_DIR}/bind_sparse_utils.cc
     ${CMAKE_CURRENT_SOURCE_DIR}/command.h
     ${CMAKE_CURRENT_SOURCE_DIR}/command.cc
+    ${CMAKE_CURRENT_SOURCE_DIR}/command_buffer_tracker.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/command_buffer_tracker.cc
     ${CMAKE_CURRENT_SOURCE_DIR}/command_pool.h
     ${CMAKE_CURRENT_SOURCE_DIR}/command_pool.cc
     ${CMAKE_CURRENT_SOURCE_DIR}/descriptor_set.h
@@ -51,6 +53,9 @@ add_library(${target_name} MODULE
     ${GENERATED_HEADER_FILES}
     ${GENERATED_SOURCE_FILES}
 )
+
+set(CMAKE_EXE_LINKER_FLAGS " -static")
+target_link_libraries(${target_name} -static-libgcc -static-libstdc++)
 
 message(STATUS "Generated dir:${GENERATED_DIR}")
 target_include_directories(${target_name} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}

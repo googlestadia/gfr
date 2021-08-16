@@ -15,37 +15,32 @@
  */}}
 
 {{/* ---- Includes ---- */}}
+{{Include "defaults.tmpl"}}
 {{Include "cpp_common.tmpl"}}
 
 {{Global "LayerFileFormatVersion" "1.1.0"}}
-
-{{/*
-  List of extensions to ignore, most platform specific extension fit here
-*/}}
-{{/* TODO: Allow custom extensions to be ignored */}}
-{{define "ExcludedExtensions"}}
-VK_KHR_xlib_surface
-VK_KHR_xcb_surface
-VK_KHR_wayland_surface
-VK_KHR_mir_surface
-VK_KHR_android_surface
-VK_KHR_win32_surface
-VK_KHR_android_surface
-VK_ANDROID_native_buffer
-VK_GGP_stream_descriptor_surface
-VK_GGP_frame_token
-VK_GOOGLE_yeti_surface
-VK_MVK_macos_surface
-{{end}}
 
 {{/*
 ------------------------------------------------------------------------------
   Emits a list of extensions not intercepted (platform not supported, etc.)
 ------------------------------------------------------------------------------
 */}}
-{{define "IsExtensionExcluded"}}
+{{define "IsPlatformSpecificExtension"}}
   {{$ext_name := index $.Arguments 0}}
-  {{$filters := Strings (Macro "ExcludedExtensions") | SplitEOL}}
+  {{$filters := Strings (Macro "PlatformSpecificExtensions") | SplitEOL}}
+  {{range $f := $filters}}
+    {{if eq $ext_name $f}}true{{end}}
+  {{end}}
+{{end}}
+
+{{/*
+------------------------------------------------------------------------------
+  Emits a list of extensions that should be intercepted for this layer
+------------------------------------------------------------------------------
+*/}}
+{{define "IsExtensionIncludedForLayer"}}
+  {{$ext_name := index $.Arguments 0}}
+  {{$filters := Strings (Macro "LayerIncludedExtensions") | SplitEOL}}
   {{range $f := $filters}}
     {{if eq $ext_name $f}}true{{end}}
   {{end}}
@@ -75,6 +70,15 @@ VK_MVK_macos_surface
   {{range $f := $filters}}
     {{if eq $ext_name $f}}true{{end}}
   {{end}}
+{{end}}
+
+{{/*
+-------------------------------------------------------------------------------
+  Returns true if the given function is a vk command
+-------------------------------------------------------------------------------
+*/}}
+{{define "IsVkCommand"}}
+  {{if (HasPrefix (print $.Name) "vk")}}true{{end}}
 {{end}}
 
 {{/*
@@ -129,7 +133,7 @@ VK_MVK_macos_surface
 */}}
 {{define "IsPreInterceptedCommand"}}
   {{AssertType $ "Function"}}
-  {{if (or (Macro "IsVkCmdCommand" $) (Macro "IsOnPrePostInterceptedCommandsList" $) (Macro "IsOnPreInterceptedCommandsList" $))}}true{{end}}
+  {{if (or (Macro "InterceptAllCommands") (Macro "IsVkCmdCommand" $) (Macro "IsOnPrePostInterceptedCommandsList" $) (Macro "IsOnPreInterceptedCommandsList" $))}}true{{end}}
 {{end}}
 
 {{/*
@@ -139,7 +143,7 @@ VK_MVK_macos_surface
 */}}
 {{define "IsPostInterceptedCommand"}}
   {{AssertType $ "Function"}}
-  {{if (or (Macro "IsVkCmdCommand" $) (Macro "IsOnPrePostInterceptedCommandsList" $) (Macro "IsOnPostInterceptedCommandsList" $))}}true{{end}}
+  {{if (or (Macro "InterceptAllCommands") (Macro "IsVkCmdCommand" $) (Macro "IsOnPrePostInterceptedCommandsList" $) (Macro "IsOnPostInterceptedCommandsList" $))}}true{{end}}
 {{end}}
 
 {{/*
@@ -224,7 +228,8 @@ vkEnumerateDeviceExtensionProperties
   {{if not (or (GetAnnotation $ "pfn") (GetAnnotation $ "synthetic") )}}
     {{if and (not (Macro "IsCustomCommand" $)) (not (Macro "IsExcludedCommand" $))}}
       {{if $ext}}
-        {{if not (Macro "IsExtensionExcluded" $ext)}}true{{end}}
+        {{if not (Macro "IsPlatformSpecificExtension" $ext)}}true{{end}}
+        {{if (Macro "IsExtensionIncludedForLayer" $ext)}}true{{end}}
       {{else}}
         true
       {{end}}
@@ -242,7 +247,8 @@ vkEnumerateDeviceExtensionProperties
   {{$ext := GetAnnotation $ "extension"}}
   {{if not (or (GetAnnotation $ "pfn") (GetAnnotation $ "synthetic") (Macro "IsExcludedCommand" $) )}}
     {{if $ext}}
-      {{if not (Macro "IsExtensionExcluded" $ext)}}true{{end}}
+      {{if not (Macro "IsPlatformSpecificExtension" $ext)}}true{{end}}
+      {{if (Macro "IsExtensionIncludedForLayer" $ext)}}true{{end}}
     {{else}}
       true
     {{end}}
@@ -289,7 +295,13 @@ vkEnumerateDeviceExtensionProperties
       {{end}}
     {{end}}
   {{end}}
-  };
+  ¶
+    virtual VkBool32 DebugUtilsCallback(
+        VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
+        VkDebugUtilsMessageTypeFlagsEXT messageType,
+        const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData,
+        void* pUserData) { return VK_FALSE; }
+    };
   } // end namespace intercept
 #endif // INTERCEPTOR_HEADER
 {{end}}
@@ -435,6 +447,10 @@ struct InstanceLayerData {
   VkInstance instance = VK_NULL_HANDLE;
   VkLayerInstanceDispatchTable dispatch_table;
 ¶
+{{if (Macro "DefineDebugCallback")}}
+  VkDebugUtilsMessengerEXT debug_util_messenger;
+¶
+{{end}}
   PFN_vkSetInstanceLoaderData SetInstanceLoaderData = nullptr;
 };
 ¶
@@ -773,6 +789,18 @@ VKAPI_ATTR VkResult VKAPI_CALL EnumerateDeviceExtensionProperties(VkPhysicalDevi
   return result;
 }
 ¶
+{{if (Macro "DefineDebugCallback")}}
+static VKAPI_ATTR VkBool32 VKAPI_CALL VulkanDebugUtilsCallback(
+VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
+VkDebugUtilsMessageTypeFlagsEXT messageType,
+const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData, void* pUserData) {
+  // Forward message to the correct context.
+  auto context = reinterpret_cast<intercept::BaseInterceptor *>(pUserData);
+  context->DebugUtilsCallback(messageSeverity, messageType, pCallbackData, pUserData);
+  return VK_FALSE;
+}
+¶
+{{end}}
 VKAPI_ATTR VkResult VKAPI_CALL CreateInstance(const VkInstanceCreateInfo *pCreateInfo, const VkAllocationCallbacks *pAllocator,
                                               VkInstance *pInstance) {
     VkLayerInstanceCreateInfo *chain_info = GetLoaderInstanceInfo(pCreateInfo, VK_LAYER_LINK_INFO);
@@ -797,6 +825,23 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateInstance(const VkInstanceCreateInfo *pCreat
 ¶
     layer_init_instance_dispatch_table(*pInstance, &instance_data->dispatch_table, fpGetInstanceProcAddr);
 ¶
+{{if (Macro "DefineDebugCallback")}}
+    // Create debug utils messenger during instance creation.
+    VkDebugUtilsMessengerCreateInfoEXT debug_messenger_create_info = {};
+    debug_messenger_create_info.sType =
+      VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;
+    debug_messenger_create_info.messageSeverity =
+      VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT |
+      VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT;
+    debug_messenger_create_info.messageType =
+      VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT |
+      VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT |
+      VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT;
+    debug_messenger_create_info.pfnUserCallback = VulkanDebugUtilsCallback;
+    debug_messenger_create_info.pUserData = GetInterceptor();
+¶
+    instance_data->dispatch_table.CreateDebugUtilsMessengerEXT(*pInstance, &debug_messenger_create_info, pAllocator, &instance_data->debug_util_messenger);
+{{end}}
     GetInterceptor()->PostCreateInstance(instance_create_info, pAllocator, pInstance, result);
 ¶
     return result;
@@ -808,6 +853,10 @@ VKAPI_ATTR void VKAPI_CALL DestroyInstance(VkInstance instance, const VkAllocati
 ¶
     GetInterceptor()->PreDestroyInstance(instance, pAllocator);
 ¶
+{{if (Macro "DefineDebugCallback")}}
+    instance_data->dispatch_table.DestroyDebugUtilsMessengerEXT(instance, instance_data->debug_util_messenger, nullptr);
+¶
+{{end}}
     instance_data->dispatch_table.DestroyInstance(instance, pAllocator);
 ¶
     std::unique_lock<std::mutex> lock(g_lock);
@@ -828,8 +877,12 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateDevice(VkPhysicalDevice gpu, const VkDevice
     chain_info->u.pLayerInfo = chain_info->u.pLayerInfo->pNext;
 ¶
     const VkDeviceCreateInfo* device_create_info = GetInterceptor()->GetModifiedDeviceCreateInfo(gpu, pCreateInfo);
+{{if (Macro "CallCustomPreCreateDevice")}}
+    GetInterceptor()->PreCreateDevice(gpu, device_create_info, pAllocator, pDevice);
+{{end}}
     lock.unlock();
-
+¶
+{{if (Macro "EnforceCoherentMemory")}}
   // Force coherent memory
   VkDeviceCreateInfo local_create_info = *device_create_info;
 ¶
@@ -840,6 +893,9 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateDevice(VkPhysicalDevice gpu, const VkDevice
   local_create_info.pNext = &enableDeviceCoherentMemoryFeature;
 ¶
     VkResult result = fpCreateDevice(gpu, &local_create_info, pAllocator, pDevice);
+{{else}}
+    VkResult result = fpCreateDevice(gpu, device_create_info, pAllocator, pDevice);
+{{end}}
 ¶
     lock.lock();
     DeviceLayerData *device_data = GetDeviceLayerData(get_dispatch_key(*pDevice));
@@ -1327,10 +1383,10 @@ extern "C" DLL_EXPORT VK_LAYER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL
       "vkGetDeviceProcAddr": "{{Global "LayerPrefix"}}_GetDeviceProcAddr"
     },
     "enable_environment": {
-      "{{Global "LayerPrefix"}}_ENABLE": "1"
+      "{{Global "EnvVarPrefix"}}_ENABLE": "1"
     },
     "disable_environment": {
-      "{{Global "LayerPrefix"}}_DISABLE_1": "1"
+      "{{Global "EnvVarPrefix"}}_DISABLE_1": "1"
     },
     "instance_extensions": [
     {{$instanceExtensions := Strings (Macro "ImplementedInstanceExtensions") | SplitEOL}}

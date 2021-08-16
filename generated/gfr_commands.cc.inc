@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015 Google Inc.
+ * Copyright (C) 2019 Google Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,857 +18,613 @@
 
 // clang-format off
 
-VkResult GfrContext::PreEndCommandBuffer(WrappedVkCommandBuffer* commandBuffer)
+VkResult GfrContext::PreEndCommandBuffer(VkCommandBuffer commandBuffer)
 {
-  WrappedVkCommandBuffer *wrappedcommandBuffer = reinterpret_cast<WrappedVkCommandBuffer *>(commandBuffer);
-  VkCommandBuffer unwrappedcommandBuffer = wrappedcommandBuffer->wrapped_object;
-  return commandBuffer->custom_data->PreEndCommandBuffer((VkCommandBuffer)commandBuffer, unwrappedcommandBuffer);
+  return gfr::GetGfrCommandBuffer(commandBuffer)->PreEndCommandBuffer(commandBuffer);
 }
 
-VkResult GfrContext::PostEndCommandBuffer(WrappedVkCommandBuffer* commandBuffer, VkResult result)
+VkResult GfrContext::PostEndCommandBuffer(VkCommandBuffer commandBuffer, VkResult result)
 {
-  WrappedVkCommandBuffer *wrappedcommandBuffer = reinterpret_cast<WrappedVkCommandBuffer *>(commandBuffer);
-  VkCommandBuffer unwrappedcommandBuffer = wrappedcommandBuffer->wrapped_object;
-  return commandBuffer->custom_data->PostEndCommandBuffer((VkCommandBuffer)commandBuffer, unwrappedcommandBuffer, result);
+  return gfr::GetGfrCommandBuffer(commandBuffer)->PostEndCommandBuffer(commandBuffer, result);
 }
 
-void GfrContext::PreCmdExecuteCommands(WrappedVkCommandBuffer* commandBuffer, uint32_t commandBufferCount, VkCommandBuffer const* pCommandBuffers)
+void GfrContext::PreCmdExecuteCommands(VkCommandBuffer commandBuffer, uint32_t commandBufferCount, VkCommandBuffer const* pCommandBuffers)
 {
-  WrappedVkCommandBuffer *wrappedcommandBuffer = reinterpret_cast<WrappedVkCommandBuffer *>(commandBuffer);
-  VkCommandBuffer unwrappedcommandBuffer = wrappedcommandBuffer->wrapped_object;
-  commandBuffer->custom_data->PreCmdExecuteCommands((VkCommandBuffer)commandBuffer, unwrappedcommandBuffer, commandBufferCount, pCommandBuffers);
+  gfr::GetGfrCommandBuffer(commandBuffer)->PreCmdExecuteCommands(commandBuffer, commandBufferCount, pCommandBuffers);
 }
 
-void GfrContext::PostCmdExecuteCommands(WrappedVkCommandBuffer* commandBuffer, uint32_t commandBufferCount, VkCommandBuffer const* pCommandBuffers)
+void GfrContext::PostCmdExecuteCommands(VkCommandBuffer commandBuffer, uint32_t commandBufferCount, VkCommandBuffer const* pCommandBuffers)
 {
-  WrappedVkCommandBuffer *wrappedcommandBuffer = reinterpret_cast<WrappedVkCommandBuffer *>(commandBuffer);
-  VkCommandBuffer unwrappedcommandBuffer = wrappedcommandBuffer->wrapped_object;
-  commandBuffer->custom_data->PostCmdExecuteCommands((VkCommandBuffer)commandBuffer, unwrappedcommandBuffer, commandBufferCount, pCommandBuffers);
+  gfr::GetGfrCommandBuffer(commandBuffer)->PostCmdExecuteCommands(commandBuffer, commandBufferCount, pCommandBuffers);
 }
 
-void GfrContext::PreCmdCopyBuffer(WrappedVkCommandBuffer* commandBuffer, VkBuffer srcBuffer, VkBuffer dstBuffer, uint32_t regionCount, VkBufferCopy const* pRegions)
+void GfrContext::PreCmdCopyBuffer(VkCommandBuffer commandBuffer, VkBuffer srcBuffer, VkBuffer dstBuffer, uint32_t regionCount, VkBufferCopy const* pRegions)
 {
-  WrappedVkCommandBuffer *wrappedcommandBuffer = reinterpret_cast<WrappedVkCommandBuffer *>(commandBuffer);
-  VkCommandBuffer unwrappedcommandBuffer = wrappedcommandBuffer->wrapped_object;
-  commandBuffer->custom_data->PreCmdCopyBuffer((VkCommandBuffer)commandBuffer, unwrappedcommandBuffer, srcBuffer, dstBuffer, regionCount, pRegions);
+  gfr::GetGfrCommandBuffer(commandBuffer)->PreCmdCopyBuffer(commandBuffer, srcBuffer, dstBuffer, regionCount, pRegions);
 }
 
-void GfrContext::PostCmdCopyBuffer(WrappedVkCommandBuffer* commandBuffer, VkBuffer srcBuffer, VkBuffer dstBuffer, uint32_t regionCount, VkBufferCopy const* pRegions)
+void GfrContext::PostCmdCopyBuffer(VkCommandBuffer commandBuffer, VkBuffer srcBuffer, VkBuffer dstBuffer, uint32_t regionCount, VkBufferCopy const* pRegions)
 {
-  WrappedVkCommandBuffer *wrappedcommandBuffer = reinterpret_cast<WrappedVkCommandBuffer *>(commandBuffer);
-  VkCommandBuffer unwrappedcommandBuffer = wrappedcommandBuffer->wrapped_object;
-  commandBuffer->custom_data->PostCmdCopyBuffer((VkCommandBuffer)commandBuffer, unwrappedcommandBuffer, srcBuffer, dstBuffer, regionCount, pRegions);
+  gfr::GetGfrCommandBuffer(commandBuffer)->PostCmdCopyBuffer(commandBuffer, srcBuffer, dstBuffer, regionCount, pRegions);
 }
 
-void GfrContext::PreCmdCopyImage(WrappedVkCommandBuffer* commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout, VkImage dstImage, VkImageLayout dstImageLayout, uint32_t regionCount, VkImageCopy const* pRegions)
+void GfrContext::PreCmdCopyImage(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout, VkImage dstImage, VkImageLayout dstImageLayout, uint32_t regionCount, VkImageCopy const* pRegions)
 {
-  WrappedVkCommandBuffer *wrappedcommandBuffer = reinterpret_cast<WrappedVkCommandBuffer *>(commandBuffer);
-  VkCommandBuffer unwrappedcommandBuffer = wrappedcommandBuffer->wrapped_object;
-  commandBuffer->custom_data->PreCmdCopyImage((VkCommandBuffer)commandBuffer, unwrappedcommandBuffer, srcImage, srcImageLayout, dstImage, dstImageLayout, regionCount, pRegions);
+  gfr::GetGfrCommandBuffer(commandBuffer)->PreCmdCopyImage(commandBuffer, srcImage, srcImageLayout, dstImage, dstImageLayout, regionCount, pRegions);
 }
 
-void GfrContext::PostCmdCopyImage(WrappedVkCommandBuffer* commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout, VkImage dstImage, VkImageLayout dstImageLayout, uint32_t regionCount, VkImageCopy const* pRegions)
+void GfrContext::PostCmdCopyImage(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout, VkImage dstImage, VkImageLayout dstImageLayout, uint32_t regionCount, VkImageCopy const* pRegions)
 {
-  WrappedVkCommandBuffer *wrappedcommandBuffer = reinterpret_cast<WrappedVkCommandBuffer *>(commandBuffer);
-  VkCommandBuffer unwrappedcommandBuffer = wrappedcommandBuffer->wrapped_object;
-  commandBuffer->custom_data->PostCmdCopyImage((VkCommandBuffer)commandBuffer, unwrappedcommandBuffer, srcImage, srcImageLayout, dstImage, dstImageLayout, regionCount, pRegions);
+  gfr::GetGfrCommandBuffer(commandBuffer)->PostCmdCopyImage(commandBuffer, srcImage, srcImageLayout, dstImage, dstImageLayout, regionCount, pRegions);
 }
 
-void GfrContext::PreCmdBlitImage(WrappedVkCommandBuffer* commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout, VkImage dstImage, VkImageLayout dstImageLayout, uint32_t regionCount, VkImageBlit const* pRegions, VkFilter filter)
+void GfrContext::PreCmdBlitImage(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout, VkImage dstImage, VkImageLayout dstImageLayout, uint32_t regionCount, VkImageBlit const* pRegions, VkFilter filter)
 {
-  WrappedVkCommandBuffer *wrappedcommandBuffer = reinterpret_cast<WrappedVkCommandBuffer *>(commandBuffer);
-  VkCommandBuffer unwrappedcommandBuffer = wrappedcommandBuffer->wrapped_object;
-  commandBuffer->custom_data->PreCmdBlitImage((VkCommandBuffer)commandBuffer, unwrappedcommandBuffer, srcImage, srcImageLayout, dstImage, dstImageLayout, regionCount, pRegions, filter);
+  gfr::GetGfrCommandBuffer(commandBuffer)->PreCmdBlitImage(commandBuffer, srcImage, srcImageLayout, dstImage, dstImageLayout, regionCount, pRegions, filter);
 }
 
-void GfrContext::PostCmdBlitImage(WrappedVkCommandBuffer* commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout, VkImage dstImage, VkImageLayout dstImageLayout, uint32_t regionCount, VkImageBlit const* pRegions, VkFilter filter)
+void GfrContext::PostCmdBlitImage(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout, VkImage dstImage, VkImageLayout dstImageLayout, uint32_t regionCount, VkImageBlit const* pRegions, VkFilter filter)
 {
-  WrappedVkCommandBuffer *wrappedcommandBuffer = reinterpret_cast<WrappedVkCommandBuffer *>(commandBuffer);
-  VkCommandBuffer unwrappedcommandBuffer = wrappedcommandBuffer->wrapped_object;
-  commandBuffer->custom_data->PostCmdBlitImage((VkCommandBuffer)commandBuffer, unwrappedcommandBuffer, srcImage, srcImageLayout, dstImage, dstImageLayout, regionCount, pRegions, filter);
+  gfr::GetGfrCommandBuffer(commandBuffer)->PostCmdBlitImage(commandBuffer, srcImage, srcImageLayout, dstImage, dstImageLayout, regionCount, pRegions, filter);
 }
 
-void GfrContext::PreCmdCopyBufferToImage(WrappedVkCommandBuffer* commandBuffer, VkBuffer srcBuffer, VkImage dstImage, VkImageLayout dstImageLayout, uint32_t regionCount, VkBufferImageCopy const* pRegions)
+void GfrContext::PreCmdCopyBufferToImage(VkCommandBuffer commandBuffer, VkBuffer srcBuffer, VkImage dstImage, VkImageLayout dstImageLayout, uint32_t regionCount, VkBufferImageCopy const* pRegions)
 {
-  WrappedVkCommandBuffer *wrappedcommandBuffer = reinterpret_cast<WrappedVkCommandBuffer *>(commandBuffer);
-  VkCommandBuffer unwrappedcommandBuffer = wrappedcommandBuffer->wrapped_object;
-  commandBuffer->custom_data->PreCmdCopyBufferToImage((VkCommandBuffer)commandBuffer, unwrappedcommandBuffer, srcBuffer, dstImage, dstImageLayout, regionCount, pRegions);
+  gfr::GetGfrCommandBuffer(commandBuffer)->PreCmdCopyBufferToImage(commandBuffer, srcBuffer, dstImage, dstImageLayout, regionCount, pRegions);
 }
 
-void GfrContext::PostCmdCopyBufferToImage(WrappedVkCommandBuffer* commandBuffer, VkBuffer srcBuffer, VkImage dstImage, VkImageLayout dstImageLayout, uint32_t regionCount, VkBufferImageCopy const* pRegions)
+void GfrContext::PostCmdCopyBufferToImage(VkCommandBuffer commandBuffer, VkBuffer srcBuffer, VkImage dstImage, VkImageLayout dstImageLayout, uint32_t regionCount, VkBufferImageCopy const* pRegions)
 {
-  WrappedVkCommandBuffer *wrappedcommandBuffer = reinterpret_cast<WrappedVkCommandBuffer *>(commandBuffer);
-  VkCommandBuffer unwrappedcommandBuffer = wrappedcommandBuffer->wrapped_object;
-  commandBuffer->custom_data->PostCmdCopyBufferToImage((VkCommandBuffer)commandBuffer, unwrappedcommandBuffer, srcBuffer, dstImage, dstImageLayout, regionCount, pRegions);
+  gfr::GetGfrCommandBuffer(commandBuffer)->PostCmdCopyBufferToImage(commandBuffer, srcBuffer, dstImage, dstImageLayout, regionCount, pRegions);
 }
 
-void GfrContext::PreCmdCopyImageToBuffer(WrappedVkCommandBuffer* commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout, VkBuffer dstBuffer, uint32_t regionCount, VkBufferImageCopy const* pRegions)
+void GfrContext::PreCmdCopyImageToBuffer(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout, VkBuffer dstBuffer, uint32_t regionCount, VkBufferImageCopy const* pRegions)
 {
-  WrappedVkCommandBuffer *wrappedcommandBuffer = reinterpret_cast<WrappedVkCommandBuffer *>(commandBuffer);
-  VkCommandBuffer unwrappedcommandBuffer = wrappedcommandBuffer->wrapped_object;
-  commandBuffer->custom_data->PreCmdCopyImageToBuffer((VkCommandBuffer)commandBuffer, unwrappedcommandBuffer, srcImage, srcImageLayout, dstBuffer, regionCount, pRegions);
+  gfr::GetGfrCommandBuffer(commandBuffer)->PreCmdCopyImageToBuffer(commandBuffer, srcImage, srcImageLayout, dstBuffer, regionCount, pRegions);
 }
 
-void GfrContext::PostCmdCopyImageToBuffer(WrappedVkCommandBuffer* commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout, VkBuffer dstBuffer, uint32_t regionCount, VkBufferImageCopy const* pRegions)
+void GfrContext::PostCmdCopyImageToBuffer(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout, VkBuffer dstBuffer, uint32_t regionCount, VkBufferImageCopy const* pRegions)
 {
-  WrappedVkCommandBuffer *wrappedcommandBuffer = reinterpret_cast<WrappedVkCommandBuffer *>(commandBuffer);
-  VkCommandBuffer unwrappedcommandBuffer = wrappedcommandBuffer->wrapped_object;
-  commandBuffer->custom_data->PostCmdCopyImageToBuffer((VkCommandBuffer)commandBuffer, unwrappedcommandBuffer, srcImage, srcImageLayout, dstBuffer, regionCount, pRegions);
+  gfr::GetGfrCommandBuffer(commandBuffer)->PostCmdCopyImageToBuffer(commandBuffer, srcImage, srcImageLayout, dstBuffer, regionCount, pRegions);
 }
 
-void GfrContext::PreCmdUpdateBuffer(WrappedVkCommandBuffer* commandBuffer, VkBuffer dstBuffer, VkDeviceSize dstOffset, VkDeviceSize dataSize, void const* pData)
+void GfrContext::PreCmdUpdateBuffer(VkCommandBuffer commandBuffer, VkBuffer dstBuffer, VkDeviceSize dstOffset, VkDeviceSize dataSize, void const* pData)
 {
-  WrappedVkCommandBuffer *wrappedcommandBuffer = reinterpret_cast<WrappedVkCommandBuffer *>(commandBuffer);
-  VkCommandBuffer unwrappedcommandBuffer = wrappedcommandBuffer->wrapped_object;
-  commandBuffer->custom_data->PreCmdUpdateBuffer((VkCommandBuffer)commandBuffer, unwrappedcommandBuffer, dstBuffer, dstOffset, dataSize, pData);
+  gfr::GetGfrCommandBuffer(commandBuffer)->PreCmdUpdateBuffer(commandBuffer, dstBuffer, dstOffset, dataSize, pData);
 }
 
-void GfrContext::PostCmdUpdateBuffer(WrappedVkCommandBuffer* commandBuffer, VkBuffer dstBuffer, VkDeviceSize dstOffset, VkDeviceSize dataSize, void const* pData)
+void GfrContext::PostCmdUpdateBuffer(VkCommandBuffer commandBuffer, VkBuffer dstBuffer, VkDeviceSize dstOffset, VkDeviceSize dataSize, void const* pData)
 {
-  WrappedVkCommandBuffer *wrappedcommandBuffer = reinterpret_cast<WrappedVkCommandBuffer *>(commandBuffer);
-  VkCommandBuffer unwrappedcommandBuffer = wrappedcommandBuffer->wrapped_object;
-  commandBuffer->custom_data->PostCmdUpdateBuffer((VkCommandBuffer)commandBuffer, unwrappedcommandBuffer, dstBuffer, dstOffset, dataSize, pData);
+  gfr::GetGfrCommandBuffer(commandBuffer)->PostCmdUpdateBuffer(commandBuffer, dstBuffer, dstOffset, dataSize, pData);
 }
 
-void GfrContext::PreCmdFillBuffer(WrappedVkCommandBuffer* commandBuffer, VkBuffer dstBuffer, VkDeviceSize dstOffset, VkDeviceSize size, uint32_t data)
+void GfrContext::PreCmdFillBuffer(VkCommandBuffer commandBuffer, VkBuffer dstBuffer, VkDeviceSize dstOffset, VkDeviceSize size, uint32_t data)
 {
-  WrappedVkCommandBuffer *wrappedcommandBuffer = reinterpret_cast<WrappedVkCommandBuffer *>(commandBuffer);
-  VkCommandBuffer unwrappedcommandBuffer = wrappedcommandBuffer->wrapped_object;
-  commandBuffer->custom_data->PreCmdFillBuffer((VkCommandBuffer)commandBuffer, unwrappedcommandBuffer, dstBuffer, dstOffset, size, data);
+  gfr::GetGfrCommandBuffer(commandBuffer)->PreCmdFillBuffer(commandBuffer, dstBuffer, dstOffset, size, data);
 }
 
-void GfrContext::PostCmdFillBuffer(WrappedVkCommandBuffer* commandBuffer, VkBuffer dstBuffer, VkDeviceSize dstOffset, VkDeviceSize size, uint32_t data)
+void GfrContext::PostCmdFillBuffer(VkCommandBuffer commandBuffer, VkBuffer dstBuffer, VkDeviceSize dstOffset, VkDeviceSize size, uint32_t data)
 {
-  WrappedVkCommandBuffer *wrappedcommandBuffer = reinterpret_cast<WrappedVkCommandBuffer *>(commandBuffer);
-  VkCommandBuffer unwrappedcommandBuffer = wrappedcommandBuffer->wrapped_object;
-  commandBuffer->custom_data->PostCmdFillBuffer((VkCommandBuffer)commandBuffer, unwrappedcommandBuffer, dstBuffer, dstOffset, size, data);
+  gfr::GetGfrCommandBuffer(commandBuffer)->PostCmdFillBuffer(commandBuffer, dstBuffer, dstOffset, size, data);
 }
 
-void GfrContext::PreCmdClearColorImage(WrappedVkCommandBuffer* commandBuffer, VkImage image, VkImageLayout imageLayout, VkClearColorValue const* pColor, uint32_t rangeCount, VkImageSubresourceRange const* pRanges)
+void GfrContext::PreCmdClearColorImage(VkCommandBuffer commandBuffer, VkImage image, VkImageLayout imageLayout, VkClearColorValue const* pColor, uint32_t rangeCount, VkImageSubresourceRange const* pRanges)
 {
-  WrappedVkCommandBuffer *wrappedcommandBuffer = reinterpret_cast<WrappedVkCommandBuffer *>(commandBuffer);
-  VkCommandBuffer unwrappedcommandBuffer = wrappedcommandBuffer->wrapped_object;
-  commandBuffer->custom_data->PreCmdClearColorImage((VkCommandBuffer)commandBuffer, unwrappedcommandBuffer, image, imageLayout, pColor, rangeCount, pRanges);
+  gfr::GetGfrCommandBuffer(commandBuffer)->PreCmdClearColorImage(commandBuffer, image, imageLayout, pColor, rangeCount, pRanges);
 }
 
-void GfrContext::PostCmdClearColorImage(WrappedVkCommandBuffer* commandBuffer, VkImage image, VkImageLayout imageLayout, VkClearColorValue const* pColor, uint32_t rangeCount, VkImageSubresourceRange const* pRanges)
+void GfrContext::PostCmdClearColorImage(VkCommandBuffer commandBuffer, VkImage image, VkImageLayout imageLayout, VkClearColorValue const* pColor, uint32_t rangeCount, VkImageSubresourceRange const* pRanges)
 {
-  WrappedVkCommandBuffer *wrappedcommandBuffer = reinterpret_cast<WrappedVkCommandBuffer *>(commandBuffer);
-  VkCommandBuffer unwrappedcommandBuffer = wrappedcommandBuffer->wrapped_object;
-  commandBuffer->custom_data->PostCmdClearColorImage((VkCommandBuffer)commandBuffer, unwrappedcommandBuffer, image, imageLayout, pColor, rangeCount, pRanges);
+  gfr::GetGfrCommandBuffer(commandBuffer)->PostCmdClearColorImage(commandBuffer, image, imageLayout, pColor, rangeCount, pRanges);
 }
 
-void GfrContext::PreCmdClearDepthStencilImage(WrappedVkCommandBuffer* commandBuffer, VkImage image, VkImageLayout imageLayout, VkClearDepthStencilValue const* pDepthStencil, uint32_t rangeCount, VkImageSubresourceRange const* pRanges)
+void GfrContext::PreCmdClearDepthStencilImage(VkCommandBuffer commandBuffer, VkImage image, VkImageLayout imageLayout, VkClearDepthStencilValue const* pDepthStencil, uint32_t rangeCount, VkImageSubresourceRange const* pRanges)
 {
-  WrappedVkCommandBuffer *wrappedcommandBuffer = reinterpret_cast<WrappedVkCommandBuffer *>(commandBuffer);
-  VkCommandBuffer unwrappedcommandBuffer = wrappedcommandBuffer->wrapped_object;
-  commandBuffer->custom_data->PreCmdClearDepthStencilImage((VkCommandBuffer)commandBuffer, unwrappedcommandBuffer, image, imageLayout, pDepthStencil, rangeCount, pRanges);
+  gfr::GetGfrCommandBuffer(commandBuffer)->PreCmdClearDepthStencilImage(commandBuffer, image, imageLayout, pDepthStencil, rangeCount, pRanges);
 }
 
-void GfrContext::PostCmdClearDepthStencilImage(WrappedVkCommandBuffer* commandBuffer, VkImage image, VkImageLayout imageLayout, VkClearDepthStencilValue const* pDepthStencil, uint32_t rangeCount, VkImageSubresourceRange const* pRanges)
+void GfrContext::PostCmdClearDepthStencilImage(VkCommandBuffer commandBuffer, VkImage image, VkImageLayout imageLayout, VkClearDepthStencilValue const* pDepthStencil, uint32_t rangeCount, VkImageSubresourceRange const* pRanges)
 {
-  WrappedVkCommandBuffer *wrappedcommandBuffer = reinterpret_cast<WrappedVkCommandBuffer *>(commandBuffer);
-  VkCommandBuffer unwrappedcommandBuffer = wrappedcommandBuffer->wrapped_object;
-  commandBuffer->custom_data->PostCmdClearDepthStencilImage((VkCommandBuffer)commandBuffer, unwrappedcommandBuffer, image, imageLayout, pDepthStencil, rangeCount, pRanges);
+  gfr::GetGfrCommandBuffer(commandBuffer)->PostCmdClearDepthStencilImage(commandBuffer, image, imageLayout, pDepthStencil, rangeCount, pRanges);
 }
 
-void GfrContext::PreCmdClearAttachments(WrappedVkCommandBuffer* commandBuffer, uint32_t attachmentCount, VkClearAttachment const* pAttachments, uint32_t rectCount, VkClearRect const* pRects)
+void GfrContext::PreCmdClearAttachments(VkCommandBuffer commandBuffer, uint32_t attachmentCount, VkClearAttachment const* pAttachments, uint32_t rectCount, VkClearRect const* pRects)
 {
-  WrappedVkCommandBuffer *wrappedcommandBuffer = reinterpret_cast<WrappedVkCommandBuffer *>(commandBuffer);
-  VkCommandBuffer unwrappedcommandBuffer = wrappedcommandBuffer->wrapped_object;
-  commandBuffer->custom_data->PreCmdClearAttachments((VkCommandBuffer)commandBuffer, unwrappedcommandBuffer, attachmentCount, pAttachments, rectCount, pRects);
+  gfr::GetGfrCommandBuffer(commandBuffer)->PreCmdClearAttachments(commandBuffer, attachmentCount, pAttachments, rectCount, pRects);
 }
 
-void GfrContext::PostCmdClearAttachments(WrappedVkCommandBuffer* commandBuffer, uint32_t attachmentCount, VkClearAttachment const* pAttachments, uint32_t rectCount, VkClearRect const* pRects)
+void GfrContext::PostCmdClearAttachments(VkCommandBuffer commandBuffer, uint32_t attachmentCount, VkClearAttachment const* pAttachments, uint32_t rectCount, VkClearRect const* pRects)
 {
-  WrappedVkCommandBuffer *wrappedcommandBuffer = reinterpret_cast<WrappedVkCommandBuffer *>(commandBuffer);
-  VkCommandBuffer unwrappedcommandBuffer = wrappedcommandBuffer->wrapped_object;
-  commandBuffer->custom_data->PostCmdClearAttachments((VkCommandBuffer)commandBuffer, unwrappedcommandBuffer, attachmentCount, pAttachments, rectCount, pRects);
+  gfr::GetGfrCommandBuffer(commandBuffer)->PostCmdClearAttachments(commandBuffer, attachmentCount, pAttachments, rectCount, pRects);
 }
 
-void GfrContext::PreCmdResolveImage(WrappedVkCommandBuffer* commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout, VkImage dstImage, VkImageLayout dstImageLayout, uint32_t regionCount, VkImageResolve const* pRegions)
+void GfrContext::PreCmdResolveImage(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout, VkImage dstImage, VkImageLayout dstImageLayout, uint32_t regionCount, VkImageResolve const* pRegions)
 {
-  WrappedVkCommandBuffer *wrappedcommandBuffer = reinterpret_cast<WrappedVkCommandBuffer *>(commandBuffer);
-  VkCommandBuffer unwrappedcommandBuffer = wrappedcommandBuffer->wrapped_object;
-  commandBuffer->custom_data->PreCmdResolveImage((VkCommandBuffer)commandBuffer, unwrappedcommandBuffer, srcImage, srcImageLayout, dstImage, dstImageLayout, regionCount, pRegions);
+  gfr::GetGfrCommandBuffer(commandBuffer)->PreCmdResolveImage(commandBuffer, srcImage, srcImageLayout, dstImage, dstImageLayout, regionCount, pRegions);
 }
 
-void GfrContext::PostCmdResolveImage(WrappedVkCommandBuffer* commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout, VkImage dstImage, VkImageLayout dstImageLayout, uint32_t regionCount, VkImageResolve const* pRegions)
+void GfrContext::PostCmdResolveImage(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout, VkImage dstImage, VkImageLayout dstImageLayout, uint32_t regionCount, VkImageResolve const* pRegions)
 {
-  WrappedVkCommandBuffer *wrappedcommandBuffer = reinterpret_cast<WrappedVkCommandBuffer *>(commandBuffer);
-  VkCommandBuffer unwrappedcommandBuffer = wrappedcommandBuffer->wrapped_object;
-  commandBuffer->custom_data->PostCmdResolveImage((VkCommandBuffer)commandBuffer, unwrappedcommandBuffer, srcImage, srcImageLayout, dstImage, dstImageLayout, regionCount, pRegions);
+  gfr::GetGfrCommandBuffer(commandBuffer)->PostCmdResolveImage(commandBuffer, srcImage, srcImageLayout, dstImage, dstImageLayout, regionCount, pRegions);
 }
 
-void GfrContext::PreCmdBindDescriptorSets(WrappedVkCommandBuffer* commandBuffer, VkPipelineBindPoint pipelineBindPoint, VkPipelineLayout layout, uint32_t firstSet, uint32_t descriptorSetCount, VkDescriptorSet const* pDescriptorSets, uint32_t dynamicOffsetCount, uint32_t const* pDynamicOffsets)
+void GfrContext::PreCmdBindDescriptorSets(VkCommandBuffer commandBuffer, VkPipelineBindPoint pipelineBindPoint, VkPipelineLayout layout, uint32_t firstSet, uint32_t descriptorSetCount, VkDescriptorSet const* pDescriptorSets, uint32_t dynamicOffsetCount, uint32_t const* pDynamicOffsets)
 {
-  WrappedVkCommandBuffer *wrappedcommandBuffer = reinterpret_cast<WrappedVkCommandBuffer *>(commandBuffer);
-  VkCommandBuffer unwrappedcommandBuffer = wrappedcommandBuffer->wrapped_object;
-  commandBuffer->custom_data->PreCmdBindDescriptorSets((VkCommandBuffer)commandBuffer, unwrappedcommandBuffer, pipelineBindPoint, layout, firstSet, descriptorSetCount, pDescriptorSets, dynamicOffsetCount, pDynamicOffsets);
+  gfr::GetGfrCommandBuffer(commandBuffer)->PreCmdBindDescriptorSets(commandBuffer, pipelineBindPoint, layout, firstSet, descriptorSetCount, pDescriptorSets, dynamicOffsetCount, pDynamicOffsets);
 }
 
-void GfrContext::PostCmdBindDescriptorSets(WrappedVkCommandBuffer* commandBuffer, VkPipelineBindPoint pipelineBindPoint, VkPipelineLayout layout, uint32_t firstSet, uint32_t descriptorSetCount, VkDescriptorSet const* pDescriptorSets, uint32_t dynamicOffsetCount, uint32_t const* pDynamicOffsets)
+void GfrContext::PostCmdBindDescriptorSets(VkCommandBuffer commandBuffer, VkPipelineBindPoint pipelineBindPoint, VkPipelineLayout layout, uint32_t firstSet, uint32_t descriptorSetCount, VkDescriptorSet const* pDescriptorSets, uint32_t dynamicOffsetCount, uint32_t const* pDynamicOffsets)
 {
-  WrappedVkCommandBuffer *wrappedcommandBuffer = reinterpret_cast<WrappedVkCommandBuffer *>(commandBuffer);
-  VkCommandBuffer unwrappedcommandBuffer = wrappedcommandBuffer->wrapped_object;
-  commandBuffer->custom_data->PostCmdBindDescriptorSets((VkCommandBuffer)commandBuffer, unwrappedcommandBuffer, pipelineBindPoint, layout, firstSet, descriptorSetCount, pDescriptorSets, dynamicOffsetCount, pDynamicOffsets);
+  gfr::GetGfrCommandBuffer(commandBuffer)->PostCmdBindDescriptorSets(commandBuffer, pipelineBindPoint, layout, firstSet, descriptorSetCount, pDescriptorSets, dynamicOffsetCount, pDynamicOffsets);
 }
 
-void GfrContext::PreCmdPushConstants(WrappedVkCommandBuffer* commandBuffer, VkPipelineLayout layout, VkShaderStageFlags stageFlags, uint32_t offset, uint32_t size, void const* pValues)
+void GfrContext::PreCmdPushConstants(VkCommandBuffer commandBuffer, VkPipelineLayout layout, VkShaderStageFlags stageFlags, uint32_t offset, uint32_t size, void const* pValues)
 {
-  WrappedVkCommandBuffer *wrappedcommandBuffer = reinterpret_cast<WrappedVkCommandBuffer *>(commandBuffer);
-  VkCommandBuffer unwrappedcommandBuffer = wrappedcommandBuffer->wrapped_object;
-  commandBuffer->custom_data->PreCmdPushConstants((VkCommandBuffer)commandBuffer, unwrappedcommandBuffer, layout, stageFlags, offset, size, pValues);
+  gfr::GetGfrCommandBuffer(commandBuffer)->PreCmdPushConstants(commandBuffer, layout, stageFlags, offset, size, pValues);
 }
 
-void GfrContext::PostCmdPushConstants(WrappedVkCommandBuffer* commandBuffer, VkPipelineLayout layout, VkShaderStageFlags stageFlags, uint32_t offset, uint32_t size, void const* pValues)
+void GfrContext::PostCmdPushConstants(VkCommandBuffer commandBuffer, VkPipelineLayout layout, VkShaderStageFlags stageFlags, uint32_t offset, uint32_t size, void const* pValues)
 {
-  WrappedVkCommandBuffer *wrappedcommandBuffer = reinterpret_cast<WrappedVkCommandBuffer *>(commandBuffer);
-  VkCommandBuffer unwrappedcommandBuffer = wrappedcommandBuffer->wrapped_object;
-  commandBuffer->custom_data->PostCmdPushConstants((VkCommandBuffer)commandBuffer, unwrappedcommandBuffer, layout, stageFlags, offset, size, pValues);
+  gfr::GetGfrCommandBuffer(commandBuffer)->PostCmdPushConstants(commandBuffer, layout, stageFlags, offset, size, pValues);
 }
 
-void GfrContext::PreCmdBindIndexBuffer(WrappedVkCommandBuffer* commandBuffer, VkBuffer buffer, VkDeviceSize offset, VkIndexType indexType)
+void GfrContext::PreCmdBindIndexBuffer(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset, VkIndexType indexType)
 {
-  WrappedVkCommandBuffer *wrappedcommandBuffer = reinterpret_cast<WrappedVkCommandBuffer *>(commandBuffer);
-  VkCommandBuffer unwrappedcommandBuffer = wrappedcommandBuffer->wrapped_object;
-  commandBuffer->custom_data->PreCmdBindIndexBuffer((VkCommandBuffer)commandBuffer, unwrappedcommandBuffer, buffer, offset, indexType);
+  gfr::GetGfrCommandBuffer(commandBuffer)->PreCmdBindIndexBuffer(commandBuffer, buffer, offset, indexType);
 }
 
-void GfrContext::PostCmdBindIndexBuffer(WrappedVkCommandBuffer* commandBuffer, VkBuffer buffer, VkDeviceSize offset, VkIndexType indexType)
+void GfrContext::PostCmdBindIndexBuffer(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset, VkIndexType indexType)
 {
-  WrappedVkCommandBuffer *wrappedcommandBuffer = reinterpret_cast<WrappedVkCommandBuffer *>(commandBuffer);
-  VkCommandBuffer unwrappedcommandBuffer = wrappedcommandBuffer->wrapped_object;
-  commandBuffer->custom_data->PostCmdBindIndexBuffer((VkCommandBuffer)commandBuffer, unwrappedcommandBuffer, buffer, offset, indexType);
+  gfr::GetGfrCommandBuffer(commandBuffer)->PostCmdBindIndexBuffer(commandBuffer, buffer, offset, indexType);
 }
 
-void GfrContext::PreCmdBindVertexBuffers(WrappedVkCommandBuffer* commandBuffer, uint32_t firstBinding, uint32_t bindingCount, VkBuffer const* pBuffers, VkDeviceSize const* pOffsets)
+void GfrContext::PreCmdBindVertexBuffers(VkCommandBuffer commandBuffer, uint32_t firstBinding, uint32_t bindingCount, VkBuffer const* pBuffers, VkDeviceSize const* pOffsets)
 {
-  WrappedVkCommandBuffer *wrappedcommandBuffer = reinterpret_cast<WrappedVkCommandBuffer *>(commandBuffer);
-  VkCommandBuffer unwrappedcommandBuffer = wrappedcommandBuffer->wrapped_object;
-  commandBuffer->custom_data->PreCmdBindVertexBuffers((VkCommandBuffer)commandBuffer, unwrappedcommandBuffer, firstBinding, bindingCount, pBuffers, pOffsets);
+  gfr::GetGfrCommandBuffer(commandBuffer)->PreCmdBindVertexBuffers(commandBuffer, firstBinding, bindingCount, pBuffers, pOffsets);
 }
 
-void GfrContext::PostCmdBindVertexBuffers(WrappedVkCommandBuffer* commandBuffer, uint32_t firstBinding, uint32_t bindingCount, VkBuffer const* pBuffers, VkDeviceSize const* pOffsets)
+void GfrContext::PostCmdBindVertexBuffers(VkCommandBuffer commandBuffer, uint32_t firstBinding, uint32_t bindingCount, VkBuffer const* pBuffers, VkDeviceSize const* pOffsets)
 {
-  WrappedVkCommandBuffer *wrappedcommandBuffer = reinterpret_cast<WrappedVkCommandBuffer *>(commandBuffer);
-  VkCommandBuffer unwrappedcommandBuffer = wrappedcommandBuffer->wrapped_object;
-  commandBuffer->custom_data->PostCmdBindVertexBuffers((VkCommandBuffer)commandBuffer, unwrappedcommandBuffer, firstBinding, bindingCount, pBuffers, pOffsets);
+  gfr::GetGfrCommandBuffer(commandBuffer)->PostCmdBindVertexBuffers(commandBuffer, firstBinding, bindingCount, pBuffers, pOffsets);
 }
 
-void GfrContext::PreCmdDraw(WrappedVkCommandBuffer* commandBuffer, uint32_t vertexCount, uint32_t instanceCount, uint32_t firstVertex, uint32_t firstInstance)
+void GfrContext::PreCmdDraw(VkCommandBuffer commandBuffer, uint32_t vertexCount, uint32_t instanceCount, uint32_t firstVertex, uint32_t firstInstance)
 {
-  WrappedVkCommandBuffer *wrappedcommandBuffer = reinterpret_cast<WrappedVkCommandBuffer *>(commandBuffer);
-  VkCommandBuffer unwrappedcommandBuffer = wrappedcommandBuffer->wrapped_object;
-  commandBuffer->custom_data->PreCmdDraw((VkCommandBuffer)commandBuffer, unwrappedcommandBuffer, vertexCount, instanceCount, firstVertex, firstInstance);
+  gfr::GetGfrCommandBuffer(commandBuffer)->PreCmdDraw(commandBuffer, vertexCount, instanceCount, firstVertex, firstInstance);
 }
 
-void GfrContext::PostCmdDraw(WrappedVkCommandBuffer* commandBuffer, uint32_t vertexCount, uint32_t instanceCount, uint32_t firstVertex, uint32_t firstInstance)
+void GfrContext::PostCmdDraw(VkCommandBuffer commandBuffer, uint32_t vertexCount, uint32_t instanceCount, uint32_t firstVertex, uint32_t firstInstance)
 {
-  WrappedVkCommandBuffer *wrappedcommandBuffer = reinterpret_cast<WrappedVkCommandBuffer *>(commandBuffer);
-  VkCommandBuffer unwrappedcommandBuffer = wrappedcommandBuffer->wrapped_object;
-  commandBuffer->custom_data->PostCmdDraw((VkCommandBuffer)commandBuffer, unwrappedcommandBuffer, vertexCount, instanceCount, firstVertex, firstInstance);
+  gfr::GetGfrCommandBuffer(commandBuffer)->PostCmdDraw(commandBuffer, vertexCount, instanceCount, firstVertex, firstInstance);
 }
 
-void GfrContext::PreCmdDrawIndexed(WrappedVkCommandBuffer* commandBuffer, uint32_t indexCount, uint32_t instanceCount, uint32_t firstIndex, int32_t vertexOffset, uint32_t firstInstance)
+void GfrContext::PreCmdDrawIndexed(VkCommandBuffer commandBuffer, uint32_t indexCount, uint32_t instanceCount, uint32_t firstIndex, int32_t vertexOffset, uint32_t firstInstance)
 {
-  WrappedVkCommandBuffer *wrappedcommandBuffer = reinterpret_cast<WrappedVkCommandBuffer *>(commandBuffer);
-  VkCommandBuffer unwrappedcommandBuffer = wrappedcommandBuffer->wrapped_object;
-  commandBuffer->custom_data->PreCmdDrawIndexed((VkCommandBuffer)commandBuffer, unwrappedcommandBuffer, indexCount, instanceCount, firstIndex, vertexOffset, firstInstance);
+  gfr::GetGfrCommandBuffer(commandBuffer)->PreCmdDrawIndexed(commandBuffer, indexCount, instanceCount, firstIndex, vertexOffset, firstInstance);
 }
 
-void GfrContext::PostCmdDrawIndexed(WrappedVkCommandBuffer* commandBuffer, uint32_t indexCount, uint32_t instanceCount, uint32_t firstIndex, int32_t vertexOffset, uint32_t firstInstance)
+void GfrContext::PostCmdDrawIndexed(VkCommandBuffer commandBuffer, uint32_t indexCount, uint32_t instanceCount, uint32_t firstIndex, int32_t vertexOffset, uint32_t firstInstance)
 {
-  WrappedVkCommandBuffer *wrappedcommandBuffer = reinterpret_cast<WrappedVkCommandBuffer *>(commandBuffer);
-  VkCommandBuffer unwrappedcommandBuffer = wrappedcommandBuffer->wrapped_object;
-  commandBuffer->custom_data->PostCmdDrawIndexed((VkCommandBuffer)commandBuffer, unwrappedcommandBuffer, indexCount, instanceCount, firstIndex, vertexOffset, firstInstance);
+  gfr::GetGfrCommandBuffer(commandBuffer)->PostCmdDrawIndexed(commandBuffer, indexCount, instanceCount, firstIndex, vertexOffset, firstInstance);
 }
 
-void GfrContext::PreCmdDrawIndirect(WrappedVkCommandBuffer* commandBuffer, VkBuffer buffer, VkDeviceSize offset, uint32_t drawCount, uint32_t stride)
+void GfrContext::PreCmdDrawIndirect(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset, uint32_t drawCount, uint32_t stride)
 {
-  WrappedVkCommandBuffer *wrappedcommandBuffer = reinterpret_cast<WrappedVkCommandBuffer *>(commandBuffer);
-  VkCommandBuffer unwrappedcommandBuffer = wrappedcommandBuffer->wrapped_object;
-  commandBuffer->custom_data->PreCmdDrawIndirect((VkCommandBuffer)commandBuffer, unwrappedcommandBuffer, buffer, offset, drawCount, stride);
+  gfr::GetGfrCommandBuffer(commandBuffer)->PreCmdDrawIndirect(commandBuffer, buffer, offset, drawCount, stride);
 }
 
-void GfrContext::PostCmdDrawIndirect(WrappedVkCommandBuffer* commandBuffer, VkBuffer buffer, VkDeviceSize offset, uint32_t drawCount, uint32_t stride)
+void GfrContext::PostCmdDrawIndirect(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset, uint32_t drawCount, uint32_t stride)
 {
-  WrappedVkCommandBuffer *wrappedcommandBuffer = reinterpret_cast<WrappedVkCommandBuffer *>(commandBuffer);
-  VkCommandBuffer unwrappedcommandBuffer = wrappedcommandBuffer->wrapped_object;
-  commandBuffer->custom_data->PostCmdDrawIndirect((VkCommandBuffer)commandBuffer, unwrappedcommandBuffer, buffer, offset, drawCount, stride);
+  gfr::GetGfrCommandBuffer(commandBuffer)->PostCmdDrawIndirect(commandBuffer, buffer, offset, drawCount, stride);
 }
 
-void GfrContext::PreCmdDrawIndexedIndirect(WrappedVkCommandBuffer* commandBuffer, VkBuffer buffer, VkDeviceSize offset, uint32_t drawCount, uint32_t stride)
+void GfrContext::PreCmdDrawIndexedIndirect(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset, uint32_t drawCount, uint32_t stride)
 {
-  WrappedVkCommandBuffer *wrappedcommandBuffer = reinterpret_cast<WrappedVkCommandBuffer *>(commandBuffer);
-  VkCommandBuffer unwrappedcommandBuffer = wrappedcommandBuffer->wrapped_object;
-  commandBuffer->custom_data->PreCmdDrawIndexedIndirect((VkCommandBuffer)commandBuffer, unwrappedcommandBuffer, buffer, offset, drawCount, stride);
+  gfr::GetGfrCommandBuffer(commandBuffer)->PreCmdDrawIndexedIndirect(commandBuffer, buffer, offset, drawCount, stride);
 }
 
-void GfrContext::PostCmdDrawIndexedIndirect(WrappedVkCommandBuffer* commandBuffer, VkBuffer buffer, VkDeviceSize offset, uint32_t drawCount, uint32_t stride)
+void GfrContext::PostCmdDrawIndexedIndirect(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset, uint32_t drawCount, uint32_t stride)
 {
-  WrappedVkCommandBuffer *wrappedcommandBuffer = reinterpret_cast<WrappedVkCommandBuffer *>(commandBuffer);
-  VkCommandBuffer unwrappedcommandBuffer = wrappedcommandBuffer->wrapped_object;
-  commandBuffer->custom_data->PostCmdDrawIndexedIndirect((VkCommandBuffer)commandBuffer, unwrappedcommandBuffer, buffer, offset, drawCount, stride);
+  gfr::GetGfrCommandBuffer(commandBuffer)->PostCmdDrawIndexedIndirect(commandBuffer, buffer, offset, drawCount, stride);
 }
 
-void GfrContext::PreCmdDispatch(WrappedVkCommandBuffer* commandBuffer, uint32_t groupCountX, uint32_t groupCountY, uint32_t groupCountZ)
+void GfrContext::PreCmdDispatch(VkCommandBuffer commandBuffer, uint32_t groupCountX, uint32_t groupCountY, uint32_t groupCountZ)
 {
-  WrappedVkCommandBuffer *wrappedcommandBuffer = reinterpret_cast<WrappedVkCommandBuffer *>(commandBuffer);
-  VkCommandBuffer unwrappedcommandBuffer = wrappedcommandBuffer->wrapped_object;
-  commandBuffer->custom_data->PreCmdDispatch((VkCommandBuffer)commandBuffer, unwrappedcommandBuffer, groupCountX, groupCountY, groupCountZ);
+  gfr::GetGfrCommandBuffer(commandBuffer)->PreCmdDispatch(commandBuffer, groupCountX, groupCountY, groupCountZ);
 }
 
-void GfrContext::PostCmdDispatch(WrappedVkCommandBuffer* commandBuffer, uint32_t groupCountX, uint32_t groupCountY, uint32_t groupCountZ)
+void GfrContext::PostCmdDispatch(VkCommandBuffer commandBuffer, uint32_t groupCountX, uint32_t groupCountY, uint32_t groupCountZ)
 {
-  WrappedVkCommandBuffer *wrappedcommandBuffer = reinterpret_cast<WrappedVkCommandBuffer *>(commandBuffer);
-  VkCommandBuffer unwrappedcommandBuffer = wrappedcommandBuffer->wrapped_object;
-  commandBuffer->custom_data->PostCmdDispatch((VkCommandBuffer)commandBuffer, unwrappedcommandBuffer, groupCountX, groupCountY, groupCountZ);
+  gfr::GetGfrCommandBuffer(commandBuffer)->PostCmdDispatch(commandBuffer, groupCountX, groupCountY, groupCountZ);
 }
 
-void GfrContext::PreCmdDispatchIndirect(WrappedVkCommandBuffer* commandBuffer, VkBuffer buffer, VkDeviceSize offset)
+void GfrContext::PreCmdDispatchIndirect(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset)
 {
-  WrappedVkCommandBuffer *wrappedcommandBuffer = reinterpret_cast<WrappedVkCommandBuffer *>(commandBuffer);
-  VkCommandBuffer unwrappedcommandBuffer = wrappedcommandBuffer->wrapped_object;
-  commandBuffer->custom_data->PreCmdDispatchIndirect((VkCommandBuffer)commandBuffer, unwrappedcommandBuffer, buffer, offset);
+  gfr::GetGfrCommandBuffer(commandBuffer)->PreCmdDispatchIndirect(commandBuffer, buffer, offset);
 }
 
-void GfrContext::PostCmdDispatchIndirect(WrappedVkCommandBuffer* commandBuffer, VkBuffer buffer, VkDeviceSize offset)
+void GfrContext::PostCmdDispatchIndirect(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset)
 {
-  WrappedVkCommandBuffer *wrappedcommandBuffer = reinterpret_cast<WrappedVkCommandBuffer *>(commandBuffer);
-  VkCommandBuffer unwrappedcommandBuffer = wrappedcommandBuffer->wrapped_object;
-  commandBuffer->custom_data->PostCmdDispatchIndirect((VkCommandBuffer)commandBuffer, unwrappedcommandBuffer, buffer, offset);
+  gfr::GetGfrCommandBuffer(commandBuffer)->PostCmdDispatchIndirect(commandBuffer, buffer, offset);
 }
 
-void GfrContext::PreCmdSetViewport(WrappedVkCommandBuffer* commandBuffer, uint32_t firstViewport, uint32_t viewportCount, VkViewport const* pViewports)
+void GfrContext::PreCmdSetViewport(VkCommandBuffer commandBuffer, uint32_t firstViewport, uint32_t viewportCount, VkViewport const* pViewports)
 {
-  WrappedVkCommandBuffer *wrappedcommandBuffer = reinterpret_cast<WrappedVkCommandBuffer *>(commandBuffer);
-  VkCommandBuffer unwrappedcommandBuffer = wrappedcommandBuffer->wrapped_object;
-  commandBuffer->custom_data->PreCmdSetViewport((VkCommandBuffer)commandBuffer, unwrappedcommandBuffer, firstViewport, viewportCount, pViewports);
+  gfr::GetGfrCommandBuffer(commandBuffer)->PreCmdSetViewport(commandBuffer, firstViewport, viewportCount, pViewports);
 }
 
-void GfrContext::PostCmdSetViewport(WrappedVkCommandBuffer* commandBuffer, uint32_t firstViewport, uint32_t viewportCount, VkViewport const* pViewports)
+void GfrContext::PostCmdSetViewport(VkCommandBuffer commandBuffer, uint32_t firstViewport, uint32_t viewportCount, VkViewport const* pViewports)
 {
-  WrappedVkCommandBuffer *wrappedcommandBuffer = reinterpret_cast<WrappedVkCommandBuffer *>(commandBuffer);
-  VkCommandBuffer unwrappedcommandBuffer = wrappedcommandBuffer->wrapped_object;
-  commandBuffer->custom_data->PostCmdSetViewport((VkCommandBuffer)commandBuffer, unwrappedcommandBuffer, firstViewport, viewportCount, pViewports);
+  gfr::GetGfrCommandBuffer(commandBuffer)->PostCmdSetViewport(commandBuffer, firstViewport, viewportCount, pViewports);
 }
 
-void GfrContext::PreCmdSetScissor(WrappedVkCommandBuffer* commandBuffer, uint32_t firstScissor, uint32_t scissorCount, VkRect2D const* pScissors)
+void GfrContext::PreCmdSetScissor(VkCommandBuffer commandBuffer, uint32_t firstScissor, uint32_t scissorCount, VkRect2D const* pScissors)
 {
-  WrappedVkCommandBuffer *wrappedcommandBuffer = reinterpret_cast<WrappedVkCommandBuffer *>(commandBuffer);
-  VkCommandBuffer unwrappedcommandBuffer = wrappedcommandBuffer->wrapped_object;
-  commandBuffer->custom_data->PreCmdSetScissor((VkCommandBuffer)commandBuffer, unwrappedcommandBuffer, firstScissor, scissorCount, pScissors);
+  gfr::GetGfrCommandBuffer(commandBuffer)->PreCmdSetScissor(commandBuffer, firstScissor, scissorCount, pScissors);
 }
 
-void GfrContext::PostCmdSetScissor(WrappedVkCommandBuffer* commandBuffer, uint32_t firstScissor, uint32_t scissorCount, VkRect2D const* pScissors)
+void GfrContext::PostCmdSetScissor(VkCommandBuffer commandBuffer, uint32_t firstScissor, uint32_t scissorCount, VkRect2D const* pScissors)
 {
-  WrappedVkCommandBuffer *wrappedcommandBuffer = reinterpret_cast<WrappedVkCommandBuffer *>(commandBuffer);
-  VkCommandBuffer unwrappedcommandBuffer = wrappedcommandBuffer->wrapped_object;
-  commandBuffer->custom_data->PostCmdSetScissor((VkCommandBuffer)commandBuffer, unwrappedcommandBuffer, firstScissor, scissorCount, pScissors);
+  gfr::GetGfrCommandBuffer(commandBuffer)->PostCmdSetScissor(commandBuffer, firstScissor, scissorCount, pScissors);
 }
 
-void GfrContext::PreCmdSetLineWidth(WrappedVkCommandBuffer* commandBuffer, float lineWidth)
+void GfrContext::PreCmdSetLineWidth(VkCommandBuffer commandBuffer, float lineWidth)
 {
-  WrappedVkCommandBuffer *wrappedcommandBuffer = reinterpret_cast<WrappedVkCommandBuffer *>(commandBuffer);
-  VkCommandBuffer unwrappedcommandBuffer = wrappedcommandBuffer->wrapped_object;
-  commandBuffer->custom_data->PreCmdSetLineWidth((VkCommandBuffer)commandBuffer, unwrappedcommandBuffer, lineWidth);
+  gfr::GetGfrCommandBuffer(commandBuffer)->PreCmdSetLineWidth(commandBuffer, lineWidth);
 }
 
-void GfrContext::PostCmdSetLineWidth(WrappedVkCommandBuffer* commandBuffer, float lineWidth)
+void GfrContext::PostCmdSetLineWidth(VkCommandBuffer commandBuffer, float lineWidth)
 {
-  WrappedVkCommandBuffer *wrappedcommandBuffer = reinterpret_cast<WrappedVkCommandBuffer *>(commandBuffer);
-  VkCommandBuffer unwrappedcommandBuffer = wrappedcommandBuffer->wrapped_object;
-  commandBuffer->custom_data->PostCmdSetLineWidth((VkCommandBuffer)commandBuffer, unwrappedcommandBuffer, lineWidth);
+  gfr::GetGfrCommandBuffer(commandBuffer)->PostCmdSetLineWidth(commandBuffer, lineWidth);
 }
 
-void GfrContext::PreCmdSetDepthBias(WrappedVkCommandBuffer* commandBuffer, float depthBiasConstantFactor, float depthBiasClamp, float depthBiasSlopeFactor)
+void GfrContext::PreCmdSetDepthBias(VkCommandBuffer commandBuffer, float depthBiasConstantFactor, float depthBiasClamp, float depthBiasSlopeFactor)
 {
-  WrappedVkCommandBuffer *wrappedcommandBuffer = reinterpret_cast<WrappedVkCommandBuffer *>(commandBuffer);
-  VkCommandBuffer unwrappedcommandBuffer = wrappedcommandBuffer->wrapped_object;
-  commandBuffer->custom_data->PreCmdSetDepthBias((VkCommandBuffer)commandBuffer, unwrappedcommandBuffer, depthBiasConstantFactor, depthBiasClamp, depthBiasSlopeFactor);
+  gfr::GetGfrCommandBuffer(commandBuffer)->PreCmdSetDepthBias(commandBuffer, depthBiasConstantFactor, depthBiasClamp, depthBiasSlopeFactor);
 }
 
-void GfrContext::PostCmdSetDepthBias(WrappedVkCommandBuffer* commandBuffer, float depthBiasConstantFactor, float depthBiasClamp, float depthBiasSlopeFactor)
+void GfrContext::PostCmdSetDepthBias(VkCommandBuffer commandBuffer, float depthBiasConstantFactor, float depthBiasClamp, float depthBiasSlopeFactor)
 {
-  WrappedVkCommandBuffer *wrappedcommandBuffer = reinterpret_cast<WrappedVkCommandBuffer *>(commandBuffer);
-  VkCommandBuffer unwrappedcommandBuffer = wrappedcommandBuffer->wrapped_object;
-  commandBuffer->custom_data->PostCmdSetDepthBias((VkCommandBuffer)commandBuffer, unwrappedcommandBuffer, depthBiasConstantFactor, depthBiasClamp, depthBiasSlopeFactor);
+  gfr::GetGfrCommandBuffer(commandBuffer)->PostCmdSetDepthBias(commandBuffer, depthBiasConstantFactor, depthBiasClamp, depthBiasSlopeFactor);
 }
 
-void GfrContext::PreCmdSetBlendConstants(WrappedVkCommandBuffer* commandBuffer, float blendConstants[4])
+void GfrContext::PreCmdSetBlendConstants(VkCommandBuffer commandBuffer, float blendConstants[4])
 {
-  WrappedVkCommandBuffer *wrappedcommandBuffer = reinterpret_cast<WrappedVkCommandBuffer *>(commandBuffer);
-  VkCommandBuffer unwrappedcommandBuffer = wrappedcommandBuffer->wrapped_object;
-  commandBuffer->custom_data->PreCmdSetBlendConstants((VkCommandBuffer)commandBuffer, unwrappedcommandBuffer, blendConstants);
+  gfr::GetGfrCommandBuffer(commandBuffer)->PreCmdSetBlendConstants(commandBuffer, blendConstants);
 }
 
-void GfrContext::PostCmdSetBlendConstants(WrappedVkCommandBuffer* commandBuffer, float blendConstants[4])
+void GfrContext::PostCmdSetBlendConstants(VkCommandBuffer commandBuffer, float blendConstants[4])
 {
-  WrappedVkCommandBuffer *wrappedcommandBuffer = reinterpret_cast<WrappedVkCommandBuffer *>(commandBuffer);
-  VkCommandBuffer unwrappedcommandBuffer = wrappedcommandBuffer->wrapped_object;
-  commandBuffer->custom_data->PostCmdSetBlendConstants((VkCommandBuffer)commandBuffer, unwrappedcommandBuffer, blendConstants);
+  gfr::GetGfrCommandBuffer(commandBuffer)->PostCmdSetBlendConstants(commandBuffer, blendConstants);
 }
 
-void GfrContext::PreCmdSetDepthBounds(WrappedVkCommandBuffer* commandBuffer, float minDepthBounds, float maxDepthBounds)
+void GfrContext::PreCmdSetDepthBounds(VkCommandBuffer commandBuffer, float minDepthBounds, float maxDepthBounds)
 {
-  WrappedVkCommandBuffer *wrappedcommandBuffer = reinterpret_cast<WrappedVkCommandBuffer *>(commandBuffer);
-  VkCommandBuffer unwrappedcommandBuffer = wrappedcommandBuffer->wrapped_object;
-  commandBuffer->custom_data->PreCmdSetDepthBounds((VkCommandBuffer)commandBuffer, unwrappedcommandBuffer, minDepthBounds, maxDepthBounds);
+  gfr::GetGfrCommandBuffer(commandBuffer)->PreCmdSetDepthBounds(commandBuffer, minDepthBounds, maxDepthBounds);
 }
 
-void GfrContext::PostCmdSetDepthBounds(WrappedVkCommandBuffer* commandBuffer, float minDepthBounds, float maxDepthBounds)
+void GfrContext::PostCmdSetDepthBounds(VkCommandBuffer commandBuffer, float minDepthBounds, float maxDepthBounds)
 {
-  WrappedVkCommandBuffer *wrappedcommandBuffer = reinterpret_cast<WrappedVkCommandBuffer *>(commandBuffer);
-  VkCommandBuffer unwrappedcommandBuffer = wrappedcommandBuffer->wrapped_object;
-  commandBuffer->custom_data->PostCmdSetDepthBounds((VkCommandBuffer)commandBuffer, unwrappedcommandBuffer, minDepthBounds, maxDepthBounds);
+  gfr::GetGfrCommandBuffer(commandBuffer)->PostCmdSetDepthBounds(commandBuffer, minDepthBounds, maxDepthBounds);
 }
 
-void GfrContext::PreCmdSetStencilCompareMask(WrappedVkCommandBuffer* commandBuffer, VkStencilFaceFlags faceMask, uint32_t compareMask)
+void GfrContext::PreCmdSetStencilCompareMask(VkCommandBuffer commandBuffer, VkStencilFaceFlags faceMask, uint32_t compareMask)
 {
-  WrappedVkCommandBuffer *wrappedcommandBuffer = reinterpret_cast<WrappedVkCommandBuffer *>(commandBuffer);
-  VkCommandBuffer unwrappedcommandBuffer = wrappedcommandBuffer->wrapped_object;
-  commandBuffer->custom_data->PreCmdSetStencilCompareMask((VkCommandBuffer)commandBuffer, unwrappedcommandBuffer, faceMask, compareMask);
+  gfr::GetGfrCommandBuffer(commandBuffer)->PreCmdSetStencilCompareMask(commandBuffer, faceMask, compareMask);
 }
 
-void GfrContext::PostCmdSetStencilCompareMask(WrappedVkCommandBuffer* commandBuffer, VkStencilFaceFlags faceMask, uint32_t compareMask)
+void GfrContext::PostCmdSetStencilCompareMask(VkCommandBuffer commandBuffer, VkStencilFaceFlags faceMask, uint32_t compareMask)
 {
-  WrappedVkCommandBuffer *wrappedcommandBuffer = reinterpret_cast<WrappedVkCommandBuffer *>(commandBuffer);
-  VkCommandBuffer unwrappedcommandBuffer = wrappedcommandBuffer->wrapped_object;
-  commandBuffer->custom_data->PostCmdSetStencilCompareMask((VkCommandBuffer)commandBuffer, unwrappedcommandBuffer, faceMask, compareMask);
+  gfr::GetGfrCommandBuffer(commandBuffer)->PostCmdSetStencilCompareMask(commandBuffer, faceMask, compareMask);
 }
 
-void GfrContext::PreCmdSetStencilWriteMask(WrappedVkCommandBuffer* commandBuffer, VkStencilFaceFlags faceMask, uint32_t writeMask)
+void GfrContext::PreCmdSetStencilWriteMask(VkCommandBuffer commandBuffer, VkStencilFaceFlags faceMask, uint32_t writeMask)
 {
-  WrappedVkCommandBuffer *wrappedcommandBuffer = reinterpret_cast<WrappedVkCommandBuffer *>(commandBuffer);
-  VkCommandBuffer unwrappedcommandBuffer = wrappedcommandBuffer->wrapped_object;
-  commandBuffer->custom_data->PreCmdSetStencilWriteMask((VkCommandBuffer)commandBuffer, unwrappedcommandBuffer, faceMask, writeMask);
+  gfr::GetGfrCommandBuffer(commandBuffer)->PreCmdSetStencilWriteMask(commandBuffer, faceMask, writeMask);
 }
 
-void GfrContext::PostCmdSetStencilWriteMask(WrappedVkCommandBuffer* commandBuffer, VkStencilFaceFlags faceMask, uint32_t writeMask)
+void GfrContext::PostCmdSetStencilWriteMask(VkCommandBuffer commandBuffer, VkStencilFaceFlags faceMask, uint32_t writeMask)
 {
-  WrappedVkCommandBuffer *wrappedcommandBuffer = reinterpret_cast<WrappedVkCommandBuffer *>(commandBuffer);
-  VkCommandBuffer unwrappedcommandBuffer = wrappedcommandBuffer->wrapped_object;
-  commandBuffer->custom_data->PostCmdSetStencilWriteMask((VkCommandBuffer)commandBuffer, unwrappedcommandBuffer, faceMask, writeMask);
+  gfr::GetGfrCommandBuffer(commandBuffer)->PostCmdSetStencilWriteMask(commandBuffer, faceMask, writeMask);
 }
 
-void GfrContext::PreCmdSetStencilReference(WrappedVkCommandBuffer* commandBuffer, VkStencilFaceFlags faceMask, uint32_t reference)
+void GfrContext::PreCmdSetStencilReference(VkCommandBuffer commandBuffer, VkStencilFaceFlags faceMask, uint32_t reference)
 {
-  WrappedVkCommandBuffer *wrappedcommandBuffer = reinterpret_cast<WrappedVkCommandBuffer *>(commandBuffer);
-  VkCommandBuffer unwrappedcommandBuffer = wrappedcommandBuffer->wrapped_object;
-  commandBuffer->custom_data->PreCmdSetStencilReference((VkCommandBuffer)commandBuffer, unwrappedcommandBuffer, faceMask, reference);
+  gfr::GetGfrCommandBuffer(commandBuffer)->PreCmdSetStencilReference(commandBuffer, faceMask, reference);
 }
 
-void GfrContext::PostCmdSetStencilReference(WrappedVkCommandBuffer* commandBuffer, VkStencilFaceFlags faceMask, uint32_t reference)
+void GfrContext::PostCmdSetStencilReference(VkCommandBuffer commandBuffer, VkStencilFaceFlags faceMask, uint32_t reference)
 {
-  WrappedVkCommandBuffer *wrappedcommandBuffer = reinterpret_cast<WrappedVkCommandBuffer *>(commandBuffer);
-  VkCommandBuffer unwrappedcommandBuffer = wrappedcommandBuffer->wrapped_object;
-  commandBuffer->custom_data->PostCmdSetStencilReference((VkCommandBuffer)commandBuffer, unwrappedcommandBuffer, faceMask, reference);
+  gfr::GetGfrCommandBuffer(commandBuffer)->PostCmdSetStencilReference(commandBuffer, faceMask, reference);
 }
 
-void GfrContext::PreCmdBeginQuery(WrappedVkCommandBuffer* commandBuffer, VkQueryPool queryPool, uint32_t query, VkQueryControlFlags flags)
+void GfrContext::PreCmdBeginQuery(VkCommandBuffer commandBuffer, VkQueryPool queryPool, uint32_t query, VkQueryControlFlags flags)
 {
-  WrappedVkCommandBuffer *wrappedcommandBuffer = reinterpret_cast<WrappedVkCommandBuffer *>(commandBuffer);
-  VkCommandBuffer unwrappedcommandBuffer = wrappedcommandBuffer->wrapped_object;
-  commandBuffer->custom_data->PreCmdBeginQuery((VkCommandBuffer)commandBuffer, unwrappedcommandBuffer, queryPool, query, flags);
+  gfr::GetGfrCommandBuffer(commandBuffer)->PreCmdBeginQuery(commandBuffer, queryPool, query, flags);
 }
 
-void GfrContext::PostCmdBeginQuery(WrappedVkCommandBuffer* commandBuffer, VkQueryPool queryPool, uint32_t query, VkQueryControlFlags flags)
+void GfrContext::PostCmdBeginQuery(VkCommandBuffer commandBuffer, VkQueryPool queryPool, uint32_t query, VkQueryControlFlags flags)
 {
-  WrappedVkCommandBuffer *wrappedcommandBuffer = reinterpret_cast<WrappedVkCommandBuffer *>(commandBuffer);
-  VkCommandBuffer unwrappedcommandBuffer = wrappedcommandBuffer->wrapped_object;
-  commandBuffer->custom_data->PostCmdBeginQuery((VkCommandBuffer)commandBuffer, unwrappedcommandBuffer, queryPool, query, flags);
+  gfr::GetGfrCommandBuffer(commandBuffer)->PostCmdBeginQuery(commandBuffer, queryPool, query, flags);
 }
 
-void GfrContext::PreCmdEndQuery(WrappedVkCommandBuffer* commandBuffer, VkQueryPool queryPool, uint32_t query)
+void GfrContext::PreCmdEndQuery(VkCommandBuffer commandBuffer, VkQueryPool queryPool, uint32_t query)
 {
-  WrappedVkCommandBuffer *wrappedcommandBuffer = reinterpret_cast<WrappedVkCommandBuffer *>(commandBuffer);
-  VkCommandBuffer unwrappedcommandBuffer = wrappedcommandBuffer->wrapped_object;
-  commandBuffer->custom_data->PreCmdEndQuery((VkCommandBuffer)commandBuffer, unwrappedcommandBuffer, queryPool, query);
+  gfr::GetGfrCommandBuffer(commandBuffer)->PreCmdEndQuery(commandBuffer, queryPool, query);
 }
 
-void GfrContext::PostCmdEndQuery(WrappedVkCommandBuffer* commandBuffer, VkQueryPool queryPool, uint32_t query)
+void GfrContext::PostCmdEndQuery(VkCommandBuffer commandBuffer, VkQueryPool queryPool, uint32_t query)
 {
-  WrappedVkCommandBuffer *wrappedcommandBuffer = reinterpret_cast<WrappedVkCommandBuffer *>(commandBuffer);
-  VkCommandBuffer unwrappedcommandBuffer = wrappedcommandBuffer->wrapped_object;
-  commandBuffer->custom_data->PostCmdEndQuery((VkCommandBuffer)commandBuffer, unwrappedcommandBuffer, queryPool, query);
+  gfr::GetGfrCommandBuffer(commandBuffer)->PostCmdEndQuery(commandBuffer, queryPool, query);
 }
 
-void GfrContext::PreCmdResetQueryPool(WrappedVkCommandBuffer* commandBuffer, VkQueryPool queryPool, uint32_t firstQuery, uint32_t queryCount)
+void GfrContext::PreCmdResetQueryPool(VkCommandBuffer commandBuffer, VkQueryPool queryPool, uint32_t firstQuery, uint32_t queryCount)
 {
-  WrappedVkCommandBuffer *wrappedcommandBuffer = reinterpret_cast<WrappedVkCommandBuffer *>(commandBuffer);
-  VkCommandBuffer unwrappedcommandBuffer = wrappedcommandBuffer->wrapped_object;
-  commandBuffer->custom_data->PreCmdResetQueryPool((VkCommandBuffer)commandBuffer, unwrappedcommandBuffer, queryPool, firstQuery, queryCount);
+  gfr::GetGfrCommandBuffer(commandBuffer)->PreCmdResetQueryPool(commandBuffer, queryPool, firstQuery, queryCount);
 }
 
-void GfrContext::PostCmdResetQueryPool(WrappedVkCommandBuffer* commandBuffer, VkQueryPool queryPool, uint32_t firstQuery, uint32_t queryCount)
+void GfrContext::PostCmdResetQueryPool(VkCommandBuffer commandBuffer, VkQueryPool queryPool, uint32_t firstQuery, uint32_t queryCount)
 {
-  WrappedVkCommandBuffer *wrappedcommandBuffer = reinterpret_cast<WrappedVkCommandBuffer *>(commandBuffer);
-  VkCommandBuffer unwrappedcommandBuffer = wrappedcommandBuffer->wrapped_object;
-  commandBuffer->custom_data->PostCmdResetQueryPool((VkCommandBuffer)commandBuffer, unwrappedcommandBuffer, queryPool, firstQuery, queryCount);
+  gfr::GetGfrCommandBuffer(commandBuffer)->PostCmdResetQueryPool(commandBuffer, queryPool, firstQuery, queryCount);
 }
 
-void GfrContext::PreCmdWriteTimestamp(WrappedVkCommandBuffer* commandBuffer, VkPipelineStageFlagBits pipelineStage, VkQueryPool queryPool, uint32_t query)
+void GfrContext::PreCmdWriteTimestamp(VkCommandBuffer commandBuffer, VkPipelineStageFlagBits pipelineStage, VkQueryPool queryPool, uint32_t query)
 {
-  WrappedVkCommandBuffer *wrappedcommandBuffer = reinterpret_cast<WrappedVkCommandBuffer *>(commandBuffer);
-  VkCommandBuffer unwrappedcommandBuffer = wrappedcommandBuffer->wrapped_object;
-  commandBuffer->custom_data->PreCmdWriteTimestamp((VkCommandBuffer)commandBuffer, unwrappedcommandBuffer, pipelineStage, queryPool, query);
+  gfr::GetGfrCommandBuffer(commandBuffer)->PreCmdWriteTimestamp(commandBuffer, pipelineStage, queryPool, query);
 }
 
-void GfrContext::PostCmdWriteTimestamp(WrappedVkCommandBuffer* commandBuffer, VkPipelineStageFlagBits pipelineStage, VkQueryPool queryPool, uint32_t query)
+void GfrContext::PostCmdWriteTimestamp(VkCommandBuffer commandBuffer, VkPipelineStageFlagBits pipelineStage, VkQueryPool queryPool, uint32_t query)
 {
-  WrappedVkCommandBuffer *wrappedcommandBuffer = reinterpret_cast<WrappedVkCommandBuffer *>(commandBuffer);
-  VkCommandBuffer unwrappedcommandBuffer = wrappedcommandBuffer->wrapped_object;
-  commandBuffer->custom_data->PostCmdWriteTimestamp((VkCommandBuffer)commandBuffer, unwrappedcommandBuffer, pipelineStage, queryPool, query);
+  gfr::GetGfrCommandBuffer(commandBuffer)->PostCmdWriteTimestamp(commandBuffer, pipelineStage, queryPool, query);
 }
 
-void GfrContext::PreCmdCopyQueryPoolResults(WrappedVkCommandBuffer* commandBuffer, VkQueryPool queryPool, uint32_t firstQuery, uint32_t queryCount, VkBuffer dstBuffer, VkDeviceSize dstOffset, VkDeviceSize stride, VkQueryResultFlags flags)
+void GfrContext::PreCmdCopyQueryPoolResults(VkCommandBuffer commandBuffer, VkQueryPool queryPool, uint32_t firstQuery, uint32_t queryCount, VkBuffer dstBuffer, VkDeviceSize dstOffset, VkDeviceSize stride, VkQueryResultFlags flags)
 {
-  WrappedVkCommandBuffer *wrappedcommandBuffer = reinterpret_cast<WrappedVkCommandBuffer *>(commandBuffer);
-  VkCommandBuffer unwrappedcommandBuffer = wrappedcommandBuffer->wrapped_object;
-  commandBuffer->custom_data->PreCmdCopyQueryPoolResults((VkCommandBuffer)commandBuffer, unwrappedcommandBuffer, queryPool, firstQuery, queryCount, dstBuffer, dstOffset, stride, flags);
+  gfr::GetGfrCommandBuffer(commandBuffer)->PreCmdCopyQueryPoolResults(commandBuffer, queryPool, firstQuery, queryCount, dstBuffer, dstOffset, stride, flags);
 }
 
-void GfrContext::PostCmdCopyQueryPoolResults(WrappedVkCommandBuffer* commandBuffer, VkQueryPool queryPool, uint32_t firstQuery, uint32_t queryCount, VkBuffer dstBuffer, VkDeviceSize dstOffset, VkDeviceSize stride, VkQueryResultFlags flags)
+void GfrContext::PostCmdCopyQueryPoolResults(VkCommandBuffer commandBuffer, VkQueryPool queryPool, uint32_t firstQuery, uint32_t queryCount, VkBuffer dstBuffer, VkDeviceSize dstOffset, VkDeviceSize stride, VkQueryResultFlags flags)
 {
-  WrappedVkCommandBuffer *wrappedcommandBuffer = reinterpret_cast<WrappedVkCommandBuffer *>(commandBuffer);
-  VkCommandBuffer unwrappedcommandBuffer = wrappedcommandBuffer->wrapped_object;
-  commandBuffer->custom_data->PostCmdCopyQueryPoolResults((VkCommandBuffer)commandBuffer, unwrappedcommandBuffer, queryPool, firstQuery, queryCount, dstBuffer, dstOffset, stride, flags);
+  gfr::GetGfrCommandBuffer(commandBuffer)->PostCmdCopyQueryPoolResults(commandBuffer, queryPool, firstQuery, queryCount, dstBuffer, dstOffset, stride, flags);
 }
 
-void GfrContext::PreCmdBeginRenderPass(WrappedVkCommandBuffer* commandBuffer, VkRenderPassBeginInfo const* pRenderPassBegin, VkSubpassContents contents)
+void GfrContext::PreCmdBeginRenderPass(VkCommandBuffer commandBuffer, VkRenderPassBeginInfo const* pRenderPassBegin, VkSubpassContents contents)
 {
-  WrappedVkCommandBuffer *wrappedcommandBuffer = reinterpret_cast<WrappedVkCommandBuffer *>(commandBuffer);
-  VkCommandBuffer unwrappedcommandBuffer = wrappedcommandBuffer->wrapped_object;
-  commandBuffer->custom_data->PreCmdBeginRenderPass((VkCommandBuffer)commandBuffer, unwrappedcommandBuffer, pRenderPassBegin, contents);
+  gfr::GetGfrCommandBuffer(commandBuffer)->PreCmdBeginRenderPass(commandBuffer, pRenderPassBegin, contents);
 }
 
-void GfrContext::PostCmdBeginRenderPass(WrappedVkCommandBuffer* commandBuffer, VkRenderPassBeginInfo const* pRenderPassBegin, VkSubpassContents contents)
+void GfrContext::PostCmdBeginRenderPass(VkCommandBuffer commandBuffer, VkRenderPassBeginInfo const* pRenderPassBegin, VkSubpassContents contents)
 {
-  WrappedVkCommandBuffer *wrappedcommandBuffer = reinterpret_cast<WrappedVkCommandBuffer *>(commandBuffer);
-  VkCommandBuffer unwrappedcommandBuffer = wrappedcommandBuffer->wrapped_object;
-  commandBuffer->custom_data->PostCmdBeginRenderPass((VkCommandBuffer)commandBuffer, unwrappedcommandBuffer, pRenderPassBegin, contents);
+  gfr::GetGfrCommandBuffer(commandBuffer)->PostCmdBeginRenderPass(commandBuffer, pRenderPassBegin, contents);
 }
 
-void GfrContext::PreCmdNextSubpass(WrappedVkCommandBuffer* commandBuffer, VkSubpassContents contents)
+void GfrContext::PreCmdNextSubpass(VkCommandBuffer commandBuffer, VkSubpassContents contents)
 {
-  WrappedVkCommandBuffer *wrappedcommandBuffer = reinterpret_cast<WrappedVkCommandBuffer *>(commandBuffer);
-  VkCommandBuffer unwrappedcommandBuffer = wrappedcommandBuffer->wrapped_object;
-  commandBuffer->custom_data->PreCmdNextSubpass((VkCommandBuffer)commandBuffer, unwrappedcommandBuffer, contents);
+  gfr::GetGfrCommandBuffer(commandBuffer)->PreCmdNextSubpass(commandBuffer, contents);
 }
 
-void GfrContext::PostCmdNextSubpass(WrappedVkCommandBuffer* commandBuffer, VkSubpassContents contents)
+void GfrContext::PostCmdNextSubpass(VkCommandBuffer commandBuffer, VkSubpassContents contents)
 {
-  WrappedVkCommandBuffer *wrappedcommandBuffer = reinterpret_cast<WrappedVkCommandBuffer *>(commandBuffer);
-  VkCommandBuffer unwrappedcommandBuffer = wrappedcommandBuffer->wrapped_object;
-  commandBuffer->custom_data->PostCmdNextSubpass((VkCommandBuffer)commandBuffer, unwrappedcommandBuffer, contents);
+  gfr::GetGfrCommandBuffer(commandBuffer)->PostCmdNextSubpass(commandBuffer, contents);
 }
 
-void GfrContext::PreCmdEndRenderPass(WrappedVkCommandBuffer* commandBuffer)
+void GfrContext::PreCmdEndRenderPass(VkCommandBuffer commandBuffer)
 {
-  WrappedVkCommandBuffer *wrappedcommandBuffer = reinterpret_cast<WrappedVkCommandBuffer *>(commandBuffer);
-  VkCommandBuffer unwrappedcommandBuffer = wrappedcommandBuffer->wrapped_object;
-  commandBuffer->custom_data->PreCmdEndRenderPass((VkCommandBuffer)commandBuffer, unwrappedcommandBuffer);
+  gfr::GetGfrCommandBuffer(commandBuffer)->PreCmdEndRenderPass(commandBuffer);
 }
 
-void GfrContext::PostCmdEndRenderPass(WrappedVkCommandBuffer* commandBuffer)
+void GfrContext::PostCmdEndRenderPass(VkCommandBuffer commandBuffer)
 {
-  WrappedVkCommandBuffer *wrappedcommandBuffer = reinterpret_cast<WrappedVkCommandBuffer *>(commandBuffer);
-  VkCommandBuffer unwrappedcommandBuffer = wrappedcommandBuffer->wrapped_object;
-  commandBuffer->custom_data->PostCmdEndRenderPass((VkCommandBuffer)commandBuffer, unwrappedcommandBuffer);
+  gfr::GetGfrCommandBuffer(commandBuffer)->PostCmdEndRenderPass(commandBuffer);
 }
 
-void GfrContext::PreCmdSetEvent(WrappedVkCommandBuffer* commandBuffer, VkEvent event, VkPipelineStageFlags stageMask)
+void GfrContext::PreCmdSetEvent(VkCommandBuffer commandBuffer, VkEvent event, VkPipelineStageFlags stageMask)
 {
-  WrappedVkCommandBuffer *wrappedcommandBuffer = reinterpret_cast<WrappedVkCommandBuffer *>(commandBuffer);
-  VkCommandBuffer unwrappedcommandBuffer = wrappedcommandBuffer->wrapped_object;
-  commandBuffer->custom_data->PreCmdSetEvent((VkCommandBuffer)commandBuffer, unwrappedcommandBuffer, event, stageMask);
+  gfr::GetGfrCommandBuffer(commandBuffer)->PreCmdSetEvent(commandBuffer, event, stageMask);
 }
 
-void GfrContext::PostCmdSetEvent(WrappedVkCommandBuffer* commandBuffer, VkEvent event, VkPipelineStageFlags stageMask)
+void GfrContext::PostCmdSetEvent(VkCommandBuffer commandBuffer, VkEvent event, VkPipelineStageFlags stageMask)
 {
-  WrappedVkCommandBuffer *wrappedcommandBuffer = reinterpret_cast<WrappedVkCommandBuffer *>(commandBuffer);
-  VkCommandBuffer unwrappedcommandBuffer = wrappedcommandBuffer->wrapped_object;
-  commandBuffer->custom_data->PostCmdSetEvent((VkCommandBuffer)commandBuffer, unwrappedcommandBuffer, event, stageMask);
+  gfr::GetGfrCommandBuffer(commandBuffer)->PostCmdSetEvent(commandBuffer, event, stageMask);
 }
 
-void GfrContext::PreCmdResetEvent(WrappedVkCommandBuffer* commandBuffer, VkEvent event, VkPipelineStageFlags stageMask)
+void GfrContext::PreCmdResetEvent(VkCommandBuffer commandBuffer, VkEvent event, VkPipelineStageFlags stageMask)
 {
-  WrappedVkCommandBuffer *wrappedcommandBuffer = reinterpret_cast<WrappedVkCommandBuffer *>(commandBuffer);
-  VkCommandBuffer unwrappedcommandBuffer = wrappedcommandBuffer->wrapped_object;
-  commandBuffer->custom_data->PreCmdResetEvent((VkCommandBuffer)commandBuffer, unwrappedcommandBuffer, event, stageMask);
+  gfr::GetGfrCommandBuffer(commandBuffer)->PreCmdResetEvent(commandBuffer, event, stageMask);
 }
 
-void GfrContext::PostCmdResetEvent(WrappedVkCommandBuffer* commandBuffer, VkEvent event, VkPipelineStageFlags stageMask)
+void GfrContext::PostCmdResetEvent(VkCommandBuffer commandBuffer, VkEvent event, VkPipelineStageFlags stageMask)
 {
-  WrappedVkCommandBuffer *wrappedcommandBuffer = reinterpret_cast<WrappedVkCommandBuffer *>(commandBuffer);
-  VkCommandBuffer unwrappedcommandBuffer = wrappedcommandBuffer->wrapped_object;
-  commandBuffer->custom_data->PostCmdResetEvent((VkCommandBuffer)commandBuffer, unwrappedcommandBuffer, event, stageMask);
+  gfr::GetGfrCommandBuffer(commandBuffer)->PostCmdResetEvent(commandBuffer, event, stageMask);
 }
 
-void GfrContext::PreCmdWaitEvents(WrappedVkCommandBuffer* commandBuffer, uint32_t eventCount, VkEvent const* pEvents, VkPipelineStageFlags srcStageMask, VkPipelineStageFlags dstStageMask, uint32_t memoryBarrierCount, VkMemoryBarrier const* pMemoryBarriers, uint32_t bufferMemoryBarrierCount, VkBufferMemoryBarrier const* pBufferMemoryBarriers, uint32_t imageMemoryBarrierCount, VkImageMemoryBarrier const* pImageMemoryBarriers)
+void GfrContext::PreCmdWaitEvents(VkCommandBuffer commandBuffer, uint32_t eventCount, VkEvent const* pEvents, VkPipelineStageFlags srcStageMask, VkPipelineStageFlags dstStageMask, uint32_t memoryBarrierCount, VkMemoryBarrier const* pMemoryBarriers, uint32_t bufferMemoryBarrierCount, VkBufferMemoryBarrier const* pBufferMemoryBarriers, uint32_t imageMemoryBarrierCount, VkImageMemoryBarrier const* pImageMemoryBarriers)
 {
-  WrappedVkCommandBuffer *wrappedcommandBuffer = reinterpret_cast<WrappedVkCommandBuffer *>(commandBuffer);
-  VkCommandBuffer unwrappedcommandBuffer = wrappedcommandBuffer->wrapped_object;
-  commandBuffer->custom_data->PreCmdWaitEvents((VkCommandBuffer)commandBuffer, unwrappedcommandBuffer, eventCount, pEvents, srcStageMask, dstStageMask, memoryBarrierCount, pMemoryBarriers, bufferMemoryBarrierCount, pBufferMemoryBarriers, imageMemoryBarrierCount, pImageMemoryBarriers);
+  gfr::GetGfrCommandBuffer(commandBuffer)->PreCmdWaitEvents(commandBuffer, eventCount, pEvents, srcStageMask, dstStageMask, memoryBarrierCount, pMemoryBarriers, bufferMemoryBarrierCount, pBufferMemoryBarriers, imageMemoryBarrierCount, pImageMemoryBarriers);
 }
 
-void GfrContext::PostCmdWaitEvents(WrappedVkCommandBuffer* commandBuffer, uint32_t eventCount, VkEvent const* pEvents, VkPipelineStageFlags srcStageMask, VkPipelineStageFlags dstStageMask, uint32_t memoryBarrierCount, VkMemoryBarrier const* pMemoryBarriers, uint32_t bufferMemoryBarrierCount, VkBufferMemoryBarrier const* pBufferMemoryBarriers, uint32_t imageMemoryBarrierCount, VkImageMemoryBarrier const* pImageMemoryBarriers)
+void GfrContext::PostCmdWaitEvents(VkCommandBuffer commandBuffer, uint32_t eventCount, VkEvent const* pEvents, VkPipelineStageFlags srcStageMask, VkPipelineStageFlags dstStageMask, uint32_t memoryBarrierCount, VkMemoryBarrier const* pMemoryBarriers, uint32_t bufferMemoryBarrierCount, VkBufferMemoryBarrier const* pBufferMemoryBarriers, uint32_t imageMemoryBarrierCount, VkImageMemoryBarrier const* pImageMemoryBarriers)
 {
-  WrappedVkCommandBuffer *wrappedcommandBuffer = reinterpret_cast<WrappedVkCommandBuffer *>(commandBuffer);
-  VkCommandBuffer unwrappedcommandBuffer = wrappedcommandBuffer->wrapped_object;
-  commandBuffer->custom_data->PostCmdWaitEvents((VkCommandBuffer)commandBuffer, unwrappedcommandBuffer, eventCount, pEvents, srcStageMask, dstStageMask, memoryBarrierCount, pMemoryBarriers, bufferMemoryBarrierCount, pBufferMemoryBarriers, imageMemoryBarrierCount, pImageMemoryBarriers);
+  gfr::GetGfrCommandBuffer(commandBuffer)->PostCmdWaitEvents(commandBuffer, eventCount, pEvents, srcStageMask, dstStageMask, memoryBarrierCount, pMemoryBarriers, bufferMemoryBarrierCount, pBufferMemoryBarriers, imageMemoryBarrierCount, pImageMemoryBarriers);
 }
 
-void GfrContext::PreCmdPipelineBarrier(WrappedVkCommandBuffer* commandBuffer, VkPipelineStageFlags srcStageMask, VkPipelineStageFlags dstStageMask, VkDependencyFlags dependencyFlags, uint32_t memoryBarrierCount, VkMemoryBarrier const* pMemoryBarriers, uint32_t bufferMemoryBarrierCount, VkBufferMemoryBarrier const* pBufferMemoryBarriers, uint32_t imageMemoryBarrierCount, VkImageMemoryBarrier const* pImageMemoryBarriers)
+void GfrContext::PreCmdPipelineBarrier(VkCommandBuffer commandBuffer, VkPipelineStageFlags srcStageMask, VkPipelineStageFlags dstStageMask, VkDependencyFlags dependencyFlags, uint32_t memoryBarrierCount, VkMemoryBarrier const* pMemoryBarriers, uint32_t bufferMemoryBarrierCount, VkBufferMemoryBarrier const* pBufferMemoryBarriers, uint32_t imageMemoryBarrierCount, VkImageMemoryBarrier const* pImageMemoryBarriers)
 {
-  WrappedVkCommandBuffer *wrappedcommandBuffer = reinterpret_cast<WrappedVkCommandBuffer *>(commandBuffer);
-  VkCommandBuffer unwrappedcommandBuffer = wrappedcommandBuffer->wrapped_object;
-  commandBuffer->custom_data->PreCmdPipelineBarrier((VkCommandBuffer)commandBuffer, unwrappedcommandBuffer, srcStageMask, dstStageMask, dependencyFlags, memoryBarrierCount, pMemoryBarriers, bufferMemoryBarrierCount, pBufferMemoryBarriers, imageMemoryBarrierCount, pImageMemoryBarriers);
+  gfr::GetGfrCommandBuffer(commandBuffer)->PreCmdPipelineBarrier(commandBuffer, srcStageMask, dstStageMask, dependencyFlags, memoryBarrierCount, pMemoryBarriers, bufferMemoryBarrierCount, pBufferMemoryBarriers, imageMemoryBarrierCount, pImageMemoryBarriers);
 }
 
-void GfrContext::PostCmdPipelineBarrier(WrappedVkCommandBuffer* commandBuffer, VkPipelineStageFlags srcStageMask, VkPipelineStageFlags dstStageMask, VkDependencyFlags dependencyFlags, uint32_t memoryBarrierCount, VkMemoryBarrier const* pMemoryBarriers, uint32_t bufferMemoryBarrierCount, VkBufferMemoryBarrier const* pBufferMemoryBarriers, uint32_t imageMemoryBarrierCount, VkImageMemoryBarrier const* pImageMemoryBarriers)
+void GfrContext::PostCmdPipelineBarrier(VkCommandBuffer commandBuffer, VkPipelineStageFlags srcStageMask, VkPipelineStageFlags dstStageMask, VkDependencyFlags dependencyFlags, uint32_t memoryBarrierCount, VkMemoryBarrier const* pMemoryBarriers, uint32_t bufferMemoryBarrierCount, VkBufferMemoryBarrier const* pBufferMemoryBarriers, uint32_t imageMemoryBarrierCount, VkImageMemoryBarrier const* pImageMemoryBarriers)
 {
-  WrappedVkCommandBuffer *wrappedcommandBuffer = reinterpret_cast<WrappedVkCommandBuffer *>(commandBuffer);
-  VkCommandBuffer unwrappedcommandBuffer = wrappedcommandBuffer->wrapped_object;
-  commandBuffer->custom_data->PostCmdPipelineBarrier((VkCommandBuffer)commandBuffer, unwrappedcommandBuffer, srcStageMask, dstStageMask, dependencyFlags, memoryBarrierCount, pMemoryBarriers, bufferMemoryBarrierCount, pBufferMemoryBarriers, imageMemoryBarrierCount, pImageMemoryBarriers);
+  gfr::GetGfrCommandBuffer(commandBuffer)->PostCmdPipelineBarrier(commandBuffer, srcStageMask, dstStageMask, dependencyFlags, memoryBarrierCount, pMemoryBarriers, bufferMemoryBarrierCount, pBufferMemoryBarriers, imageMemoryBarrierCount, pImageMemoryBarriers);
 }
 
-void GfrContext::PreCmdWriteBufferMarkerAMD(WrappedVkCommandBuffer* commandBuffer, VkPipelineStageFlagBits pipelineStage, VkBuffer dstBuffer, VkDeviceSize dstOffset, uint32_t marker)
+void GfrContext::PreCmdWriteBufferMarkerAMD(VkCommandBuffer commandBuffer, VkPipelineStageFlagBits pipelineStage, VkBuffer dstBuffer, VkDeviceSize dstOffset, uint32_t marker)
 {
-  WrappedVkCommandBuffer *wrappedcommandBuffer = reinterpret_cast<WrappedVkCommandBuffer *>(commandBuffer);
-  VkCommandBuffer unwrappedcommandBuffer = wrappedcommandBuffer->wrapped_object;
-  commandBuffer->custom_data->PreCmdWriteBufferMarkerAMD((VkCommandBuffer)commandBuffer, unwrappedcommandBuffer, pipelineStage, dstBuffer, dstOffset, marker);
+  gfr::GetGfrCommandBuffer(commandBuffer)->PreCmdWriteBufferMarkerAMD(commandBuffer, pipelineStage, dstBuffer, dstOffset, marker);
 }
 
-void GfrContext::PostCmdWriteBufferMarkerAMD(WrappedVkCommandBuffer* commandBuffer, VkPipelineStageFlagBits pipelineStage, VkBuffer dstBuffer, VkDeviceSize dstOffset, uint32_t marker)
+void GfrContext::PostCmdWriteBufferMarkerAMD(VkCommandBuffer commandBuffer, VkPipelineStageFlagBits pipelineStage, VkBuffer dstBuffer, VkDeviceSize dstOffset, uint32_t marker)
 {
-  WrappedVkCommandBuffer *wrappedcommandBuffer = reinterpret_cast<WrappedVkCommandBuffer *>(commandBuffer);
-  VkCommandBuffer unwrappedcommandBuffer = wrappedcommandBuffer->wrapped_object;
-  commandBuffer->custom_data->PostCmdWriteBufferMarkerAMD((VkCommandBuffer)commandBuffer, unwrappedcommandBuffer, pipelineStage, dstBuffer, dstOffset, marker);
+  gfr::GetGfrCommandBuffer(commandBuffer)->PostCmdWriteBufferMarkerAMD(commandBuffer, pipelineStage, dstBuffer, dstOffset, marker);
 }
 
-void GfrContext::PreCmdDrawIndirectCountAMD(WrappedVkCommandBuffer* commandBuffer, VkBuffer buffer, VkDeviceSize offset, VkBuffer countBuffer, VkDeviceSize countOffset, uint32_t maxDrawCount, uint32_t stride)
+void GfrContext::PreCmdDrawIndirectCountAMD(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset, VkBuffer countBuffer, VkDeviceSize countOffset, uint32_t maxDrawCount, uint32_t stride)
 {
-  WrappedVkCommandBuffer *wrappedcommandBuffer = reinterpret_cast<WrappedVkCommandBuffer *>(commandBuffer);
-  VkCommandBuffer unwrappedcommandBuffer = wrappedcommandBuffer->wrapped_object;
-  commandBuffer->custom_data->PreCmdDrawIndirectCountAMD((VkCommandBuffer)commandBuffer, unwrappedcommandBuffer, buffer, offset, countBuffer, countOffset, maxDrawCount, stride);
+  gfr::GetGfrCommandBuffer(commandBuffer)->PreCmdDrawIndirectCountAMD(commandBuffer, buffer, offset, countBuffer, countOffset, maxDrawCount, stride);
 }
 
-void GfrContext::PostCmdDrawIndirectCountAMD(WrappedVkCommandBuffer* commandBuffer, VkBuffer buffer, VkDeviceSize offset, VkBuffer countBuffer, VkDeviceSize countOffset, uint32_t maxDrawCount, uint32_t stride)
+void GfrContext::PostCmdDrawIndirectCountAMD(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset, VkBuffer countBuffer, VkDeviceSize countOffset, uint32_t maxDrawCount, uint32_t stride)
 {
-  WrappedVkCommandBuffer *wrappedcommandBuffer = reinterpret_cast<WrappedVkCommandBuffer *>(commandBuffer);
-  VkCommandBuffer unwrappedcommandBuffer = wrappedcommandBuffer->wrapped_object;
-  commandBuffer->custom_data->PostCmdDrawIndirectCountAMD((VkCommandBuffer)commandBuffer, unwrappedcommandBuffer, buffer, offset, countBuffer, countOffset, maxDrawCount, stride);
+  gfr::GetGfrCommandBuffer(commandBuffer)->PostCmdDrawIndirectCountAMD(commandBuffer, buffer, offset, countBuffer, countOffset, maxDrawCount, stride);
 }
 
-void GfrContext::PreCmdDrawIndexedIndirectCountAMD(WrappedVkCommandBuffer* commandBuffer, VkBuffer buffer, VkDeviceSize offset, VkBuffer countBuffer, VkDeviceSize countOffset, uint32_t maxDrawCount, uint32_t stride)
+void GfrContext::PreCmdDrawIndexedIndirectCountAMD(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset, VkBuffer countBuffer, VkDeviceSize countOffset, uint32_t maxDrawCount, uint32_t stride)
 {
-  WrappedVkCommandBuffer *wrappedcommandBuffer = reinterpret_cast<WrappedVkCommandBuffer *>(commandBuffer);
-  VkCommandBuffer unwrappedcommandBuffer = wrappedcommandBuffer->wrapped_object;
-  commandBuffer->custom_data->PreCmdDrawIndexedIndirectCountAMD((VkCommandBuffer)commandBuffer, unwrappedcommandBuffer, buffer, offset, countBuffer, countOffset, maxDrawCount, stride);
+  gfr::GetGfrCommandBuffer(commandBuffer)->PreCmdDrawIndexedIndirectCountAMD(commandBuffer, buffer, offset, countBuffer, countOffset, maxDrawCount, stride);
 }
 
-void GfrContext::PostCmdDrawIndexedIndirectCountAMD(WrappedVkCommandBuffer* commandBuffer, VkBuffer buffer, VkDeviceSize offset, VkBuffer countBuffer, VkDeviceSize countOffset, uint32_t maxDrawCount, uint32_t stride)
+void GfrContext::PostCmdDrawIndexedIndirectCountAMD(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset, VkBuffer countBuffer, VkDeviceSize countOffset, uint32_t maxDrawCount, uint32_t stride)
 {
-  WrappedVkCommandBuffer *wrappedcommandBuffer = reinterpret_cast<WrappedVkCommandBuffer *>(commandBuffer);
-  VkCommandBuffer unwrappedcommandBuffer = wrappedcommandBuffer->wrapped_object;
-  commandBuffer->custom_data->PostCmdDrawIndexedIndirectCountAMD((VkCommandBuffer)commandBuffer, unwrappedcommandBuffer, buffer, offset, countBuffer, countOffset, maxDrawCount, stride);
+  gfr::GetGfrCommandBuffer(commandBuffer)->PostCmdDrawIndexedIndirectCountAMD(commandBuffer, buffer, offset, countBuffer, countOffset, maxDrawCount, stride);
 }
 
-void GfrContext::PreCmdBeginConditionalRenderingEXT(WrappedVkCommandBuffer* commandBuffer, VkConditionalRenderingBeginInfoEXT const* pConditinalRenderingBegin)
+void GfrContext::PreCmdBeginConditionalRenderingEXT(VkCommandBuffer commandBuffer, VkConditionalRenderingBeginInfoEXT const* pConditinalRenderingBegin)
 {
-  WrappedVkCommandBuffer *wrappedcommandBuffer = reinterpret_cast<WrappedVkCommandBuffer *>(commandBuffer);
-  VkCommandBuffer unwrappedcommandBuffer = wrappedcommandBuffer->wrapped_object;
-  commandBuffer->custom_data->PreCmdBeginConditionalRenderingEXT((VkCommandBuffer)commandBuffer, unwrappedcommandBuffer, pConditinalRenderingBegin);
+  gfr::GetGfrCommandBuffer(commandBuffer)->PreCmdBeginConditionalRenderingEXT(commandBuffer, pConditinalRenderingBegin);
 }
 
-void GfrContext::PostCmdBeginConditionalRenderingEXT(WrappedVkCommandBuffer* commandBuffer, VkConditionalRenderingBeginInfoEXT const* pConditinalRenderingBegin)
+void GfrContext::PostCmdBeginConditionalRenderingEXT(VkCommandBuffer commandBuffer, VkConditionalRenderingBeginInfoEXT const* pConditinalRenderingBegin)
 {
-  WrappedVkCommandBuffer *wrappedcommandBuffer = reinterpret_cast<WrappedVkCommandBuffer *>(commandBuffer);
-  VkCommandBuffer unwrappedcommandBuffer = wrappedcommandBuffer->wrapped_object;
-  commandBuffer->custom_data->PostCmdBeginConditionalRenderingEXT((VkCommandBuffer)commandBuffer, unwrappedcommandBuffer, pConditinalRenderingBegin);
+  gfr::GetGfrCommandBuffer(commandBuffer)->PostCmdBeginConditionalRenderingEXT(commandBuffer, pConditinalRenderingBegin);
 }
 
-void GfrContext::PreCmdEndConditionalRenderingEXT(WrappedVkCommandBuffer* commandBuffer)
+void GfrContext::PreCmdEndConditionalRenderingEXT(VkCommandBuffer commandBuffer)
 {
-  WrappedVkCommandBuffer *wrappedcommandBuffer = reinterpret_cast<WrappedVkCommandBuffer *>(commandBuffer);
-  VkCommandBuffer unwrappedcommandBuffer = wrappedcommandBuffer->wrapped_object;
-  commandBuffer->custom_data->PreCmdEndConditionalRenderingEXT((VkCommandBuffer)commandBuffer, unwrappedcommandBuffer);
+  gfr::GetGfrCommandBuffer(commandBuffer)->PreCmdEndConditionalRenderingEXT(commandBuffer);
 }
 
-void GfrContext::PostCmdEndConditionalRenderingEXT(WrappedVkCommandBuffer* commandBuffer)
+void GfrContext::PostCmdEndConditionalRenderingEXT(VkCommandBuffer commandBuffer)
 {
-  WrappedVkCommandBuffer *wrappedcommandBuffer = reinterpret_cast<WrappedVkCommandBuffer *>(commandBuffer);
-  VkCommandBuffer unwrappedcommandBuffer = wrappedcommandBuffer->wrapped_object;
-  commandBuffer->custom_data->PostCmdEndConditionalRenderingEXT((VkCommandBuffer)commandBuffer, unwrappedcommandBuffer);
+  gfr::GetGfrCommandBuffer(commandBuffer)->PostCmdEndConditionalRenderingEXT(commandBuffer);
 }
 
-void GfrContext::PreCmdDebugMarkerBeginEXT(WrappedVkCommandBuffer* commandBuffer, VkDebugMarkerMarkerInfoEXT const* pMarkerInfo)
+void GfrContext::PreCmdDebugMarkerBeginEXT(VkCommandBuffer commandBuffer, VkDebugMarkerMarkerInfoEXT const* pMarkerInfo)
 {
-  WrappedVkCommandBuffer *wrappedcommandBuffer = reinterpret_cast<WrappedVkCommandBuffer *>(commandBuffer);
-  VkCommandBuffer unwrappedcommandBuffer = wrappedcommandBuffer->wrapped_object;
-  commandBuffer->custom_data->PreCmdDebugMarkerBeginEXT((VkCommandBuffer)commandBuffer, unwrappedcommandBuffer, pMarkerInfo);
+  gfr::GetGfrCommandBuffer(commandBuffer)->PreCmdDebugMarkerBeginEXT(commandBuffer, pMarkerInfo);
 }
 
-void GfrContext::PostCmdDebugMarkerBeginEXT(WrappedVkCommandBuffer* commandBuffer, VkDebugMarkerMarkerInfoEXT const* pMarkerInfo)
+void GfrContext::PostCmdDebugMarkerBeginEXT(VkCommandBuffer commandBuffer, VkDebugMarkerMarkerInfoEXT const* pMarkerInfo)
 {
-  WrappedVkCommandBuffer *wrappedcommandBuffer = reinterpret_cast<WrappedVkCommandBuffer *>(commandBuffer);
-  VkCommandBuffer unwrappedcommandBuffer = wrappedcommandBuffer->wrapped_object;
-  commandBuffer->custom_data->PostCmdDebugMarkerBeginEXT((VkCommandBuffer)commandBuffer, unwrappedcommandBuffer, pMarkerInfo);
+  gfr::GetGfrCommandBuffer(commandBuffer)->PostCmdDebugMarkerBeginEXT(commandBuffer, pMarkerInfo);
 }
 
-void GfrContext::PreCmdDebugMarkerEndEXT(WrappedVkCommandBuffer* commandBuffer)
+void GfrContext::PreCmdDebugMarkerEndEXT(VkCommandBuffer commandBuffer)
 {
-  WrappedVkCommandBuffer *wrappedcommandBuffer = reinterpret_cast<WrappedVkCommandBuffer *>(commandBuffer);
-  VkCommandBuffer unwrappedcommandBuffer = wrappedcommandBuffer->wrapped_object;
-  commandBuffer->custom_data->PreCmdDebugMarkerEndEXT((VkCommandBuffer)commandBuffer, unwrappedcommandBuffer);
+  gfr::GetGfrCommandBuffer(commandBuffer)->PreCmdDebugMarkerEndEXT(commandBuffer);
 }
 
-void GfrContext::PostCmdDebugMarkerEndEXT(WrappedVkCommandBuffer* commandBuffer)
+void GfrContext::PostCmdDebugMarkerEndEXT(VkCommandBuffer commandBuffer)
 {
-  WrappedVkCommandBuffer *wrappedcommandBuffer = reinterpret_cast<WrappedVkCommandBuffer *>(commandBuffer);
-  VkCommandBuffer unwrappedcommandBuffer = wrappedcommandBuffer->wrapped_object;
-  commandBuffer->custom_data->PostCmdDebugMarkerEndEXT((VkCommandBuffer)commandBuffer, unwrappedcommandBuffer);
+  gfr::GetGfrCommandBuffer(commandBuffer)->PostCmdDebugMarkerEndEXT(commandBuffer);
 }
 
-void GfrContext::PreCmdDebugMarkerInsertEXT(WrappedVkCommandBuffer* commandBuffer, VkDebugMarkerMarkerInfoEXT const* pMarkerInfo)
+void GfrContext::PreCmdDebugMarkerInsertEXT(VkCommandBuffer commandBuffer, VkDebugMarkerMarkerInfoEXT const* pMarkerInfo)
 {
-  WrappedVkCommandBuffer *wrappedcommandBuffer = reinterpret_cast<WrappedVkCommandBuffer *>(commandBuffer);
-  VkCommandBuffer unwrappedcommandBuffer = wrappedcommandBuffer->wrapped_object;
-  commandBuffer->custom_data->PreCmdDebugMarkerInsertEXT((VkCommandBuffer)commandBuffer, unwrappedcommandBuffer, pMarkerInfo);
+  gfr::GetGfrCommandBuffer(commandBuffer)->PreCmdDebugMarkerInsertEXT(commandBuffer, pMarkerInfo);
 }
 
-void GfrContext::PostCmdDebugMarkerInsertEXT(WrappedVkCommandBuffer* commandBuffer, VkDebugMarkerMarkerInfoEXT const* pMarkerInfo)
+void GfrContext::PostCmdDebugMarkerInsertEXT(VkCommandBuffer commandBuffer, VkDebugMarkerMarkerInfoEXT const* pMarkerInfo)
 {
-  WrappedVkCommandBuffer *wrappedcommandBuffer = reinterpret_cast<WrappedVkCommandBuffer *>(commandBuffer);
-  VkCommandBuffer unwrappedcommandBuffer = wrappedcommandBuffer->wrapped_object;
-  commandBuffer->custom_data->PostCmdDebugMarkerInsertEXT((VkCommandBuffer)commandBuffer, unwrappedcommandBuffer, pMarkerInfo);
+  gfr::GetGfrCommandBuffer(commandBuffer)->PostCmdDebugMarkerInsertEXT(commandBuffer, pMarkerInfo);
 }
 
-void GfrContext::PreCmdBeginDebugUtilsLabelEXT(WrappedVkCommandBuffer* commandBuffer, VkDebugUtilsLabelEXT const* pLabelInfo)
+void GfrContext::PreCmdBeginDebugUtilsLabelEXT(VkCommandBuffer commandBuffer, VkDebugUtilsLabelEXT const* pLabelInfo)
 {
-  WrappedVkCommandBuffer *wrappedcommandBuffer = reinterpret_cast<WrappedVkCommandBuffer *>(commandBuffer);
-  VkCommandBuffer unwrappedcommandBuffer = wrappedcommandBuffer->wrapped_object;
-  commandBuffer->custom_data->PreCmdBeginDebugUtilsLabelEXT((VkCommandBuffer)commandBuffer, unwrappedcommandBuffer, pLabelInfo);
+  gfr::GetGfrCommandBuffer(commandBuffer)->PreCmdBeginDebugUtilsLabelEXT(commandBuffer, pLabelInfo);
 }
 
-void GfrContext::PostCmdBeginDebugUtilsLabelEXT(WrappedVkCommandBuffer* commandBuffer, VkDebugUtilsLabelEXT const* pLabelInfo)
+void GfrContext::PostCmdBeginDebugUtilsLabelEXT(VkCommandBuffer commandBuffer, VkDebugUtilsLabelEXT const* pLabelInfo)
 {
-  WrappedVkCommandBuffer *wrappedcommandBuffer = reinterpret_cast<WrappedVkCommandBuffer *>(commandBuffer);
-  VkCommandBuffer unwrappedcommandBuffer = wrappedcommandBuffer->wrapped_object;
-  commandBuffer->custom_data->PostCmdBeginDebugUtilsLabelEXT((VkCommandBuffer)commandBuffer, unwrappedcommandBuffer, pLabelInfo);
+  gfr::GetGfrCommandBuffer(commandBuffer)->PostCmdBeginDebugUtilsLabelEXT(commandBuffer, pLabelInfo);
 }
 
-void GfrContext::PreCmdEndDebugUtilsLabelEXT(WrappedVkCommandBuffer* commandBuffer)
+void GfrContext::PreCmdEndDebugUtilsLabelEXT(VkCommandBuffer commandBuffer)
 {
-  WrappedVkCommandBuffer *wrappedcommandBuffer = reinterpret_cast<WrappedVkCommandBuffer *>(commandBuffer);
-  VkCommandBuffer unwrappedcommandBuffer = wrappedcommandBuffer->wrapped_object;
-  commandBuffer->custom_data->PreCmdEndDebugUtilsLabelEXT((VkCommandBuffer)commandBuffer, unwrappedcommandBuffer);
+  gfr::GetGfrCommandBuffer(commandBuffer)->PreCmdEndDebugUtilsLabelEXT(commandBuffer);
 }
 
-void GfrContext::PostCmdEndDebugUtilsLabelEXT(WrappedVkCommandBuffer* commandBuffer)
+void GfrContext::PostCmdEndDebugUtilsLabelEXT(VkCommandBuffer commandBuffer)
 {
-  WrappedVkCommandBuffer *wrappedcommandBuffer = reinterpret_cast<WrappedVkCommandBuffer *>(commandBuffer);
-  VkCommandBuffer unwrappedcommandBuffer = wrappedcommandBuffer->wrapped_object;
-  commandBuffer->custom_data->PostCmdEndDebugUtilsLabelEXT((VkCommandBuffer)commandBuffer, unwrappedcommandBuffer);
+  gfr::GetGfrCommandBuffer(commandBuffer)->PostCmdEndDebugUtilsLabelEXT(commandBuffer);
 }
 
-void GfrContext::PreCmdInsertDebugUtilsLabelEXT(WrappedVkCommandBuffer* commandBuffer, VkDebugUtilsLabelEXT const* pLabelInfo)
+void GfrContext::PreCmdInsertDebugUtilsLabelEXT(VkCommandBuffer commandBuffer, VkDebugUtilsLabelEXT const* pLabelInfo)
 {
-  WrappedVkCommandBuffer *wrappedcommandBuffer = reinterpret_cast<WrappedVkCommandBuffer *>(commandBuffer);
-  VkCommandBuffer unwrappedcommandBuffer = wrappedcommandBuffer->wrapped_object;
-  commandBuffer->custom_data->PreCmdInsertDebugUtilsLabelEXT((VkCommandBuffer)commandBuffer, unwrappedcommandBuffer, pLabelInfo);
+  gfr::GetGfrCommandBuffer(commandBuffer)->PreCmdInsertDebugUtilsLabelEXT(commandBuffer, pLabelInfo);
 }
 
-void GfrContext::PostCmdInsertDebugUtilsLabelEXT(WrappedVkCommandBuffer* commandBuffer, VkDebugUtilsLabelEXT const* pLabelInfo)
+void GfrContext::PostCmdInsertDebugUtilsLabelEXT(VkCommandBuffer commandBuffer, VkDebugUtilsLabelEXT const* pLabelInfo)
 {
-  WrappedVkCommandBuffer *wrappedcommandBuffer = reinterpret_cast<WrappedVkCommandBuffer *>(commandBuffer);
-  VkCommandBuffer unwrappedcommandBuffer = wrappedcommandBuffer->wrapped_object;
-  commandBuffer->custom_data->PostCmdInsertDebugUtilsLabelEXT((VkCommandBuffer)commandBuffer, unwrappedcommandBuffer, pLabelInfo);
+  gfr::GetGfrCommandBuffer(commandBuffer)->PostCmdInsertDebugUtilsLabelEXT(commandBuffer, pLabelInfo);
 }
 
-void GfrContext::PreCmdSetDeviceMaskKHR(WrappedVkCommandBuffer* commandBuffer, uint32_t deviceMask)
+void GfrContext::PreCmdSetDeviceMaskKHR(VkCommandBuffer commandBuffer, uint32_t deviceMask)
 {
-  WrappedVkCommandBuffer *wrappedcommandBuffer = reinterpret_cast<WrappedVkCommandBuffer *>(commandBuffer);
-  VkCommandBuffer unwrappedcommandBuffer = wrappedcommandBuffer->wrapped_object;
-  commandBuffer->custom_data->PreCmdSetDeviceMaskKHR((VkCommandBuffer)commandBuffer, unwrappedcommandBuffer, deviceMask);
+  gfr::GetGfrCommandBuffer(commandBuffer)->PreCmdSetDeviceMaskKHR(commandBuffer, deviceMask);
 }
 
-void GfrContext::PostCmdSetDeviceMaskKHR(WrappedVkCommandBuffer* commandBuffer, uint32_t deviceMask)
+void GfrContext::PostCmdSetDeviceMaskKHR(VkCommandBuffer commandBuffer, uint32_t deviceMask)
 {
-  WrappedVkCommandBuffer *wrappedcommandBuffer = reinterpret_cast<WrappedVkCommandBuffer *>(commandBuffer);
-  VkCommandBuffer unwrappedcommandBuffer = wrappedcommandBuffer->wrapped_object;
-  commandBuffer->custom_data->PostCmdSetDeviceMaskKHR((VkCommandBuffer)commandBuffer, unwrappedcommandBuffer, deviceMask);
+  gfr::GetGfrCommandBuffer(commandBuffer)->PostCmdSetDeviceMaskKHR(commandBuffer, deviceMask);
 }
 
-void GfrContext::PreCmdSetDeviceMask(WrappedVkCommandBuffer* commandBuffer, uint32_t deviceMask)
+void GfrContext::PreCmdSetDeviceMask(VkCommandBuffer commandBuffer, uint32_t deviceMask)
 {
-  WrappedVkCommandBuffer *wrappedcommandBuffer = reinterpret_cast<WrappedVkCommandBuffer *>(commandBuffer);
-  VkCommandBuffer unwrappedcommandBuffer = wrappedcommandBuffer->wrapped_object;
-  commandBuffer->custom_data->PreCmdSetDeviceMask((VkCommandBuffer)commandBuffer, unwrappedcommandBuffer, deviceMask);
+  gfr::GetGfrCommandBuffer(commandBuffer)->PreCmdSetDeviceMask(commandBuffer, deviceMask);
 }
 
-void GfrContext::PostCmdSetDeviceMask(WrappedVkCommandBuffer* commandBuffer, uint32_t deviceMask)
+void GfrContext::PostCmdSetDeviceMask(VkCommandBuffer commandBuffer, uint32_t deviceMask)
 {
-  WrappedVkCommandBuffer *wrappedcommandBuffer = reinterpret_cast<WrappedVkCommandBuffer *>(commandBuffer);
-  VkCommandBuffer unwrappedcommandBuffer = wrappedcommandBuffer->wrapped_object;
-  commandBuffer->custom_data->PostCmdSetDeviceMask((VkCommandBuffer)commandBuffer, unwrappedcommandBuffer, deviceMask);
+  gfr::GetGfrCommandBuffer(commandBuffer)->PostCmdSetDeviceMask(commandBuffer, deviceMask);
 }
 
-void GfrContext::PreCmdDispatchBaseKHR(WrappedVkCommandBuffer* commandBuffer, uint32_t baseGroupX, uint32_t baseGroupY, uint32_t baseGroupZ, uint32_t groupCountX, uint32_t groupCountY, uint32_t groupCountZ)
+void GfrContext::PreCmdDispatchBaseKHR(VkCommandBuffer commandBuffer, uint32_t baseGroupX, uint32_t baseGroupY, uint32_t baseGroupZ, uint32_t groupCountX, uint32_t groupCountY, uint32_t groupCountZ)
 {
-  WrappedVkCommandBuffer *wrappedcommandBuffer = reinterpret_cast<WrappedVkCommandBuffer *>(commandBuffer);
-  VkCommandBuffer unwrappedcommandBuffer = wrappedcommandBuffer->wrapped_object;
-  commandBuffer->custom_data->PreCmdDispatchBaseKHR((VkCommandBuffer)commandBuffer, unwrappedcommandBuffer, baseGroupX, baseGroupY, baseGroupZ, groupCountX, groupCountY, groupCountZ);
+  gfr::GetGfrCommandBuffer(commandBuffer)->PreCmdDispatchBaseKHR(commandBuffer, baseGroupX, baseGroupY, baseGroupZ, groupCountX, groupCountY, groupCountZ);
 }
 
-void GfrContext::PostCmdDispatchBaseKHR(WrappedVkCommandBuffer* commandBuffer, uint32_t baseGroupX, uint32_t baseGroupY, uint32_t baseGroupZ, uint32_t groupCountX, uint32_t groupCountY, uint32_t groupCountZ)
+void GfrContext::PostCmdDispatchBaseKHR(VkCommandBuffer commandBuffer, uint32_t baseGroupX, uint32_t baseGroupY, uint32_t baseGroupZ, uint32_t groupCountX, uint32_t groupCountY, uint32_t groupCountZ)
 {
-  WrappedVkCommandBuffer *wrappedcommandBuffer = reinterpret_cast<WrappedVkCommandBuffer *>(commandBuffer);
-  VkCommandBuffer unwrappedcommandBuffer = wrappedcommandBuffer->wrapped_object;
-  commandBuffer->custom_data->PostCmdDispatchBaseKHR((VkCommandBuffer)commandBuffer, unwrappedcommandBuffer, baseGroupX, baseGroupY, baseGroupZ, groupCountX, groupCountY, groupCountZ);
+  gfr::GetGfrCommandBuffer(commandBuffer)->PostCmdDispatchBaseKHR(commandBuffer, baseGroupX, baseGroupY, baseGroupZ, groupCountX, groupCountY, groupCountZ);
 }
 
-void GfrContext::PreCmdDispatchBase(WrappedVkCommandBuffer* commandBuffer, uint32_t baseGroupX, uint32_t baseGroupY, uint32_t baseGroupZ, uint32_t groupCountX, uint32_t groupCountY, uint32_t groupCountZ)
+void GfrContext::PreCmdDispatchBase(VkCommandBuffer commandBuffer, uint32_t baseGroupX, uint32_t baseGroupY, uint32_t baseGroupZ, uint32_t groupCountX, uint32_t groupCountY, uint32_t groupCountZ)
 {
-  WrappedVkCommandBuffer *wrappedcommandBuffer = reinterpret_cast<WrappedVkCommandBuffer *>(commandBuffer);
-  VkCommandBuffer unwrappedcommandBuffer = wrappedcommandBuffer->wrapped_object;
-  commandBuffer->custom_data->PreCmdDispatchBase((VkCommandBuffer)commandBuffer, unwrappedcommandBuffer, baseGroupX, baseGroupY, baseGroupZ, groupCountX, groupCountY, groupCountZ);
+  gfr::GetGfrCommandBuffer(commandBuffer)->PreCmdDispatchBase(commandBuffer, baseGroupX, baseGroupY, baseGroupZ, groupCountX, groupCountY, groupCountZ);
 }
 
-void GfrContext::PostCmdDispatchBase(WrappedVkCommandBuffer* commandBuffer, uint32_t baseGroupX, uint32_t baseGroupY, uint32_t baseGroupZ, uint32_t groupCountX, uint32_t groupCountY, uint32_t groupCountZ)
+void GfrContext::PostCmdDispatchBase(VkCommandBuffer commandBuffer, uint32_t baseGroupX, uint32_t baseGroupY, uint32_t baseGroupZ, uint32_t groupCountX, uint32_t groupCountY, uint32_t groupCountZ)
 {
-  WrappedVkCommandBuffer *wrappedcommandBuffer = reinterpret_cast<WrappedVkCommandBuffer *>(commandBuffer);
-  VkCommandBuffer unwrappedcommandBuffer = wrappedcommandBuffer->wrapped_object;
-  commandBuffer->custom_data->PostCmdDispatchBase((VkCommandBuffer)commandBuffer, unwrappedcommandBuffer, baseGroupX, baseGroupY, baseGroupZ, groupCountX, groupCountY, groupCountZ);
+  gfr::GetGfrCommandBuffer(commandBuffer)->PostCmdDispatchBase(commandBuffer, baseGroupX, baseGroupY, baseGroupZ, groupCountX, groupCountY, groupCountZ);
 }
 
-void GfrContext::PreCmdDrawIndirectCountKHR(WrappedVkCommandBuffer* commandBuffer, VkBuffer buffer, VkDeviceSize offset, VkBuffer countBuffer, VkDeviceSize countOffset, uint32_t maxDrawCount, uint32_t stride)
+void GfrContext::PreCmdDrawIndirectCountKHR(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset, VkBuffer countBuffer, VkDeviceSize countOffset, uint32_t maxDrawCount, uint32_t stride)
 {
-  WrappedVkCommandBuffer *wrappedcommandBuffer = reinterpret_cast<WrappedVkCommandBuffer *>(commandBuffer);
-  VkCommandBuffer unwrappedcommandBuffer = wrappedcommandBuffer->wrapped_object;
-  commandBuffer->custom_data->PreCmdDrawIndirectCountKHR((VkCommandBuffer)commandBuffer, unwrappedcommandBuffer, buffer, offset, countBuffer, countOffset, maxDrawCount, stride);
+  gfr::GetGfrCommandBuffer(commandBuffer)->PreCmdDrawIndirectCountKHR(commandBuffer, buffer, offset, countBuffer, countOffset, maxDrawCount, stride);
 }
 
-void GfrContext::PostCmdDrawIndirectCountKHR(WrappedVkCommandBuffer* commandBuffer, VkBuffer buffer, VkDeviceSize offset, VkBuffer countBuffer, VkDeviceSize countOffset, uint32_t maxDrawCount, uint32_t stride)
+void GfrContext::PostCmdDrawIndirectCountKHR(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset, VkBuffer countBuffer, VkDeviceSize countOffset, uint32_t maxDrawCount, uint32_t stride)
 {
-  WrappedVkCommandBuffer *wrappedcommandBuffer = reinterpret_cast<WrappedVkCommandBuffer *>(commandBuffer);
-  VkCommandBuffer unwrappedcommandBuffer = wrappedcommandBuffer->wrapped_object;
-  commandBuffer->custom_data->PostCmdDrawIndirectCountKHR((VkCommandBuffer)commandBuffer, unwrappedcommandBuffer, buffer, offset, countBuffer, countOffset, maxDrawCount, stride);
+  gfr::GetGfrCommandBuffer(commandBuffer)->PostCmdDrawIndirectCountKHR(commandBuffer, buffer, offset, countBuffer, countOffset, maxDrawCount, stride);
 }
 
-void GfrContext::PreCmdDrawIndexedIndirectCountKHR(WrappedVkCommandBuffer* commandBuffer, VkBuffer buffer, VkDeviceSize offset, VkBuffer countBuffer, VkDeviceSize countOffset, uint32_t maxDrawCount, uint32_t stride)
+void GfrContext::PreCmdDrawIndexedIndirectCountKHR(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset, VkBuffer countBuffer, VkDeviceSize countOffset, uint32_t maxDrawCount, uint32_t stride)
 {
-  WrappedVkCommandBuffer *wrappedcommandBuffer = reinterpret_cast<WrappedVkCommandBuffer *>(commandBuffer);
-  VkCommandBuffer unwrappedcommandBuffer = wrappedcommandBuffer->wrapped_object;
-  commandBuffer->custom_data->PreCmdDrawIndexedIndirectCountKHR((VkCommandBuffer)commandBuffer, unwrappedcommandBuffer, buffer, offset, countBuffer, countOffset, maxDrawCount, stride);
+  gfr::GetGfrCommandBuffer(commandBuffer)->PreCmdDrawIndexedIndirectCountKHR(commandBuffer, buffer, offset, countBuffer, countOffset, maxDrawCount, stride);
 }
 
-void GfrContext::PostCmdDrawIndexedIndirectCountKHR(WrappedVkCommandBuffer* commandBuffer, VkBuffer buffer, VkDeviceSize offset, VkBuffer countBuffer, VkDeviceSize countOffset, uint32_t maxDrawCount, uint32_t stride)
+void GfrContext::PostCmdDrawIndexedIndirectCountKHR(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset, VkBuffer countBuffer, VkDeviceSize countOffset, uint32_t maxDrawCount, uint32_t stride)
 {
-  WrappedVkCommandBuffer *wrappedcommandBuffer = reinterpret_cast<WrappedVkCommandBuffer *>(commandBuffer);
-  VkCommandBuffer unwrappedcommandBuffer = wrappedcommandBuffer->wrapped_object;
-  commandBuffer->custom_data->PostCmdDrawIndexedIndirectCountKHR((VkCommandBuffer)commandBuffer, unwrappedcommandBuffer, buffer, offset, countBuffer, countOffset, maxDrawCount, stride);
+  gfr::GetGfrCommandBuffer(commandBuffer)->PostCmdDrawIndexedIndirectCountKHR(commandBuffer, buffer, offset, countBuffer, countOffset, maxDrawCount, stride);
 }
 // clang-format on
