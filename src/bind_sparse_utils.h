@@ -25,7 +25,7 @@
 #include "gfr.h"
 #include "semaphore_tracker.h"
 
-namespace gfr {
+namespace GFR {
 
 class Device;
 class SemaphoreTracker;
@@ -55,6 +55,6 @@ class BindSparseUtils {
       std::vector<VkSemaphore>* wait_binary_semaphores);
 };
 
-}  // namespace gfr
+}  // namespace GFR
 
 #endif  // GFR_BIND_SPARSE_UTILS_H

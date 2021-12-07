@@ -31,7 +31,7 @@
 
 #include "object_name_db.h"
 
-namespace gfr {
+namespace GFR {
 
 class Device;
 
@@ -73,6 +73,6 @@ class ShaderModule {
 
 using ShaderModulePtr = std::unique_ptr<ShaderModule>;
 
-}  // namespace gfr
+}  // namespace GFR
 
 #endif  // GFR_SHADER_MODULE_H

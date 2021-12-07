@@ -28,7 +28,7 @@
 #include "marker.h"
 #include "semaphore_tracker.h"
 
-namespace gfr {
+namespace GFR {
 
 class Device;
 
@@ -131,6 +131,6 @@ class SubmitTracker {
 
 using SubmitTrackerPtr = std::unique_ptr<SubmitTracker>;
 
-}  // namespace gfr
+}  // namespace GFR
 
 #endif  // GFR_SUBMIT_TRACKER_H

@@ -22,7 +22,7 @@
 #include <sstream>
 #include <string>
 
-namespace gfr {
+namespace GFR {
 
 inline void ToUpper(std::string& s) {
   std::transform(std::begin(s), std::end(s), std::begin(s), ::toupper);
@@ -73,6 +73,6 @@ const T* FindOnChain(const void* pNext) {
   return FindOnChain<T, sType>(p->pNext);
 }
 
-}  // namespace gfr
+}  // namespace GFR
 
 #endif  // GFR_UTIL_H

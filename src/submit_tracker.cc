@@ -24,10 +24,9 @@
 #include "gfr.h"
 #include "util.h"
 
-namespace gfr {
+namespace GFR {
 
-SubmitTracker::SubmitTracker(Device* p_device) : device_(p_device) {
-}
+SubmitTracker::SubmitTracker(Device* p_device) : device_(p_device) {}
 
 SubmitTracker::SubmitInfo::SubmitInfo() {
   top_marker.type = MarkerType::kUint32;
@@ -473,4 +472,4 @@ void SubmitTracker::DumpWaitingSubmits(std::ostream& os) {
   }
 }
 
-}  // namespace gfr
+}  // namespace GFR
