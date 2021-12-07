@@ -22,9 +22,9 @@
 #include <memory>
 #include <mutex>
 #include <string>
+#include <vector>
 #include <unordered_map>
 #include <utility>
-#include <vector>
 
 // -----------------------------------------------------------------------------
 // Debug info for a Vulkan object
@@ -63,6 +63,7 @@ class ObjectInfoDB {
   }  // TODO(aellem) remove object info..
 
   const ObjectInfo* FindObjectInfo(uint64_t handle) const;
+  std::string GetObjectDebugName(uint64_t handle) const;
   std::string GetObjectName(
       uint64_t handle, HandleDebugNamePreference handle_debug_name_preference =
                            kReportBoth) const;

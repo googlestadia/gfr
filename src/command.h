@@ -30,7 +30,7 @@
 #include "marker.h"
 #include "util.h"
 
-namespace gfr {
+namespace GFR {
 
 class Device;
 
@@ -105,7 +105,7 @@ class CommandBuffer {
   void QueueSubmit(VkQueue queue, VkFence fence);
 
   void DumpContents(std::ostream& os, CommandBufferDumpOptions options,
-                    const std::string& indent = gfr::Indent(2),
+                    const std::string& indent = GFR::Indent(2),
                     uint64_t secondary_cb_submit_info_id = 0,
                     CommandState vkcmd_execute_commands_command_state =
                         CommandState::kInvalidState);
@@ -206,6 +206,6 @@ class CommandBuffer {
 
 using CommandBufferPtr = std::unique_ptr<CommandBuffer>;
 
-}  // namespace gfr
+}  // namespace GFR
 
 #endif  // GFR_COMMAND_H

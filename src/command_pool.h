@@ -18,10 +18,11 @@
 #define GFR_COMMAND_POOL_H
 
 #include <vulkan/vulkan.h>
+
 #include <memory>
 #include <vector>
 
-namespace gfr {
+namespace GFR {
 
 class Device;
 
@@ -65,6 +66,6 @@ class CommandPool {
 
 using CommandPoolPtr = std::unique_ptr<CommandPool>;
 
-}  // namespace gfr
+}  // namespace GFR
 
 #endif  // GFR_COMMAND_POOL_H

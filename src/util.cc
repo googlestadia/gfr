@@ -16,4 +16,4 @@
 
 #include "util.h"
 
-namespace gfr {}  // namespace gfr
+namespace GFR {}  // namespace GFR

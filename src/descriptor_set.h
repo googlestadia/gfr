@@ -24,7 +24,7 @@
 #include <string>
 #include <vector>
 
-namespace gfr {
+namespace GFR {
 
 class Device;
 
@@ -48,6 +48,6 @@ class ActiveDescriptorSets {
   std::map<uint32_t, VkDescriptorSet> descriptor_sets_;
 };
 
-}  // namespace gfr
+}  // namespace GFR
 
 #endif  // GFR_DESCRIPTOR_SET_H

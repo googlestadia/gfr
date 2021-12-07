@@ -25,7 +25,7 @@
 
 #include "object_name_db.h"
 
-namespace gfr {
+namespace GFR {
 
 // =================================================================================================
 // Shader bound to a pipeline
@@ -78,6 +78,6 @@ class Pipeline {
 
 using PipelinePtr = std::shared_ptr<Pipeline>;
 
-}  // namespace gfr
+}  // namespace GFR
 
 #endif  // GFR_PIPELINE_H

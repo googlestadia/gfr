@@ -34,17 +34,19 @@ file(TO_CMAKE_PATH ${VULKAN_DIR} VULKAN_DIR)
 set(GENERATED_DIR "${CMAKE_SOURCE_DIR}/generated")
 list(APPEND GENERATED_HEADER_FILES
   ${GENERATED_DIR}/command_common.h
+  ${GENERATED_DIR}/command_printer.h
   ${GENERATED_DIR}/command_recorder.h
   ${GENERATED_DIR}/command_tracker.h
-  ${GENERATED_DIR}/gfr_base_interceptor.h
-  ${GENERATED_DIR}/gfr_layer.h
+  ${GENERATED_DIR}/dispatch.h
+  ${GENERATED_DIR}/layer_base.h
 )
 list(APPEND GENERATED_SOURCE_FILES
   ${GENERATED_DIR}/command_common.cc
+  ${GENERATED_DIR}/command_printer.cc
   ${GENERATED_DIR}/command_recorder.cc
   ${GENERATED_DIR}/command_tracker.cc
-  ${GENERATED_DIR}/gfr_base_interceptor.cc
-  ${GENERATED_DIR}/gfr_layer.cc
+  ${GENERATED_DIR}/dispatch.cc
+  ${GENERATED_DIR}/layer_base.cc
 )
 message(STATUS "Generated dir:${GENERATED_DIR}")
 message(STATUS "${GENERATED_SOURCE_FILES}")

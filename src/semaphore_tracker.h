@@ -27,7 +27,7 @@
 
 #include "marker.h"
 
-namespace gfr {
+namespace GFR {
 
 class Device;
 
@@ -138,6 +138,6 @@ class SemaphoreTracker {
 
 using SemaphoreTrackerPtr = std::unique_ptr<SemaphoreTracker>;
 
-}  // namespace gfr
+}  // namespace GFR
 
 #endif  // GFR_SEMAPHORE_TRACKER_H

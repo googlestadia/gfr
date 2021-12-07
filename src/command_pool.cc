@@ -19,7 +19,7 @@
 #include <algorithm>
 #include <cassert>
 
-namespace gfr {
+namespace GFR {
 
 CommandPool::CommandPool(
     VkCommandPool vk_command_pool, const VkCommandPoolCreateInfo* p_create_info,
@@ -74,4 +74,4 @@ void CommandPool::Reset() {
   // TODO CB Reset/ResetByPool tracking b/113674089
 }
 
-}  // namespace gfr
+}  // namespace GFR
