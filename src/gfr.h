@@ -40,11 +40,10 @@
 #include "command.h"
 #include "command_buffer_tracker.h"
 #include "device.h"
-#include "gfr_base_interceptor.h"
-#include "gfr_layer.h"
+#include "layer_base.h"
 #include "submit_tracker.h"
 
-namespace gfr {
+namespace GFR {
 
 using StringArray = std::vector<std::string>;
 
@@ -122,10 +121,12 @@ T* GfrNewArray(size_t size) {
   return new T[size];
 }
 
-class GfrContext : public intercept::BaseInterceptor {
+class GfrContext {
  public:
   GfrContext();
   virtual ~GfrContext();
+
+  VkInstance GetInstance() { return vk_instance_; }
 
   void MakeOutputPath();
   const std::string& GetOutputPath() const;
@@ -205,87 +206,176 @@ class GfrContext : public intercept::BaseInterceptor {
   void DumpCommandBufferState(CommandBuffer* p_cmd);
 
  public:
-  // clang-format off
-  // ---------------------------------------------------------------------------
-  // Layer Factory functions (BEGIN)
-  // ---------------------------------------------------------------------------
   void PreApiFunction(const char* api_name);
   void PostApiFunction(const char* api_name);
 
-  virtual const VkInstanceCreateInfo* GetModifiedInstanceCreateInfo(const VkInstanceCreateInfo* pCreateInfo) final override;
-  virtual const VkDeviceCreateInfo* GetModifiedDeviceCreateInfo(VkPhysicalDevice physicalDevice,
-                                     const VkDeviceCreateInfo* pCreateInfo) final override;
+  const VkInstanceCreateInfo* GetModifiedInstanceCreateInfo(
+      const VkInstanceCreateInfo* pCreateInfo);
+  const VkDeviceCreateInfo* GetModifiedDeviceCreateInfo(
+      VkPhysicalDevice physicalDevice, const VkDeviceCreateInfo* pCreateInfo);
 
-  virtual void PreDestroyBuffer(VkDevice device, VkBuffer buffer, AllocationCallbacks pAllocator) final override;
-  virtual void PostDestroyBuffer(VkDevice device, VkBuffer buffer, AllocationCallbacks pAllocator) final override;
+  void PreDestroyBuffer(VkDevice device, VkBuffer buffer,
+                        const VkAllocationCallbacks* pAllocator);
+  void PostDestroyBuffer(VkDevice device, VkBuffer buffer,
+                         const VkAllocationCallbacks* pAllocator);
 
-  virtual VkResult PreCreateCommandPool(VkDevice device, VkCommandPoolCreateInfo const* pCreateInfo, AllocationCallbacks pAllocator, VkCommandPool* pCommandPool) final override;
-  virtual VkResult PostCreateCommandPool(VkDevice device, VkCommandPoolCreateInfo const* pCreateInfo, AllocationCallbacks pAllocator, VkCommandPool* pCommandPool, VkResult result) final override;
-  virtual void PreDestroyCommandPool(VkDevice device, VkCommandPool commandPool, AllocationCallbacks pAllocator) final override;
-  virtual void PostDestroyCommandPool(VkDevice device, VkCommandPool commandPool, AllocationCallbacks pAllocator) final override;
-  virtual VkResult PreResetCommandPool(VkDevice device, VkCommandPool commandPool, VkCommandPoolResetFlags flags) final override;
-  virtual VkResult PostResetCommandPool(VkDevice device, VkCommandPool commandPool, VkCommandPoolResetFlags flags, VkResult result) final override;
+  VkResult PreCreateCommandPool(VkDevice device,
+                                VkCommandPoolCreateInfo const* pCreateInfo,
+                                const VkAllocationCallbacks* pAllocator,
+                                VkCommandPool* pCommandPool);
+  VkResult PostCreateCommandPool(VkDevice device,
+                                 VkCommandPoolCreateInfo const* pCreateInfo,
+                                 const VkAllocationCallbacks* pAllocator,
+                                 VkCommandPool* pCommandPool, VkResult result);
+  void PreDestroyCommandPool(VkDevice device, VkCommandPool commandPool,
+                             const VkAllocationCallbacks* pAllocator);
+  void PostDestroyCommandPool(VkDevice device, VkCommandPool commandPool,
+                              const VkAllocationCallbacks* pAllocator);
+  VkResult PreResetCommandPool(VkDevice device, VkCommandPool commandPool,
+                               VkCommandPoolResetFlags flags);
+  VkResult PostResetCommandPool(VkDevice device, VkCommandPool commandPool,
+                                VkCommandPoolResetFlags flags, VkResult result);
 
-  virtual VkResult PreAllocateCommandBuffers(VkDevice device, VkCommandBufferAllocateInfo const* pAllocateInfo, VkCommandBuffer* pCommandBuffers) final override;
-  virtual VkResult PostAllocateCommandBuffers(VkDevice device, VkCommandBufferAllocateInfo const* pAllocateInfo, VkCommandBuffer* pCommandBuffers, VkResult result) final override;
-  virtual void PreFreeCommandBuffers(VkDevice device, VkCommandPool commandPool, uint32_t commandBufferCount, VkCommandBuffer const* pCommandBuffers) final override;
-  virtual void PostFreeCommandBuffers(VkDevice device, VkCommandPool commandPool, uint32_t commandBufferCount, VkCommandBuffer const* pCommandBuffers) final override;
+  VkResult PreAllocateCommandBuffers(
+      VkDevice device, VkCommandBufferAllocateInfo const* pAllocateInfo,
+      VkCommandBuffer* pCommandBuffers);
+  VkResult PostAllocateCommandBuffers(
+      VkDevice device, VkCommandBufferAllocateInfo const* pAllocateInfo,
+      VkCommandBuffer* pCommandBuffers, VkResult result);
+  void PreFreeCommandBuffers(VkDevice device, VkCommandPool commandPool,
+                             uint32_t commandBufferCount,
+                             VkCommandBuffer const* pCommandBuffers);
+  void PostFreeCommandBuffers(VkDevice device, VkCommandPool commandPool,
+                              uint32_t commandBufferCount,
+                              VkCommandBuffer const* pCommandBuffers);
 
-  virtual void PreUpdateDescriptorSets(VkDevice device, uint32_t descriptorWriteCount, VkWriteDescriptorSet const* pDescriptorWrites, uint32_t descriptorCopyCount, VkCopyDescriptorSet const* pDescriptorCopies) final override;
-  virtual void PostUpdateDescriptorSets(VkDevice device, uint32_t descriptorWriteCount, VkWriteDescriptorSet const* pDescriptorWrites, uint32_t descriptorCopyCount, VkCopyDescriptorSet const* pDescriptorCopies) final override;
+  void PreUpdateDescriptorSets(VkDevice device, uint32_t descriptorWriteCount,
+                               VkWriteDescriptorSet const* pDescriptorWrites,
+                               uint32_t descriptorCopyCount,
+                               VkCopyDescriptorSet const* pDescriptorCopies);
+  void PostUpdateDescriptorSets(VkDevice device, uint32_t descriptorWriteCount,
+                                VkWriteDescriptorSet const* pDescriptorWrites,
+                                uint32_t descriptorCopyCount,
+                                VkCopyDescriptorSet const* pDescriptorCopies);
 
-  virtual VkResult PostCreateDevice(VkPhysicalDevice physicalDevice, VkDeviceCreateInfo const* pCreateInfo, AllocationCallbacks pAllocator, VkDevice* pDevice, VkResult result) final override;
-  virtual void PreDestroyDevice(VkDevice device, AllocationCallbacks pAllocator) final override;
-  virtual void PostDestroyDevice(VkDevice device, AllocationCallbacks pAllocator) final override;
-  virtual VkResult PostDeviceWaitIdle(VkDevice device, VkResult result) final override;
+  VkResult PostCreateDevice(VkPhysicalDevice physicalDevice,
+                            VkDeviceCreateInfo const* pCreateInfo,
+                            const VkAllocationCallbacks* pAllocator,
+                            VkDevice* pDevice, VkResult result);
+  void PreDestroyDevice(VkDevice device,
+                        const VkAllocationCallbacks* pAllocator);
+  void PostDestroyDevice(VkDevice device,
+                         const VkAllocationCallbacks* pAllocator);
+  VkResult PostDeviceWaitIdle(VkDevice device, VkResult result);
 
-  virtual VkResult PreCreateInstance(VkInstanceCreateInfo const* pCreateInfo, AllocationCallbacks pAllocator, VkInstance* pInstance) final override;
-  virtual VkResult PostCreateInstance(VkInstanceCreateInfo const* pCreateInfo, AllocationCallbacks pAllocator, VkInstance* pInstance, VkResult result) final override;
-  virtual void PreDestroyInstance(VkInstance instance, AllocationCallbacks pAllocator) final override;
-  virtual void PostDestroyInstance(VkInstance instance, AllocationCallbacks pAllocator) final override;
+  VkResult PreCreateInstance(VkInstanceCreateInfo const* pCreateInfo,
+                             const VkAllocationCallbacks* pAllocator,
+                             VkInstance* pInstance);
+  VkResult PostCreateInstance(VkInstanceCreateInfo const* pCreateInfo,
+                              const VkAllocationCallbacks* pAllocator,
+                              VkInstance* pInstance, VkResult result);
+  void PreDestroyInstance(VkInstance instance,
+                          const VkAllocationCallbacks* pAllocator);
+  void PostDestroyInstance(VkInstance instance,
+                           const VkAllocationCallbacks* pAllocator);
 
-  virtual VkResult PreCreateGraphicsPipelines(VkDevice device, VkPipelineCache pipelineCache, uint32_t createInfoCount, VkGraphicsPipelineCreateInfo const* pCreateInfos, AllocationCallbacks pAllocator, VkPipeline* pPipelines) final override;
-  virtual VkResult PostCreateGraphicsPipelines(VkDevice device, VkPipelineCache pipelineCache, uint32_t createInfoCount, VkGraphicsPipelineCreateInfo const* pCreateInfos, AllocationCallbacks pAllocator, VkPipeline* pPipelines, VkResult result) final override;
-  virtual VkResult PreCreateComputePipelines(VkDevice device, VkPipelineCache pipelineCache, uint32_t createInfoCount, VkComputePipelineCreateInfo const* pCreateInfos, AllocationCallbacks pAllocator, VkPipeline* pPipelines) final override;
-  virtual VkResult PostCreateComputePipelines(VkDevice device, VkPipelineCache pipelineCache, uint32_t createInfoCount, VkComputePipelineCreateInfo const* pCreateInfos, AllocationCallbacks pAllocator, VkPipeline* pPipelines, VkResult result) final override;
-  virtual void PreDestroyPipeline(VkDevice device, VkPipeline pipeline, AllocationCallbacks pAllocator) final override;
-  virtual void PostDestroyPipeline(VkDevice device, VkPipeline pipeline, AllocationCallbacks pAllocator) final override;
-  virtual VkResult PreCreateShaderModule(VkDevice device, VkShaderModuleCreateInfo const* pCreateInfo, AllocationCallbacks pAllocator, VkShaderModule* pShaderModule) final override;
-  virtual VkResult PostCreateShaderModule(VkDevice device, VkShaderModuleCreateInfo const* pCreateInfo, AllocationCallbacks pAllocator, VkShaderModule* pShaderModule, VkResult result) final override;
-  virtual void PreDestroyShaderModule(VkDevice device, VkShaderModule shaderModule, AllocationCallbacks pAllocator) final override;
-  virtual void PostDestroyShaderModule(VkDevice device, VkShaderModule shaderModule, AllocationCallbacks pAllocator) final override;
+  VkResult PreCreateGraphicsPipelines(
+      VkDevice device, VkPipelineCache pipelineCache, uint32_t createInfoCount,
+      VkGraphicsPipelineCreateInfo const* pCreateInfos,
+      const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines);
+  VkResult PostCreateGraphicsPipelines(
+      VkDevice device, VkPipelineCache pipelineCache, uint32_t createInfoCount,
+      VkGraphicsPipelineCreateInfo const* pCreateInfos,
+      const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines,
+      VkResult result);
+  VkResult PreCreateComputePipelines(
+      VkDevice device, VkPipelineCache pipelineCache, uint32_t createInfoCount,
+      VkComputePipelineCreateInfo const* pCreateInfos,
+      const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines);
+  VkResult PostCreateComputePipelines(
+      VkDevice device, VkPipelineCache pipelineCache, uint32_t createInfoCount,
+      VkComputePipelineCreateInfo const* pCreateInfos,
+      const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines,
+      VkResult result);
+  void PreDestroyPipeline(VkDevice device, VkPipeline pipeline,
+                          const VkAllocationCallbacks* pAllocator);
+  void PostDestroyPipeline(VkDevice device, VkPipeline pipeline,
+                           const VkAllocationCallbacks* pAllocator);
+  VkResult PreCreateShaderModule(VkDevice device,
+                                 VkShaderModuleCreateInfo const* pCreateInfo,
+                                 const VkAllocationCallbacks* pAllocator,
+                                 VkShaderModule* pShaderModule);
+  VkResult PostCreateShaderModule(VkDevice device,
+                                  VkShaderModuleCreateInfo const* pCreateInfo,
+                                  const VkAllocationCallbacks* pAllocator,
+                                  VkShaderModule* pShaderModule,
+                                  VkResult result);
+  void PreDestroyShaderModule(VkDevice device, VkShaderModule shaderModule,
+                              const VkAllocationCallbacks* pAllocator);
+  void PostDestroyShaderModule(VkDevice device, VkShaderModule shaderModule,
+                               const VkAllocationCallbacks* pAllocator);
 
-  virtual void PostGetDeviceQueue(VkDevice device, uint32_t queueFamilyIndex, uint32_t queueIndex, VkQueue* pQueue) final override;
-  virtual VkResult PreQueueSubmit(VkQueue queue, uint32_t submitCount, VkSubmitInfo const* pSubmits, VkFence fence) final override;
-  virtual VkResult PostQueueSubmit(VkQueue queue, uint32_t submitCount, VkSubmitInfo const* pSubmits, VkFence fence, VkResult result) final override;
-  virtual VkResult PostQueueWaitIdle(VkQueue queue, VkResult result) final override;
-  virtual VkResult PostQueueBindSparse(VkQueue queue, uint32_t bindInfoCount, VkBindSparseInfo const* pBindInfo, VkFence fence, VkResult result) final override;
+  void PostGetDeviceQueue(VkDevice device, uint32_t queueFamilyIndex,
+                          uint32_t queueIndex, VkQueue* pQueue);
+  VkResult PreQueueSubmit(VkQueue queue, uint32_t submitCount,
+                          VkSubmitInfo const* pSubmits, VkFence fence);
+  VkResult PostQueueSubmit(VkQueue queue, uint32_t submitCount,
+                           VkSubmitInfo const* pSubmits, VkFence fence,
+                           VkResult result);
+  VkResult PostQueueWaitIdle(VkQueue queue, VkResult result);
+  VkResult PostQueueBindSparse(VkQueue queue, uint32_t bindInfoCount,
+                               VkBindSparseInfo const* pBindInfo, VkFence fence,
+                               VkResult result);
 
-  virtual VkResult PostQueuePresentKHR(VkQueue queue, VkPresentInfoKHR const* pPresentInfo, VkResult result) final override;
+  VkResult PostQueuePresentKHR(VkQueue queue,
+                               VkPresentInfoKHR const* pPresentInfo,
+                               VkResult result);
 
-  virtual VkResult PostGetQueryPoolResults(VkDevice device, VkQueryPool queryPool, uint32_t firstQuery, uint32_t queryCount, size_val dataSize, void* pData, VkDeviceSize stride, VkQueryResultFlags flags, VkResult result) final override;
-  virtual VkResult PostWaitForFences(VkDevice device, uint32_t fenceCount, VkFence const* pFences, VkBool32 waitAll, uint64_t timeout, VkResult result) final override;
-  virtual VkResult PostAcquireNextImageKHR(VkDevice device, VkSwapchainKHR swapchain, uint64_t timeout, VkSemaphore semaphore, VkFence fence, uint32_t* pImageIndex, VkResult result) final override;
-  virtual VkResult PostGetFenceStatus(VkDevice device, VkFence fence, VkResult result) final override;
+  VkResult PostGetQueryPoolResults(VkDevice device, VkQueryPool queryPool,
+                                   uint32_t firstQuery, uint32_t queryCount,
+                                   size_t dataSize, void* pData,
+                                   VkDeviceSize stride,
+                                   VkQueryResultFlags flags, VkResult result);
+  VkResult PostWaitForFences(VkDevice device, uint32_t fenceCount,
+                             VkFence const* pFences, VkBool32 waitAll,
+                             uint64_t timeout, VkResult result);
+  VkResult PostAcquireNextImageKHR(VkDevice device, VkSwapchainKHR swapchain,
+                                   uint64_t timeout, VkSemaphore semaphore,
+                                   VkFence fence, uint32_t* pImageIndex,
+                                   VkResult result);
+  VkResult PostGetFenceStatus(VkDevice device, VkFence fence, VkResult result);
 
-  virtual VkResult PreDebugMarkerSetObjectNameEXT(VkDevice device, VkDebugMarkerObjectNameInfoEXT const* pNameInfo) final override;
-  virtual VkResult PostDebugMarkerSetObjectNameEXT(VkDevice device, VkDebugMarkerObjectNameInfoEXT const* pNameInfo, VkResult result) final override;
+  VkResult PreDebugMarkerSetObjectNameEXT(
+      VkDevice device, VkDebugMarkerObjectNameInfoEXT const* pNameInfo);
+  VkResult PostDebugMarkerSetObjectNameEXT(
+      VkDevice device, VkDebugMarkerObjectNameInfoEXT const* pNameInfo,
+      VkResult result);
 
-  virtual VkResult PreSetDebugUtilsObjectNameEXT(VkDevice device, const VkDebugUtilsObjectNameInfoEXT* pNameInfo) final override;
-  virtual VkResult PostSetDebugUtilsObjectNameEXT(VkDevice device, const VkDebugUtilsObjectNameInfoEXT* pNameInfo, VkResult result) final override;
+  VkResult PreSetDebugUtilsObjectNameEXT(
+      VkDevice device, const VkDebugUtilsObjectNameInfoEXT* pNameInfo);
+  VkResult PostSetDebugUtilsObjectNameEXT(
+      VkDevice device, const VkDebugUtilsObjectNameInfoEXT* pNameInfo,
+      VkResult result);
 
-  virtual VkResult PostCreateSemaphore(VkDevice device, VkSemaphoreCreateInfo const* pCreateInfo, AllocationCallbacks pAllocator, VkSemaphore* pSemaphore, VkResult result) final override;
-  virtual void PostDestroySemaphore(VkDevice device, VkSemaphore semaphore,
-                         AllocationCallbacks pAllocator) final override;
-  virtual VkResult PostSignalSemaphoreKHR(VkDevice device, const VkSemaphoreSignalInfoKHR* pSignalInfo, VkResult result) final override;
-  virtual VkResult PreWaitSemaphoresKHR(VkDevice device, const VkSemaphoreWaitInfoKHR* pWaitInfo, uint64_t timeout) final override;
-  virtual VkResult PostWaitSemaphoresKHR(VkDevice device, const VkSemaphoreWaitInfoKHR* pWaitInfo, uint64_t timeout, VkResult result) final override;
-  virtual VkResult PostGetSemaphoreCounterValueKHR(VkDevice device, VkSemaphore semaphore, uint64_t* pValue, VkResult result) final override;
+  VkResult PostCreateSemaphore(VkDevice device,
+                               VkSemaphoreCreateInfo const* pCreateInfo,
+                               const VkAllocationCallbacks* pAllocator,
+                               VkSemaphore* pSemaphore, VkResult result);
+  void PostDestroySemaphore(VkDevice device, VkSemaphore semaphore,
+                            const VkAllocationCallbacks* pAllocator);
+  VkResult PostSignalSemaphoreKHR(VkDevice device,
+                                  const VkSemaphoreSignalInfoKHR* pSignalInfo,
+                                  VkResult result);
+  VkResult PreWaitSemaphoresKHR(VkDevice device,
+                                const VkSemaphoreWaitInfoKHR* pWaitInfo,
+                                uint64_t timeout);
+  VkResult PostWaitSemaphoresKHR(VkDevice device,
+                                 const VkSemaphoreWaitInfoKHR* pWaitInfo,
+                                 uint64_t timeout, VkResult result);
+  VkResult PostGetSemaphoreCounterValueKHR(VkDevice device,
+                                           VkSemaphore semaphore,
+                                           uint64_t* pValue, VkResult result);
 
-// clang-format on
-// =============================================================================
-// Include the generated interface
-// =============================================================================
 #include "gfr_commands.h.inc"
 
  private:
@@ -296,6 +386,7 @@ class GfrContext : public intercept::BaseInterceptor {
   CStringArray instance_extension_names_cstr_;
   VkInstance vk_instance_ = VK_NULL_HANDLE;
 
+  InstanceDispatchTable instance_dispatch_table_;
   VkInstanceCreateInfo instance_create_info_;
 
   mutable std::mutex device_create_infos_mutex_;
@@ -377,6 +468,6 @@ class GfrContext : public intercept::BaseInterceptor {
 #endif  // __linux__
 };
 
-}  // namespace gfr
+}  // namespace GFR
 
 #endif  // GFR_H

@@ -23,7 +23,7 @@
 #include "gfr.h"
 #include "util.h"
 
-namespace gfr {
+namespace GFR {
 
 const VkDeviceSize kBufferMarkerBufferSize =
     kBufferMarkerEventCount * sizeof(uint32_t);
@@ -72,15 +72,16 @@ VkResult CreateHostBuffer(VkDevice device,
   create_info.queueFamilyIndexCount = 0;
   create_info.pQueueFamilyIndices = nullptr;
 
+  auto dispatch_table = GetDeviceLayerData(DataKey(device))->dispatch_table;
   VkResult vk_res =
-      intercept::CreateBuffer(device, &create_info, nullptr, p_buffer);
+      dispatch_table.CreateBuffer(device, &create_info, nullptr, p_buffer);
   assert(VK_SUCCESS == vk_res);
   if (vk_res != VK_SUCCESS) {
     return vk_res;
   }
 
   VkMemoryRequirements mem_reqs = {};
-  intercept::GetBufferMemoryRequirements(device, *p_buffer, &mem_reqs);
+  dispatch_table.GetBufferMemoryRequirements(device, *p_buffer, &mem_reqs);
 
   if (*p_heap == VK_NULL_HANDLE) {
     VkMemoryPropertyFlags mem_flags =
@@ -105,7 +106,7 @@ VkResult CreateHostBuffer(VkDevice device,
 
     assert(found_memory);
     if (!found_memory) {
-      intercept::DestroyBuffer(device, *p_buffer, nullptr);
+      dispatch_table.DestroyBuffer(device, *p_buffer, nullptr);
       return VK_ERROR_INITIALIZATION_FAILED;
     }
 
@@ -114,19 +115,21 @@ VkResult CreateHostBuffer(VkDevice device,
     alloc_info.pNext = nullptr;
     alloc_info.allocationSize = kBuffermarkerHeapSize;
     alloc_info.memoryTypeIndex = memory_type_index;
-    vk_res = intercept::AllocateMemory(device, &alloc_info, nullptr, p_heap);
+    vk_res =
+        dispatch_table.AllocateMemory(device, &alloc_info, nullptr, p_heap);
     assert(VK_SUCCESS == vk_res);
     if (vk_res != VK_SUCCESS) {
-      intercept::DestroyBuffer(device, *p_buffer, nullptr);
+      dispatch_table.DestroyBuffer(device, *p_buffer, nullptr);
       return VK_ERROR_INITIALIZATION_FAILED;
     }
   }
 
-  vk_res = intercept::BindBufferMemory(device, *p_buffer, *p_heap, heap_offset);
+  vk_res =
+      dispatch_table.BindBufferMemory(device, *p_buffer, *p_heap, heap_offset);
   assert(VK_SUCCESS == vk_res);
   if (vk_res != VK_SUCCESS) {
-    intercept::FreeMemory(device, *p_heap, nullptr);
-    intercept::DestroyBuffer(device, *p_buffer, nullptr);
+    dispatch_table.FreeMemory(device, *p_heap, nullptr);
+    dispatch_table.DestroyBuffer(device, *p_buffer, nullptr);
     return VK_ERROR_INITIALIZATION_FAILED;
   }
 
@@ -134,7 +137,8 @@ VkResult CreateHostBuffer(VkDevice device,
 }
 
 void DestroyBuffer(VkDevice device, VkBuffer buffer) {
-  intercept::DestroyBuffer(device, buffer, nullptr);
+  auto dispatch_table = GetDeviceLayerData(DataKey(device))->dispatch_table;
+  dispatch_table.DestroyBuffer(device, buffer, nullptr);
 }
 
 // =================================================================================================
@@ -146,31 +150,40 @@ Device::Device(GfrContext* p_gfr, VkPhysicalDevice vk_gpu, VkDevice device,
       vk_physical_device_(vk_gpu),
       vk_device_(device),
       has_buffer_marker_(has_buffer_marker) {
+  // Set the dispatch tables
+  auto instance_layer_data =
+      GetInstanceLayerData(DataKey(p_gfr->GetInstance()));
+  instance_dispatch_table_ = instance_layer_data->dispatch_table;
+  auto device_layer_data = GetDeviceLayerData(DataKey(device));
+  device_dispatch_table_ = device_layer_data->dispatch_table;
+
   uint32_t count = 0;
-  intercept::GetPhysicalDeviceQueueFamilyProperties(vk_physical_device_, &count,
-                                                    nullptr);
+  instance_dispatch_table_.GetPhysicalDeviceQueueFamilyProperties(
+      vk_physical_device_, &count, nullptr);
   if (count > 0) {
     queue_family_properties_.resize(count);
-    intercept::GetPhysicalDeviceQueueFamilyProperties(
+    instance_dispatch_table_.GetPhysicalDeviceQueueFamilyProperties(
         vk_physical_device_, &count, queue_family_properties_.data());
   }
 
   // Get memory properties
-  intercept::GetPhysicalDeviceMemoryProperties(vk_gpu, &memory_properties_);
+  instance_dispatch_table_.GetPhysicalDeviceMemoryProperties(
+      vk_gpu, &memory_properties_);
 
   // Get device properties
-  intercept::GetPhysicalDeviceProperties(vk_gpu, &physical_device_properties_);
+  instance_dispatch_table_.GetPhysicalDeviceProperties(
+      vk_gpu, &physical_device_properties_);
 
   // Get proc address for vkCmdWriteBufferMarkerAMD
   if (has_buffer_marker) {
     pfn_vkCmdWriteBufferMarkerAMD_ =
-        (PFN_vkCmdWriteBufferMarkerAMD)intercept::GetDeviceDispatchTable(device)
-            ->GetDeviceProcAddr(device, "vkCmdWriteBufferMarkerAMD");
+        (PFN_vkCmdWriteBufferMarkerAMD)device_dispatch_table_.GetDeviceProcAddr(
+            device, "vkCmdWriteBufferMarkerAMD");
   }
 
   pfn_vkFreeCommandBuffers_ =
-      (PFN_vkFreeCommandBuffers)intercept::GetDeviceDispatchTable(device)
-          ->GetDeviceProcAddr(device, "vkFreeCommandBuffers");
+      (PFN_vkFreeCommandBuffers)device_dispatch_table_.GetDeviceProcAddr(
+          device, "vkFreeCommandBuffers");
 
   // Create a submit tracker
   submit_tracker_ = std::make_unique<SubmitTracker>(this);
@@ -228,13 +241,15 @@ VkResult Device::AcquireMarkerBuffer() {
     return vk_res;
   }
   if (marker_buffers_heap_mapped_base_ == nullptr) {
-    vk_res = intercept::MapMemory(vk_device_, marker_buffers_heap_, 0,
-                                  kBuffermarkerHeapSize, 0,
-                                  &marker_buffers_heap_mapped_base_);
+    vk_res = device_dispatch_table_.MapMemory(
+        vk_device_, marker_buffers_heap_, 0, kBuffermarkerHeapSize, 0,
+        &marker_buffers_heap_mapped_base_);
     assert(VK_SUCCESS == vk_res);
     if (vk_res != VK_SUCCESS) {
-      intercept::FreeMemory(vk_device_, marker_buffers_heap_, nullptr);
-      intercept::DestroyBuffer(vk_device_, marker_buffer.buffer, nullptr);
+      device_dispatch_table_.FreeMemory(vk_device_, marker_buffers_heap_,
+                                        nullptr);
+      device_dispatch_table_.DestroyBuffer(vk_device_, marker_buffer.buffer,
+                                           nullptr);
       return VK_ERROR_INITIALIZATION_FAILED;
     }
   }
@@ -340,7 +355,7 @@ void Device::DumpCommandBuffers(std::ostream& os,
       sorted_command_buffers;
   std::lock_guard<std::recursive_mutex> lock(command_buffers_mutex_);
   for (auto cb : command_buffers_) {
-    auto p_cmd = gfr::GetGfrCommandBuffer(cb);
+    auto p_cmd = GFR::GetGfrCommandBuffer(cb);
     if (p_cmd && p_cmd->IsPrimaryCommandBuffer()) {
       if (dump_all_command_buffers ||
           (p_cmd->HasBufferMarker() && p_cmd->WasSubmittedToQueue() &&
@@ -411,8 +426,7 @@ void Device::DumpCommandBufferStateOnScreen(CommandBuffer* p_cmd,
   // If there is a fence associated with this command buffer, we check
   // that it's status is signaled.
   if (submitted_fence != VK_NULL_HANDLE) {
-    auto dispatch_table = intercept::GetDeviceDispatchTable(vk_device_);
-    auto fence_status = dispatch_table->WaitForFences(
+    auto fence_status = device_dispatch_table_.WaitForFences(
         vk_device_, 1, &submitted_fence, VK_TRUE, 0);
     if (VK_TIMEOUT == fence_status) {
       std::cout << "Reset before fence was set: "
@@ -452,7 +466,7 @@ bool Device::ValidateCommandBufferNotInUse(CommandBuffer* p_cmd,
 
 bool Device::ValidateCommandBufferNotInUse(VkCommandBuffer vk_command_buffer,
                                            std::ostream& os) {
-  auto p_cmd = gfr::GetGfrCommandBuffer(vk_command_buffer);
+  auto p_cmd = GFR::GetGfrCommandBuffer(vk_command_buffer);
   assert(p_cmd != nullptr);
   if (p_cmd != nullptr) {
     return ValidateCommandBufferNotInUse(p_cmd, os);
@@ -472,7 +486,7 @@ void Device::ValidateCommandPoolState(VkCommandPool vk_command_pool,
   auto command_buffers = command_pools_[vk_command_pool]->GetCommandBuffers(
       VK_COMMAND_BUFFER_LEVEL_PRIMARY);
   for (auto vk_cmd : command_buffers) {
-    auto p_cmd = gfr::GetGfrCommandBuffer(vk_cmd);
+    auto p_cmd = GFR::GetGfrCommandBuffer(vk_cmd);
     if (p_cmd != nullptr) {
       ValidateCommandBufferNotInUse(p_cmd, os);
     }
@@ -488,7 +502,7 @@ void Device::ResetCommandPool(VkCommandPool vk_command_pool) {
     auto command_buffers =
         command_pools_[vk_command_pool]->GetCommandBuffers(cb_level);
     for (auto vk_cmd : command_buffers) {
-      auto p_cmd = gfr::GetGfrCommandBuffer(vk_cmd);
+      auto p_cmd = GFR::GetGfrCommandBuffer(vk_cmd);
       if (p_cmd != nullptr) {
         p_cmd->Reset();
       }
@@ -506,12 +520,12 @@ void Device::DeleteCommandPool(VkCommandPool vk_command_pool) {
     auto command_buffers =
         command_pools_[vk_command_pool]->GetCommandBuffers(cb_level);
     for (auto vk_cmd : command_buffers) {
-      auto p_cmd = gfr::GetGfrCommandBuffer(vk_cmd);
+      auto p_cmd = GFR::GetGfrCommandBuffer(vk_cmd);
       if (p_cmd != nullptr) {
         command_buffers_.erase(std::remove(command_buffers_.begin(),
                                            command_buffers_.end(), vk_cmd),
                                command_buffers_.end());
-        gfr::DeleteGfrCommandBuffer(vk_cmd);
+        GFR::DeleteGfrCommandBuffer(vk_cmd);
       }
     }
   }
@@ -526,7 +540,7 @@ void Device::DeleteCommandBuffers(const VkCommandBuffer* vk_cmds,
       command_buffers_.erase(std::remove(command_buffers_.begin(),
                                          command_buffers_.end(), vk_cmds[i]),
                              command_buffers_.end());
-      gfr::DeleteGfrCommandBuffer(vk_cmds[i]);
+      GFR::DeleteGfrCommandBuffer(vk_cmds[i]);
     }
   }
 }
@@ -730,4 +744,4 @@ std::ostream& Device::Print(std::ostream& stream) const {
   return stream;
 }
 
-}  // namespace gfr
+}  // namespace GFR

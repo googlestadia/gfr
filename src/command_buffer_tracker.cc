@@ -18,9 +18,9 @@
 
 #include "command.h"
 
-namespace gfr {
+namespace GFR {
 
-// Keep track of Gfr::CommandBuffer objects created for each VkCommandBuffer
+// Keep track of GFR::CommandBuffer objects created for each VkCommandBuffer
 static std::unordered_map<VkCommandBuffer, CommandBufferPtr>
     global_commandbuffer_map_;
 static std::mutex global_commandbuffer_map_mutex_;
@@ -35,7 +35,7 @@ void SetGfrCommandBuffer(VkCommandBuffer vk_command_buffer,
   global_commandbuffer_map_[vk_command_buffer] = std::move(command_buffer);
 }
 
-gfr::CommandBuffer* GetGfrCommandBuffer(VkCommandBuffer vk_command_buffer) {
+GFR::CommandBuffer* GetGfrCommandBuffer(VkCommandBuffer vk_command_buffer) {
   if (thread_cb_cache_.vkcb == vk_command_buffer) {
     return thread_cb_cache_.gfrcb;
   }
@@ -57,4 +57,4 @@ void DeleteGfrCommandBuffer(VkCommandBuffer vk_command_buffer) {
   global_commandbuffer_map_.erase(vk_command_buffer);
 }
 
-}  // namespace gfr
+}  // namespace GFR
