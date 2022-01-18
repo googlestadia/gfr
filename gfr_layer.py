@@ -97,7 +97,8 @@ def main() -> None:
     layer_file_format_version = '1.1.0'
     layer_name = 'VK_LAYER_GOOGLE_graphics_flight_recorder'
     layer_type = 'GLOBAL'
-    layer_library_path = '/usr/local/cloudcast/lib/libVkLayer_gfr.so'
+    layer_library_path_linux = 'libVkLayer_gfr.so'
+    layer_library_path_windows = '.\\\\VkLayer_gfr.dll'
     layer_implementation_version = '1'
     enforced_api_version = None
     # layer description ends up in the JSON manifest file, and JSON does not
@@ -182,7 +183,7 @@ def main() -> None:
         'file_format_version': layer_file_format_version,
         'name': layer_name,
         'type': layer_type,
-        'library_path': layer_library_path,
+        'library_path': layer_library_path_linux,
         'enforced_api_version': enforced_api_version,
         'implementation_version': layer_implementation_version,
         'description': layer_description,
@@ -191,7 +192,13 @@ def main() -> None:
         'device_extensions': implemented_device_extensions,
     }
     manifest_name = 'gfr.json'
-    layergen_utils.generate_manifest_file(manifest_name, output_dir, env,
+    manifest_output = os.path.join(output_dir, "../manifest/linux")
+    layergen_utils.generate_manifest_file(manifest_name, manifest_output, env,
+                                          manifest_parameters)
+
+    manifest_parameters['library_path'] = layer_library_path_windows
+    manifest_output = os.path.join(output_dir, "../manifest/windows")
+    layergen_utils.generate_manifest_file(manifest_name, manifest_output, env,
                                           manifest_parameters)
 
 
