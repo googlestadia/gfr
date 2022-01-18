@@ -52,15 +52,12 @@ const char* k_env_var_output_path = "GFR_OUTPUT_PATH";
 const char* k_env_var_output_name = "GFR_OUTPUT_NAME";
 
 const char* k_env_var_log_configs = "GFR_DEBUG_LOG_CONFIGS";
-const char* k_env_var_debug_dump_on_begin = "GFR_DEBUG_DUMP_ON_BEGIN";
 const char* k_env_var_trace_on = "GFR_TRACE_ON";
 const char* k_env_var_debug_autodump = "GFR_AUTODUMP";
 const char* k_env_var_dump_all_command_buffers = "GFR_DUMP_ALL_COMMAND_BUFFERS";
 const char* k_env_var_track_semaphores = "GFR_TRACK_SEMAPHORES";
 const char* k_env_var_trace_all_semaphores = "GFR_TRACE_ALL_SEMAPHORES";
 const char* k_env_var_instrument_all_commands = "GFR_INSTRUMENT_ALL_COMMANDS";
-const char* k_env_var_validate_command_buffer_state =
-    "GFR_VALIDATE_COMMAND_BUFFER_STATE";
 
 const char* k_env_var_debug_shaders_dump = "GFR_SHADERS_DUMP";
 const char* k_env_var_debug_shaders_dump_on_crash = "GFR_SHADERS_DUMP_ON_CRASH";
@@ -866,15 +863,12 @@ VkResult GfrContext::PreCreateInstance(const VkInstanceCreateInfo* pCreateInfo,
                                        const VkAllocationCallbacks* pAllocator,
                                        VkInstance* pInstance) {
   // Setup debug flags
-  GetEnvVal<bool>(k_env_var_debug_dump_on_begin, &debug_dump_on_begin_);
   GetEnvVal<int>(k_env_var_debug_autodump, &debug_autodump_rate_);
   GetEnvVal<bool>(k_env_var_dump_all_command_buffers,
                   &debug_dump_all_command_buffers_);
   GetEnvVal<bool>(k_env_var_track_semaphores, &track_semaphores_);
   GetEnvVal<bool>(k_env_var_trace_all_semaphores, &trace_all_semaphores_);
   GetEnvVal<bool>(k_env_var_instrument_all_commands, &instrument_all_commands_);
-  GetEnvVal<bool>(k_env_var_validate_command_buffer_state,
-                  &validate_command_buffer_state_);
 
   instance_extension_names_original_.assign(
       pCreateInfo->ppEnabledExtensionNames,

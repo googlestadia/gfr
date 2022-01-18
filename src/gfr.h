@@ -420,7 +420,6 @@ class GfrContext {
   std::unordered_map<VkQueue, VkDevice> queue_device_tracker_;
 
   // Debug flags
-  bool debug_dump_on_begin_ = false;
   int debug_autodump_rate_ = 0;
   bool debug_dump_all_command_buffers_ = false;
   bool debug_dump_shaders_on_crash_ = false;
@@ -429,7 +428,6 @@ class GfrContext {
   int shader_module_load_options_ = ShaderModule::LoadOptions::kNone;
 
   bool instrument_all_commands_ = false;
-  bool validate_command_buffer_state_ = true;
   bool track_semaphores_ = false;
   bool trace_all_semaphores_ = false;
 
