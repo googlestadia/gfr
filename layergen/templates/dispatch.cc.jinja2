@@ -1,0 +1,36 @@
+{# Generate base layer boilerplate
+
+Parameters:
+layer_prefix            name used to prefix layer specfic entry points
+copyright_notice        copyright notice
+
+-#}
+{{ copyright_notice }}
+
+#include "dispatch.h"
+
+namespace {{ layer_prefix }} {
+
+void InitInstanceDispatchTable(VkInstance instance, PFN_vkGetInstanceProcAddr pa, InstanceDispatchTable *dt)
+{
+{% for platform in registry.platforms.values() %}
+{% if platform.macro != '' %}#ifdef {{ platform.macro }} {% endif %}
+{% for cmd_name, cmd in platform.commands.items() if cmd.is_instance -%}
+    dt->{{cmd_name[2:]}} = (PFN_{{cmd_name}})pa(instance, "{{cmd_name}}");
+{% endfor %}
+{% if platform.macro != '' %}#endif // {{ platform.macro }}{% endif %}
+{% endfor %}
+}
+
+void InitDeviceDispatchTable(VkDevice device, PFN_vkGetDeviceProcAddr pa, DeviceDispatchTable *dt)
+{
+{% for platform in registry.platforms.values() %}
+{% if platform.macro != '' %}#ifdef {{ platform.macro }} {% endif %}
+{% for cmd_name, cmd in platform.commands.items() if not cmd.is_instance -%}
+    dt->{{cmd_name[2:]}} =  (PFN_{{cmd_name}})pa(device, "{{cmd_name}}");
+{% endfor %}
+{% if platform.macro != '' %}#endif // {{ platform.macro }}{% endif %}
+{% endfor -%}
+} // NOLINT(readability/fn_size)
+
+} // namespace {{ layer_prefix }}

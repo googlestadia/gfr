@@ -1,0 +1,26 @@
+{# 
+Parameters:
+copyright_notice        copyright notice
+-#}
+{{ copyright_notice }}
+{% import 'vulkan_macros.jinja2' as vulkan -%}
+
+#include "command_common.h"
+
+// Returns the name of given command. This only cares for commands that have one
+// parameter of type VkCommandBuffer.
+const char *Command::GetCommandName(const Command &cmd) {
+  switch (cmd.type) {
+    default:
+    case Command::Type::kUnknown: return "Unknown";
+{%- for platform in registry.platforms.values() -%}
+{% if platform.macro != '' -%}#ifdef {{ platform.macro }} {%- endif %}
+{% for cmd_name, cmd in platform.commands.items() -%}
+{% if vulkan.contained_in_groups(cmd, ['all_cb_commands']) %}
+    case Command::Type::k{{cmd_name[2:]}}: return "{{cmd_name}}"; 
+{%- endif %}
+{%- endfor %}
+{% if platform.macro != '' %}#endif // {{ platform.macro }}{% endif %}
+{%- endfor %}
+  }
+}

@@ -1,0 +1,57 @@
+{# 
+Parameters:
+copyright_notice        copyright notice
+-#}
+{{ copyright_notice }}
+{% import 'vulkan_macros.jinja2' as vulkan -%}
+
+// clang-format off
+#ifndef COMMAND_COMMON_HEADER
+#define COMMAND_COMMON_HEADER
+
+#include <cstring>
+#include <iostream>
+#include <vector>
+#include <vulkan/vulkan.h>
+
+// Enumerate commands that have one parameter of type VkCommandBuffer.
+struct Command
+{
+  enum Type {
+    kUnknown,
+{%- filter indent(4) -%}
+{% for platform in registry.platforms.values() -%}
+{% if platform.macro != '' %}#ifdef {{ platform.macro }} {% endif %}
+{% for cmd_name, cmd in platform.commands.items() -%}
+{% if vulkan.contained_in_groups(cmd, ['all_cb_commands']) -%}
+    k{{cmd_name[2:]}},
+{% endif %}
+{%- endfor %}
+{% if platform.macro != '' %}#endif // {{ platform.macro }}{% endif %}
+{%- endfor %}
+{%- endfilter %}
+  };
+
+  public:
+  static const char *GetCommandName(const Command &cmd);
+
+  Type type;
+  uint32_t id;
+  void *parameters;
+};
+
+// Define structs for command parameters
+{% for platform in registry.platforms.values() -%}
+{% if platform.macro != '' %}#ifdef {{ platform.macro }} {% endif %}
+{% for cmd_name, cmd in platform.commands.items() -%}
+{% if vulkan.contained_in_groups(cmd, ['all_cb_commands']) %}
+struct {{cmd_name[2:]}}Args {
+{% for p in cmd.parameters -%}
+    {{vulkan.full_writable_type_name(p)|indent(2, True)}};
+{% endfor %}};
+{% endif %}
+{%- endfor %}
+{% if platform.macro != '' %}#endif // {{ platform.macro }}{% endif %}
+{%- endfor %}
+
+#endif // COMMAND_COMMON_HEADER

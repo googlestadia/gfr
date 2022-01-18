@@ -22,7 +22,8 @@ namespace GFR {
 
 void InitInstanceDispatchTable(VkInstance instance,
                                PFN_vkGetInstanceProcAddr pa,
-                               InstanceDispatchTable* dt) {
+                               InstanceDispatchTable *dt) {
+
   dt->GetPhysicalDeviceDisplayPropertiesKHR =
       (PFN_vkGetPhysicalDeviceDisplayPropertiesKHR)pa(
           instance, "vkGetPhysicalDeviceDisplayPropertiesKHR");
@@ -211,11 +212,12 @@ void InitInstanceDispatchTable(VkInstance instance,
       (PFN_vkCreateStreamDescriptorSurfaceGGP)pa(
           instance, "vkCreateStreamDescriptorSurfaceGGP");
 
-#endif  // VK_USE_PLATFORM_GGP
+#endif // VK_USE_PLATFORM_GGP
 }
 
 void InitDeviceDispatchTable(VkDevice device, PFN_vkGetDeviceProcAddr pa,
-                             DeviceDispatchTable* dt) {
+                             DeviceDispatchTable *dt) {
+
   dt->ResetQueryPool = (PFN_vkResetQueryPool)pa(device, "vkResetQueryPool");
   dt->ResetQueryPoolEXT =
       (PFN_vkResetQueryPoolEXT)pa(device, "vkResetQueryPoolEXT");
@@ -787,7 +789,7 @@ void InitDeviceDispatchTable(VkDevice device, PFN_vkGetDeviceProcAddr pa,
 
 #ifdef VK_USE_PLATFORM_GGP
 
-#endif  // VK_USE_PLATFORM_GGP
-}  // NOLINT(readability/fn_size)
+#endif // VK_USE_PLATFORM_GGP
+} // NOLINT(readability/fn_size)
 
-}  // namespace GFR
+} // namespace GFR

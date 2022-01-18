@@ -1,0 +1,25 @@
+{#
+Parameters:
+copyright_notice        copyright notice
+-#}
+{{ copyright_notice }}
+{% import 'vulkan_macros.jinja2' as vulkan -%}
+
+{% set custom_command_buffer_functions = [
+    'vkBeginCommandBuffer',
+    'vkEndCommandBuffer',
+    'vkResetCommandBuffer',
+] -%}
+
+// clang-format off
+{% for platform in registry.platforms.values() -%}
+{% if platform.macro != '' -%}#ifdef {{ platform.macro }} {% endif -%}
+{% for cmd_name, cmd in platform.commands.items() -%}
+{% if not cmd_name in custom_command_buffer_functions and vulkan.contained_in_groups(cmd, ['all_cb_commands']) %}
+void Pre{{cmd_name[2:]}}({{vulkan.command_parameters_prototype(cmd)}});
+void Post{{cmd_name[2:]}}({{vulkan.command_parameters_prototype(cmd)}});
+{%- endif %}
+{%- endfor %}
+{% if platform.macro != '' -%}#endif // {{ platform.macro }}{%- endif %}
+{%- endfor %}
+// clang-format on

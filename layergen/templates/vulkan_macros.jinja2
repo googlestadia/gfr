@@ -1,0 +1,72 @@
+{#- Shared macros for working with Vulkan layers -#}
+
+{# Handle type modifiers #}
+{%- macro cpp_type(p) -%}
+  {%- if isinstance(p, Pointer) -%}{{ cpp_type(p.base_type) }}*
+  {%- elif isinstance(p, FixedArray) -%}{{ cpp_type(p.base_type) }}
+  {%- elif isinstance(p, DynamicArray) -%}{{ cpp_type(p.base_type) }}*
+  {%- else -%}
+    {%- if 'string' == p.name -%}char *
+    {%- else -%} {{ p.name }}
+    {%- endif -%}
+  {%- endif -%}
+{%- endmacro -%}
+
+{# Returns the fully qualified C type name of member/parameter #}
+{%- macro cpp_field_type(p) -%}
+  {%- if p.type.is_const -%}const {%endif-%}
+  {{ cpp_type(p.type) }}
+{%- endmacro -%}
+
+{# Returns post-name attributes for parameters/members #}
+{%- macro cpp_field_type_post(p) -%}
+  {%- if isinstance(p.type, FixedArray) -%}[{{p.type.length}}]
+  {%- endif -%}
+{%- endmacro -%}
+
+{# Returns the fully qualified C type and name of member/parameter #}
+{%- macro full_type_name(p) -%}
+  {{ cpp_field_type(p) }} {{p.name}}{{cpp_field_type_post(p)}}
+{%- endmacro -%}
+
+{# Returns the fully qualified C type and name of member/parameter,
+  except for fixed size array where const qualifier is dropped so the
+  array can be filled later. #}
+{%- macro full_writable_type_name(p) -%}
+  {%- if p.type.is_const and not isinstance(p.type, FixedArray) -%}const {%endif-%}
+  {{ cpp_type(p.type) }} {{p.name}}{{cpp_field_type_post(p)}}
+{%- endmacro -%}
+
+{# Returns the commands parameters as the function prototype #}
+{%- macro command_parameters_prototype(cmd) -%}
+{% for p in cmd.parameters -%}{{full_type_name(p)}}{% if not loop.last %}, {% endif %}{% endfor %}
+{%- endmacro -%}
+
+{# Returns the commands parameters #}
+{%- macro command_parameters(cmd) -%}
+{% for p in cmd.parameters -%}{{p.name}}{% if not loop.last %}, {% endif %}{% endfor %}
+{%- endmacro -%}
+
+{# Returns true if the command matches any of the predefined special intercept
+   groups. Current special intercept groups are:
+   - all_vulkan_commands
+   - all_cb_commands: all commands that work on a command buffer, including
+       begin, reset, end and all vkCmd commands.
+   - all_vk_cmds
+#}
+{%- macro contained_in_groups(cmd, groups) -%}
+{% if 'all_vulkan_commands' in groups %}
+  {{ True }}
+{% elif  'all_cb_commands' in groups and cmd.parameters|length > 0 and cmd.parameters[0].type.name=='VkCommandBuffer' %}
+  {{ True }}
+{% elif  'all_vk_cmds' in groups and cmd.name[:5] == 'vkCmd' %}
+  {{ True }}
+{% endif %}
+{%- endmacro -%}
+
+{%- macro get_default_return_value(return_type) -%}
+{%- if 'VkResult' == return_type -%} VK_SUCCESS
+{%- elif 'PFN_vkVoidFunction' == return_type -%} nullptr
+{%- else -%} 0
+{%- endif -%}
+{%- endmacro -%}

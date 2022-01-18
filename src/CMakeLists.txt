@@ -55,7 +55,6 @@ add_library(${target_name} MODULE
 )
 
 set(CMAKE_EXE_LINKER_FLAGS " -static")
-target_link_libraries(${target_name} -static-libgcc -static-libstdc++)
 
 message(STATUS "Generated dir:${GENERATED_DIR}")
 target_include_directories(${target_name} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
@@ -63,8 +62,9 @@ target_include_directories(${target_name} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
                                                   ${GENERATED_DIR})
 
 if(WIN32)
-target_include_directories(${target_name} PRIVATE ${VULKAN_DIR}/LayerFactory/Project)
 add_definitions(-D_CRT_SECURE_NO_WARNINGS)
+else()
+target_link_libraries(${target_name} -static-libgcc -static-libstdc++)
 endif(WIN32)
 
 set_target_properties(${target_name} PROPERTIES OUTPUT_NAME "VkLayer_gfr")

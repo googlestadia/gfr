@@ -1,0 +1,41 @@
+{#- Generate base layer boilerplate
+
+Parameters:
+intercept_pre_groups:     list of cammand groups to call a pre function
+intercept_post_groups:    list of cammand groups to call a post function
+intercept_pre_commands    list of cammands to call a pre function
+intercept_post_commands   list of cammands to call a post function
+platform_macro            the macro define for the target platform
+
+-#}
+{#
+Parameters:
+copyright_notice        copyright notice
+-#}
+{{ copyright_notice }}
+{% import 'vulkan_macros.jinja2' as vulkan %}
+
+// clang-format off
+{% for platform in registry.platforms.values() %}
+{% if platform.macro != '' %}#ifdef {{ platform.macro }} {% endif %}
+{% for cmd_name, cmd in platform.commands.items() -%}
+{%- if cmd_name in intercept_pre_commands or vulkan.contained_in_groups(cmd, intercept_pre_groups)%}
+void InterceptPre{{cmd_name[2:]}}({{ vulkan.command_parameters_prototype(cmd) }}) {
+  g_interceptor->Pre{{cmd_name[2:]}}({{ vulkan.command_parameters(cmd) }});
+}
+{%- endif %}
+{%- if cmd_name in intercept_post_commands or vulkan.contained_in_groups(cmd, intercept_post_groups)%}
+{% if cmd.return_type.name == 'void' -%}
+void InterceptPost{{cmd_name[2:]}}({{ vulkan.command_parameters_prototype(cmd) }}) {
+  g_interceptor->Post{{cmd_name[2:]}}({{ vulkan.command_parameters(cmd) }});
+}
+{% else -%}
+{{ cmd.return_type.name }} InterceptPost{{cmd_name[2:]}}({{ vulkan.command_parameters_prototype(cmd) }}, {{ cmd.return_type.name }} result) {
+  return g_interceptor->Post{{cmd_name[2:]}}({{ vulkan.command_parameters(cmd) }}, result);
+}
+{%- endif %}
+{%- endif %}
+{%- endfor %}
+{% if platform.macro != '' -%}#endif // {{ platform.macro }}{%- endif %}
+{%- endfor %}
+// clang-format on
