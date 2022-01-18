@@ -386,8 +386,64 @@ const VkInstanceCreateInfo* GfrContext::GetModifiedInstanceCreateInfo(
   return &instance_create_info_;
 }
 
+// TryAddExtension will try an enable an extension.
+//
+// If the extension is already part of |pCreateInfo|, |extenion_enabled| be set
+// to true and |extension_added| will be set to false. If the extension is
+// supported by the device then |extension_enabled| and |extension_added| will
+// be set to true. If the extension is not supported by the device then
+// |extension_enabled| and |extension_added| will be set to false.
+void TryAddDeviceExtension(
+    const VkDeviceCreateInfo* pCreateInfo,
+    const std::vector<VkExtensionProperties>& extension_properties,
+    StringArray& enabled_extensions, const char* extension_name,
+    bool* extension_enabled, bool* extension_added) {
+  assert(extension_enabled != nullptr);
+  assert(extension_added != nullptr);
+
+  *extension_enabled = false;
+  *extension_added = false;
+
+  // Was the extension enabled by the main program?
+  for (uint32_t i = 0; i < pCreateInfo->enabledExtensionCount; ++i) {
+    const char* name = pCreateInfo->ppEnabledExtensionNames[i];
+    if (strcmp(name, extension_name) == 0) {
+      *extension_enabled = true;
+      return;
+    }
+  }
+
+  // Does the device support this extension?
+  auto e = std::find_if(std::begin(extension_properties),
+                        std::end(extension_properties),
+                        [extension_name](const VkExtensionProperties& p) {
+                          return strcmp(extension_name, p.extensionName) == 0;
+                        });
+  if (e == std::end(extension_properties)) {
+    return;
+  }
+
+  // Supported but we need to add it.
+  *extension_enabled = true;
+  *extension_added = true;
+  enabled_extensions.push_back(extension_name);
+}
+
 const VkDeviceCreateInfo* GfrContext::GetModifiedDeviceCreateInfo(
     VkPhysicalDevice physicalDevice, const VkDeviceCreateInfo* pCreateInfo) {
+  // Get the list of device extensions.
+  uint32_t extension_count = 0;
+  std::vector<VkExtensionProperties> extension_properties;
+  VkResult vk_result =
+      instance_dispatch_table_.EnumerateDeviceExtensionProperties(
+          physicalDevice, nullptr, &extension_count, nullptr);
+  if (vk_result == VK_SUCCESS) {
+    extension_properties.resize(extension_count);
+    vk_result = instance_dispatch_table_.EnumerateDeviceExtensionProperties(
+        physicalDevice, nullptr, &extension_count, extension_properties.data());
+    assert(vk_result == VK_SUCCESS);
+  }
+
   bool requested_buffer_marker = false;
   for (uint32_t i = 0; i < pCreateInfo->enabledExtensionCount; ++i) {
     const char* name = pCreateInfo->ppEnabledExtensionNames[i];
@@ -402,7 +458,7 @@ const VkDeviceCreateInfo* GfrContext::GetModifiedDeviceCreateInfo(
   for (uint32_t i = 0; i < pCreateInfo->enabledExtensionCount; ++i) {
     const char* name = pCreateInfo->ppEnabledExtensionNames[i];
     requested_coherent_memory =
-        (strcmp(name, "VK_AMD_device_coherent_memory") == 0);
+        (strcmp(name, VK_AMD_DEVICE_COHERENT_MEMORY_EXTENSION_NAME) == 0);
     if (requested_coherent_memory) {
       break;
     }
@@ -416,70 +472,26 @@ const VkDeviceCreateInfo* GfrContext::GetModifiedDeviceCreateInfo(
 
   device_extension_names_ = device_extension_names_original_;
 
-  if (!requested_buffer_marker) {
-    // Get available extensions and add buffer marker if possible
-    bool has_buffer_marker = false;
-    {
-      uint32_t count = 0;
-      VkResult vk_result =
-          instance_dispatch_table_.EnumerateDeviceExtensionProperties(
-              physicalDevice, nullptr, &count, nullptr);
-      if (vk_result == VK_SUCCESS) {
-        std::vector<VkExtensionProperties> extension_properties(count);
-        vk_result = instance_dispatch_table_.EnumerateDeviceExtensionProperties(
-            physicalDevice, nullptr, &count, extension_properties.data());
-        if (vk_result == VK_SUCCESS) {
-          for (const auto& properties : extension_properties) {
-            if (strcmp(properties.extensionName,
-                       VK_AMD_BUFFER_MARKER_EXTENSION_NAME) == 0) {
-              has_buffer_marker = true;
-              break;
-            }
-          }
-        }
-      }
-    }
+  TryAddDeviceExtension(pCreateInfo, extension_properties,
+                        device_extension_names_,
+                        VK_AMD_BUFFER_MARKER_EXTENSION_NAME,
+                        &buffer_marker_enabled_, &buffer_marker_added_);
 
-    if (has_buffer_marker) {
-      device_extension_names_.push_back(VK_AMD_BUFFER_MARKER_EXTENSION_NAME);
-    } else {
-      std::cerr << "GFR Warning: No VK_AMD_buffer_marker extension, "
-                   "progression tracking will be disabled. "
-                << std::endl;
-    }
+  if (!buffer_marker_enabled_) {
+    std::cerr << "GFR Warning: No VK_AMD_buffer_marker extension, "
+                 "progression tracking will be disabled. "
+              << std::endl;
   }
 
-  if (!requested_coherent_memory) {
-    bool has_coherent_memory = false;
-    {
-      uint32_t count = 0;
-      VkResult vk_result =
-          instance_dispatch_table_.EnumerateDeviceExtensionProperties(
-              physicalDevice, nullptr, &count, nullptr);
-      if (vk_result == VK_SUCCESS) {
-        std::vector<VkExtensionProperties> extension_properties(count);
-        vk_result = instance_dispatch_table_.EnumerateDeviceExtensionProperties(
-            physicalDevice, nullptr, &count, extension_properties.data());
-        if (vk_result == VK_SUCCESS) {
-          for (const auto& properties : extension_properties) {
-            if (strcmp(properties.extensionName,
-                       "VK_AMD_device_coherent_memory") == 0) {
-              has_coherent_memory = true;
-              break;
-            }
-          }
-        }
-      }
-    }
+  TryAddDeviceExtension(pCreateInfo, extension_properties,
+                        device_extension_names_,
+                        VK_AMD_DEVICE_COHERENT_MEMORY_EXTENSION_NAME,
+                        &device_coherent_enabled_, &device_coherent_added_);
 
-    // Create persistent storage for the extension names
-    if (has_coherent_memory) {
-      device_extension_names_.push_back("VK_AMD_device_coherent_memory");
-    } else {
-      std::cerr << "GFR Warning: No VK_AMD_device_coherent_memory extension, "
-                   "results may not be as accurate as possible."
-                << std::endl;
-    }
+  if (!device_coherent_enabled_) {
+    std::cerr << "GFR Warning: No VK_AMD_device_coherent_memory extension, "
+                 "results may not be as accurate as possible."
+              << std::endl;
   }
 
   auto device_create_info = std::make_unique<DeviceCreateInfo>();
@@ -1999,18 +2011,41 @@ VKAPI_ATTR VkResult VKAPI_CALL QueueBindSparse(
   return last_bind_result;
 }
 
+// FindOnChain looks for a pNext of a give type.
+const void* FindOnChain(const void* pNext, VkStructureType type) {
+  const VkStruct* pStruct = reinterpret_cast<const VkStruct*>(pNext);
+  while (pStruct) {
+    if (pStruct->sType == type) {
+      return pStruct;
+    }
+    pStruct = reinterpret_cast<const VkStruct*>(pStruct->pNext);
+  }
+
+  return nullptr;
+}
+
 // GFR intercepts vkCreateDevice to enforce coherent memory
 VKAPI_ATTR VkResult VKAPI_CALL
 CreateDevice(PFN_vkCreateDevice pfn_create_device, VkPhysicalDevice gpu,
              const VkDeviceCreateInfo* pCreateInfo,
              const VkAllocationCallbacks* pAllocator, VkDevice* pDevice) {
   VkDeviceCreateInfo local_create_info = *pCreateInfo;
-  VkPhysicalDeviceCoherentMemoryFeaturesAMD enableDeviceCoherentMemoryFeature{};
-  enableDeviceCoherentMemoryFeature.deviceCoherentMemory = true;
-  enableDeviceCoherentMemoryFeature.sType =
-      VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_COHERENT_MEMORY_FEATURES_AMD;
-  enableDeviceCoherentMemoryFeature.pNext = (void*)pCreateInfo->pNext;
-  local_create_info.pNext = &enableDeviceCoherentMemoryFeature;
+
+  if (g_interceptor->DeviceCoherentMemoryEnabled()) {
+    // Coherent memory extension enabled, check for struct, add if needed.
+    if (nullptr ==
+        FindOnChain(
+            local_create_info.pNext,
+            VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_COHERENT_MEMORY_FEATURES_AMD)) {
+      VkPhysicalDeviceCoherentMemoryFeaturesAMD
+          enableDeviceCoherentMemoryFeature{};
+      enableDeviceCoherentMemoryFeature.deviceCoherentMemory = true;
+      enableDeviceCoherentMemoryFeature.sType =
+          VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_COHERENT_MEMORY_FEATURES_AMD;
+      enableDeviceCoherentMemoryFeature.pNext = (void*)pCreateInfo->pNext;
+      local_create_info.pNext = &enableDeviceCoherentMemoryFeature;
+    }
+  }
   return pfn_create_device(gpu, &local_create_info, pAllocator, pDevice);
 }
 
