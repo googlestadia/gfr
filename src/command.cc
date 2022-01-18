@@ -25,7 +25,7 @@
 #include "gfr.h"
 #include "util.h"
 
-namespace gfr {
+namespace GFR {
 
 static std::atomic<uint16_t> command_buffer_marker_high_bits{1};
 
@@ -190,7 +190,7 @@ VkResult CommandBuffer::PostBeginCommandBuffer(
   if (cb_level_ == VK_COMMAND_BUFFER_LEVEL_SECONDARY &&
       pBeginInfo->pInheritanceInfo) {
     if (!scb_inheritance_info_) {
-      scb_inheritance_info_ = gfr::GfrNew<VkCommandBufferInheritanceInfo>();
+      scb_inheritance_info_ = GFR::GfrNew<VkCommandBufferInheritanceInfo>();
     }
     *scb_inheritance_info_ = *pBeginInfo->pInheritanceInfo;
   }
@@ -360,8 +360,9 @@ bool CommandBuffer::DumpCommand(const Command& command, std::ostream& os,
                                 const std::string& indent) {
   size_t stream_pos_0 = os.tellp();
 
-  tracker_.SetNameResolver(os, &device_->GetObjectInfoDB());
-  tracker_.PrintCommandParameters(os, command, indent);
+  tracker_.SetNameResolver(&device_->GetObjectInfoDB());
+  tracker_.PrintCommandParameters(os, command,
+                                  static_cast<uint32_t>(indent.length() - 1));
 
   size_t stream_pos_1 = os.tellp();
   bool wrote_output = (stream_pos_0 != stream_pos_1);
@@ -375,10 +376,10 @@ bool CommandBuffer::DumpCmdExecuteCommands(const Command& command,
                                            const std::string& indent) {
   size_t stream_pos_0 = os.tellp();
   auto args = reinterpret_cast<CmdExecuteCommandsArgs*>(command.parameters);
-  auto pindent1 = gfr::IncreaseIndent(indent);
-  auto pindent2 = gfr::IncreaseIndent(pindent1);
-  auto pindent3 = gfr::IncreaseIndent(pindent2);
-  auto pindent4 = gfr::IncreaseIndent(pindent3);
+  auto pindent1 = GFR::IncreaseIndent(indent);
+  auto pindent2 = GFR::IncreaseIndent(pindent1);
+  auto pindent3 = GFR::IncreaseIndent(pindent2);
+  auto pindent4 = GFR::IncreaseIndent(pindent3);
   os << pindent1 << "- # parameter:";
   os << pindent2 << "name: commandBuffer";
   os << pindent2 << "value: " << args->commandBuffer;
@@ -391,7 +392,7 @@ bool CommandBuffer::DumpCmdExecuteCommands(const Command& command,
     os << pindent2 << "commandBuffers:";
     for (uint32_t i = 0; i < args->commandBufferCount; i++) {
       auto secondary_command_buffer =
-          gfr::GetGfrCommandBuffer(args->pCommandBuffers[i]);
+          GFR::GetGfrCommandBuffer(args->pCommandBuffers[i]);
       if (secondary_command_buffer) {
         secondary_command_buffer->DumpContents(os, options, pindent3,
                                                submit_info_id_, command_state);
@@ -433,14 +434,14 @@ class CommandBufferInternalState {
 // Returns the pipeline used by this command or -1 if no pipeline used.
 int GetCommandPipelineType(const Command& command) {
   switch (command.type) {
-    case Command::Type::kDraw:
-    case Command::Type::kDrawIndexed:
-    case Command::Type::kDrawIndirect:
-    case Command::Type::kDrawIndexedIndirect:
+    case Command::Type::kCmdDraw:
+    case Command::Type::kCmdDrawIndexed:
+    case Command::Type::kCmdDrawIndirect:
+    case Command::Type::kCmdDrawIndexedIndirect:
       return VK_PIPELINE_BIND_POINT_GRAPHICS;
 
-    case Command::Type::kDispatch:
-    case Command::Type::kDispatchIndirect:
+    case Command::Type::kCmdDispatch:
+    case Command::Type::kCmdDispatchIndirect:
       return VK_PIPELINE_BIND_POINT_COMPUTE;
 
     default:
@@ -472,14 +473,14 @@ void CommandBuffer::HandleIncompleteCommand(
 }
 
 void CommandBufferInternalState::Mutate(const Command& cmd) {
-  if (cmd.type == Command::Type::kBindDescriptorSets) {
+  if (cmd.type == Command::Type::kCmdBindDescriptorSets) {
     if (cmd.parameters) {
       // Update the active descriptorsets for this bind point.
       auto args = reinterpret_cast<CmdBindDescriptorSetsArgs*>(cmd.parameters);
       bound_descriptors_[args->pipelineBindPoint].Bind(
           args->firstSet, args->descriptorSetCount, args->pDescriptorSets);
     }
-  } else if (cmd.type == Command::Type::kBindPipeline) {
+  } else if (cmd.type == Command::Type::kCmdBindPipeline) {
     if (cmd.parameters) {
       // Update the currently bound pipeline.
       auto args = reinterpret_cast<CmdBindPipelineArgs*>(cmd.parameters);
@@ -495,15 +496,15 @@ bool CommandBufferInternalState::Print(const Command& cmd,
                                        const ObjectInfoDB& name_resolver) {
   int bind_point = -1;
   switch (cmd.type) {
-    case Command::Type::kDraw:
-    case Command::Type::kDrawIndexed:
-    case Command::Type::kDrawIndirect:
-    case Command::Type::kDrawIndexedIndirect:
+    case Command::Type::kCmdDraw:
+    case Command::Type::kCmdDrawIndexed:
+    case Command::Type::kCmdDrawIndirect:
+    case Command::Type::kCmdDrawIndexedIndirect:
       bind_point = VK_PIPELINE_BIND_POINT_GRAPHICS;
       break;
 
-    case Command::Type::kDispatch:
-    case Command::Type::kDispatchIndirect:
+    case Command::Type::kCmdDispatch:
+    case Command::Type::kCmdDispatchIndirect:
       bind_point = VK_PIPELINE_BIND_POINT_COMPUTE;
       break;
 
@@ -513,7 +514,7 @@ bool CommandBufferInternalState::Print(const Command& cmd,
 
   if (-1 != bind_point) {
     os << indent << "internalState:";
-    auto indent2 = gfr::IncreaseIndent(indent);
+    auto indent2 = GFR::IncreaseIndent(indent);
     os << indent2 << "pipeline:";
     bound_pipelines_[bind_point]->Print(os, name_resolver, indent2);
     os << indent2 << "descriptorSets:";
@@ -531,7 +532,7 @@ void CommandBuffer::DumpContents(
   auto num_commands = tracker_.GetCommands().size();
   StringArray indents = {indent};
   for (uint32_t i = 1; i < 4; i++) {
-    indents.push_back(gfr::IncreaseIndent(indents[i - 1]));
+    indents.push_back(GFR::IncreaseIndent(indents[i - 1]));
   }
   os << indents[0] << "- # CommandBuffer:"
      << device_->GetObjectInfo((uint64_t)vk_command_buffer_, indents[1])
@@ -539,13 +540,13 @@ void CommandBuffer::DumpContents(
      << "device:" << device_->GetObjectInfo((uint64_t)device_, indents[2]);
   if (has_buffer_marker_) {
     os << indents[1]
-       << "beginMarkerValue: " << gfr::Uint32ToStr(begin_marker_value_)
+       << "beginMarkerValue: " << GFR::Uint32ToStr(begin_marker_value_)
        << indents[1]
-       << "endMarkerValue: " << gfr::Uint32ToStr(end_marker_value_);
+       << "endMarkerValue: " << GFR::Uint32ToStr(end_marker_value_);
     os << indents[1] << "topMarkerBuffer: "
-       << gfr::Uint32ToStr(ReadMarker(MarkerPosition::kTop)) << indents[1]
+       << GFR::Uint32ToStr(ReadMarker(MarkerPosition::kTop)) << indents[1]
        << "bottomMarkerBuffer: "
-       << gfr::Uint32ToStr(ReadMarker(MarkerPosition::kBottom));
+       << GFR::Uint32ToStr(ReadMarker(MarkerPosition::kBottom));
   }
   os << indents[1] << "submitInfoId: ";
   if (IsPrimaryCommandBuffer()) {
@@ -606,10 +607,10 @@ void CommandBuffer::DumpContents(
       auto command_state = GetCommandState(cb_state, command);
       os << indents[2] << "- # Command:" << indents[3] << "id: " << command.id
          << "/" << num_commands << indents[3] << "markerValue: "
-         << gfr::Uint32ToStr(begin_marker_value_ + command.id) << indents[3]
+         << GFR::Uint32ToStr(begin_marker_value_ + command.id) << indents[3]
          << "name: " << command_name << indents[3] << "state: ["
          << PrintCommandState(command_state) << "]" << indents[3]
-         << "parameters:";
+         << "parameters:" << std::endl;
 
       state.Mutate(command);
       // For vkCmdExecuteCommands, GFR prints all the information about the
@@ -642,4 +643,4 @@ void CommandBuffer::DumpContents(
 // =============================================================================
 #include "command.cc.inc"
 
-}  // namespace gfr
+}  // namespace GFR

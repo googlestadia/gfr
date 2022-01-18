@@ -29,7 +29,7 @@ namespace {
 template <typename T>
 std::string PtrToStr(const T* ptr) {
   uintptr_t value = (uintptr_t)ptr;
-  return gfr::Uint64ToStr(value);
+  return GFR::Uint64ToStr(value);
 }
 }  // namespace
 
@@ -61,6 +61,14 @@ const ObjectInfo* ObjectInfoDB::FindObjectInfo(uint64_t handle) const {
   return &unknown_object_;
 }
 
+std::string ObjectInfoDB::GetObjectDebugName(uint64_t handle) const {
+  auto info = FindObjectInfo(handle);
+  if (info != &unknown_object_) {
+    return info->name;
+  }
+  return std::string();
+}
+
 std::string ObjectInfoDB::GetObjectName(
     uint64_t handle,
     HandleDebugNamePreference handle_debug_name_preference) const {
@@ -69,13 +77,13 @@ std::string ObjectInfoDB::GetObjectName(
     if (info != &unknown_object_) {
       return info->name;
     }
-    return gfr::Uint64ToStr(handle);
+    return GFR::Uint64ToStr(handle);
   }
   std::stringstream object_name;
   if (info != &unknown_object_) {
     object_name << info->name << " ";
   }
-  object_name << "(" << gfr::Uint64ToStr(handle) << ")";
+  object_name << "(" << GFR::Uint64ToStr(handle) << ")";
   return object_name.str();
 }
 
@@ -88,7 +96,7 @@ std::string ObjectInfoDB::GetObjectInfoInternal(
   if (vkhandle_tag_requirement == kPrintVkHandleTag) {
     info_ss << indent << "vkHandle: ";
   }
-  info_ss << gfr::Uint64ToStr(handle);
+  info_ss << GFR::Uint64ToStr(handle);
   auto info = FindObjectInfo(handle);
   if (info != &unknown_object_) {
     info_ss << indent << "debugName: \"" << info->name << "\"";

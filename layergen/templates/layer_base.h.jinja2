@@ -1,0 +1,148 @@
+{#- Generate base layer boilerplate
+
+Parameters:
+layer_prefix                  name used to prefix layer specfic entry points
+modify_instance_create_info   function to call to get the modified instance create info
+modify_device_create_info     function to call to get the modified device create info
+intercept_pre_groups          groups of cammands to call a pre function
+intercept_post_groups         groups of cammands to call a post function
+intercept_pre_commands        list of cammands to call a pre function
+intercept_post_commands       list of cammands to call a post function
+platform_macro                the macro define for the target platform
+copyright_notice              copyright notice
+
+-#}
+{{ copyright_notice }}
+{% import 'vulkan_macros.jinja2' as vulkan %}
+
+#ifndef LAYER_BASE_H
+#define LAYER_BASE_H
+
+#include <cassert>
+#include <memory>
+#include <mutex>
+#include <cstring>
+#include <unordered_map>
+#include <vulkan/vulkan.h>
+#include <vulkan/vk_layer.h>
+
+#include "dispatch.h"
+
+namespace {{ layer_prefix }} {
+
+typedef VkResult (VKAPI_PTR *PFN_vkSetInstanceLoaderData)(VkInstance instance, void* object);
+typedef VkResult (VKAPI_PTR *PFN_vkSetDeviceLoaderData)(VkDevice device, void* object);
+
+// Declare our per-instance and per-device contexts.
+// These are created and initialized in vkCreateInstance and vkCreateDevice.
+struct InstanceData {
+  VkInstance instance;
+  InstanceDispatchTable dispatch_table;
+  PFN_vkSetInstanceLoaderData pfn_set_instance_loader_data = nullptr;
+  PFN_vkGetInstanceProcAddr pfn_next_instance_proc_addr = nullptr;
+};
+
+struct DeviceData {
+  VkDevice device;
+  DeviceDispatchTable dispatch_table;
+  PFN_vkSetDeviceLoaderData pfn_set_device_loader_data = nullptr;
+  PFN_vkGetDeviceProcAddr pfn_next_device_proc_addr = nullptr;
+};
+
+uintptr_t DataKey(const void *object);
+InstanceData* GetInstanceLayerData(uintptr_t key);
+DeviceData* GetDeviceLayerData(uintptr_t key);
+
+struct VkStruct {
+  VkStructureType sType;
+  const void*     pNext;
+};
+
+VkStruct *FindOnChain(VkStruct *s, VkStructureType type);
+
+VkLayerInstanceCreateInfo *GetLoaderInstanceInfo(const VkInstanceCreateInfo *create_info, VkLayerFunction func_type);
+VkLayerDeviceCreateInfo *GetLoaderDeviceInfo(const VkDeviceCreateInfo *create_info, VkLayerFunction func_type);
+
+VkResult SetInstanceLoaderData(VkInstance instance, void *obj);
+VkResult SetDeviceLoaderData(VkDevice device, void *obj);
+
+{% if modify_instance_create_info|length > 0 %}
+const VkInstanceCreateInfo* {{ modify_instance_create_info }}(
+    const VkInstanceCreateInfo* pCreateInfo);
+{% endif %}
+{% if modify_device_create_info|length > 0 %}
+const VkDeviceCreateInfo* {{ modify_device_create_info }}(
+    VkPhysicalDevice physicalDevice, const VkDeviceCreateInfo* pCreateInfo);
+{% endif %}
+
+// Implementation functions.
+// These functions are defined but not implemented here.
+{% for platform in registry.platforms.values() %}
+{% if platform.macro != '' %}#ifdef {{ platform.macro }} {% endif %}
+{% for cmd_name, cmd in platform.commands.items() -%}
+{{cmd.return_type.name}} {{cmd_name[2:]}}(PFN_{{cmd_name}} pfn, {{ vulkan.command_parameters_prototype(cmd) }});
+{% endfor %}
+{% if platform.macro != '' %}#endif // {{ platform.macro }}{% endif %}
+{% endfor %}
+
+// Declare pre intercept functions
+
+{% for platform in registry.platforms.values() %}
+{% if platform.macro != '' %}#ifdef {{ platform.macro }} {% endif %}
+{% for cmd_name, cmd in platform.commands.items() if cmd_name in intercept_pre_commands or vulkan.contained_in_groups(cmd, intercept_pre_groups) -%}
+void InterceptPre{{cmd_name[2:]}}({{ vulkan.command_parameters_prototype(cmd) }});
+{% endfor %}
+{% if platform.macro != '' %}#endif // {{ platform.macro }}{% endif %}
+{% endfor %}
+
+// Declare post intercept functions
+
+{% for platform in registry.platforms.values() %}
+{% if platform.macro != '' %}#ifdef {{ platform.macro }} {% endif %}
+{% for cmd_name, cmd in platform.commands.items() if cmd_name in intercept_post_commands or vulkan.contained_in_groups(cmd, intercept_post_groups) %}
+{% if cmd.return_type.name == 'void' %}
+{{cmd.return_type.name}} InterceptPost{{cmd_name[2:]}}({{ vulkan.command_parameters_prototype(cmd) }});
+{% else %}
+{{cmd.return_type.name}} InterceptPost{{cmd_name[2:]}}({{ vulkan.command_parameters_prototype(cmd) }}, {{cmd.return_type.name}} result);
+{% endif %}
+{% endfor %}
+{% if platform.macro != '' %}#endif // {{ platform.macro }}{% endif %}
+{% endfor %}
+
+// Declare intercept functions.
+
+{% set custom_intercept_commands = ['vkCreateInstance', 'vkCreateDevice'] %}
+
+// Intercept functions manage the dispatch table and call the implementation (layer specific)
+// function. These are the function pointers returned by vkGetXxxProcAddr.
+{% for platform in registry.platforms.values() %}
+{% if platform.macro != '' %}#ifdef {{ platform.macro }} {% endif %}
+{% for cmd_name, cmd in platform.commands.items() if cmd_name not in custom_intercept_commands -%}
+{{cmd.return_type.name}} Intercept{{cmd_name[2:]}}({{ vulkan.command_parameters_prototype(cmd) }});
+{% endfor %}
+{% if platform.macro != '' %}#endif // {{ platform.macro }}{% endif %}
+{% endfor %}
+
+// Create instance and device need special implementaitons for the layer
+VkResult InterceptCreateInstance(const VkInstanceCreateInfo* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkInstance* pInstance);
+VkResult InterceptCreateDevice(VkPhysicalDevice gpu, const VkDeviceCreateInfo *pCreateInfo, const VkAllocationCallbacks *pAllocator, VkDevice *pDevice);
+
+} // namespace {{ layer_prefix }}
+
+#ifdef WIN32
+#define DLL_EXPORT __declspec(dllexport)
+#else
+#define DLL_EXPORT
+#endif
+
+extern "C" DLL_EXPORT VK_LAYER_EXPORT VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL
+{{ layer_prefix }}_GetInstanceProcAddr(VkInstance inst, const char* func);
+
+extern "C" DLL_EXPORT VK_LAYER_EXPORT VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL
+{{ layer_prefix }}_GetDeviceProcAddr(VkDevice dev, const char* func);
+
+extern "C" DLL_EXPORT VK_LAYER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL
+{{ layer_prefix }}_NegotiateLoaderLayerInterfaceVersion(
+    VkNegotiateLayerInterface* pVersionStruct);
+
+#endif // LAYER_BASE_H

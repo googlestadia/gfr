@@ -21,15 +21,13 @@
 #include <cstdint>
 #include <map>
 
-#if defined(SPIRV_PARSE_INCLUDE_VULKAN_SPIRV_HPP)
 #ifdef WIN32
 #include <spirv-headers/spirv.hpp>
 #else
 #include <SPIRV/spirv.hpp>
 #endif
-#endif
 
-namespace gfr {
+namespace GFR {
 
 /**
  * @brief SpirvParse
@@ -272,6 +270,6 @@ class BasicSpirvParse : public SpirvParse {
   std::string source_file_;
 };
 
-}  // namespace gfr
+}  // namespace GFR
 
 #endif  // GFR_PARSE_H

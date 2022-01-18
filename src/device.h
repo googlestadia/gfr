@@ -26,7 +26,7 @@
 
 #include "command.h"
 #include "command_pool.h"
-#include "gfr_base_interceptor.h"
+#include "layer_base.h"
 #include "marker.h"
 #include "object_name_db.h"
 #include "pipeline.h"
@@ -34,7 +34,7 @@
 #include "shader_module.h"
 #include "submit_tracker.h"
 
-namespace gfr {
+namespace GFR {
 
 const VkDeviceSize kBufferMarkerEventCount = 1024;
 const MarkerType kMarkerType = MarkerType::kUint32;
@@ -151,6 +151,8 @@ class Device {
 
  private:
   GfrContext* gfr_ = nullptr;
+  InstanceDispatchTable instance_dispatch_table_;
+  DeviceDispatchTable device_dispatch_table_;
   VkPhysicalDevice vk_physical_device_ = VK_NULL_HANDLE;
   VkDevice vk_device_ = VK_NULL_HANDLE;
   bool has_buffer_marker_ = false;
@@ -215,6 +217,6 @@ class Device {
 
 using DevicePtr = std::unique_ptr<Device>;
 
-}  // namespace gfr
+}  // namespace GFR
 
 #endif  // GFR_DEVICE_H

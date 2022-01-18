@@ -82,22 +82,23 @@ Once enabled, if `vkQueueSubmit()` or other Vulkan functions returns a fatal err
 
 ## Regenerating the layer
 
-GFR uses GAPID to generate much of it's layer binding. To rebuild the source files in the `generated` folder you
-need to have GAPID built: (https://github.com/google/gapid)
+GFR uses VkSpecGen and the Vulkan XML specificaiton to generate much of it's layer bindings. To rebuild the source files in the `generated` folder you need to have Python3 installed and run the `gfr_layer.py` script.
 
-On Linux, set `GAPID_DIR` to the root of the GAPID repository and make sure `apic` from GAPID is in your path (you
-will likely need to build GAPID yourself to have access to this utility).
+This should update the layer's bindings to the version of Vulkan-Headers in the third_party directory.
 
-Then regnerate the source files:
-`$ ./scripts/generate_layer.sh`
+This does not mean that GFR will be fully compatible with newer SDK versions.  For example new commands will not be instrumented by default (only if `GFR_INSTRUMENT_ALL_COMMANDS` is enabled). Furthermore certain changes in Vulkan functionality may affect how effective GFR functions. Commands or new API's that affect how command buffers are recorded or submitted many not work properly unless GFR is updated.
 
 ## Advanced Configuration
 
 Some additional environment variables are supported, mainly intended for debugging the layer itself.
 - `GFR_OUTPUT_PATH` can be set to override the directory where log files and shader binaries are written.
-- If `GFR_TRACE_ON` is set to 1, all Vulkan API calls intercepted by the layer will be logged.
+- If `GFR_TRACE_ON` is set to 1, all Vulkan API calls intercepted by the layer will be logged to
+the console.
 - If `GFR_DUMP_ALL_COMMAND_BUFFERS` is set to 1, all command buffers will be output when a log is created, even if they are determined to be complete.
+- If `GFR_INSTRUMENT_ALL_COMMANDS` is set to 1, all commands will be instrumented.
 - If `GFR_WATCHDOG_TIMEOUT_MS` is set to a non-zero number, a watchdog thread will be created. This will trigger if the application fails to submit new commands within a set time (in milliseconds) and a log will be created as if the a lost device error was encountered.
+- If `GFR_TRACK_SEMAPHORES` is set to 1, semaphore value tracking will be enabled.
+- If `GFR_TRACE_ALL_SEMAPHORES` is set to 1, semaphore events will be logged to console.
 
 - If `GFR_SHADERS_DUMP` is set to 1, all shaders will be dumped to disk when created.
 - If `GFR_SHADERS_DUMP_ON_BIND` is set to 1, shaders will be dumped to disk when they are bound.  This can reduce the number of shaders dumped to those referenced by the application.

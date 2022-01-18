@@ -1,0 +1,72 @@
+{#
+Parameters:
+copyright_notice        copyright notice
+-#}
+{{ copyright_notice }}
+{% import 'vulkan_macros.jinja2' as vulkan -%}
+
+{% set custom_command_buffer_functions = [
+    'vkBeginCommandBuffer',
+    'vkEndCommandBuffer',
+    'vkResetCommandBuffer',
+] -%}
+
+{% set default_instrumented_functions = [
+    'vkCmdDispatch',
+    'vkCmdDispatchIndirect',
+    'vkCmdDraw',
+    'vkCmdDrawIndexed',
+    'vkCmdDrawIndirect',
+    'vkCmdDrawIndexedIndirect',
+    'vkCmdCopyBuffer',
+    'vkCmdCopyBufferToImage',
+    'vkCmdCopyImage',
+    'vkCmdCopyImageToBuffer',
+    'vkCmdBindPipeline',
+    'vkCmdExecuteCommands',
+    'vkCmdPipelineBarrier',
+    'vkCmdSetEvent',
+    'vkCmdResetEvent',
+    'vkCmdWaitEvents',
+    'vkCmdDebugMarkerBeginEXT',
+    'vkCmdDebugMarkerEndEXT',
+    'vkCmdDebugMarkerInsertEXT',
+    'vkCmdBeginDebugUtilsLabelEXT',
+    'vkCmdEndDebugUtilsLabelEXT',
+    'vkCmdInsertDebugUtilsLabelEXT',
+] -%}
+
+// clang-format off
+{% for platform in registry.platforms.values() -%}
+{% if platform.macro != '' -%}#ifdef {{ platform.macro }} {% endif -%}
+{% for cmd_name, cmd in platform.commands.items() -%}
+{% if not cmd_name in custom_command_buffer_functions and vulkan.contained_in_groups(cmd, ['all_cb_commands']) %}
+
+void CommandBuffer::Pre{{cmd_name[2:]}}({{vulkan.command_parameters_prototype(cmd)}})
+{
+  tracker_.TrackPre{{cmd_name[2:]}}({{vulkan.command_parameters(cmd)}});
+{%- if cmd_name in default_instrumented_functions %}
+  WriteBeginCommandExecutionMarker(tracker_.GetCommands().back().id);
+{%- else %}
+  if (instrument_all_commands_) {
+    WriteBeginCommandExecutionMarker(tracker_.GetCommands().back().id);
+  }
+{%- endif %}
+}
+
+void CommandBuffer::Post{{cmd_name[2:]}}({{vulkan.command_parameters_prototype(cmd)}})
+{
+  tracker_.TrackPost{{cmd_name[2:]}}({{vulkan.command_parameters(cmd)}});
+{%- if cmd_name in default_instrumented_functions %}
+  WriteEndCommandExecutionMarker(tracker_.GetCommands().back().id);
+{%- else %}
+  if (instrument_all_commands_) {
+    WriteEndCommandExecutionMarker(tracker_.GetCommands().back().id);
+  }
+{%- endif %}
+}
+{%- endif %}
+{%- endfor %}
+{% if platform.macro != '' -%}#endif // {{ platform.macro }}{%- endif %}
+{%- endfor %}
+// clang-format on

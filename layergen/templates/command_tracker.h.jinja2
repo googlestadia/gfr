@@ -1,0 +1,46 @@
+{# 
+Parameters:
+copyright_notice        copyright notice
+-#}
+{{ copyright_notice }}
+{% import 'vulkan_macros.jinja2' as vulkan -%}
+
+// clang-format off
+#ifndef COMMAND_TRACKER_HEADER
+#define COMMAND_TRACKER_HEADER
+
+#include <vector>
+#include <iostream>
+#include <vulkan/vulkan.h>
+
+#include "command_common.h"
+#include "command_printer.h"
+#include "command_recorder.h"
+
+class CommandTracker
+{
+ public:
+  void Reset();
+  void SetNameResolver(const ObjectInfoDB *name_resolver);
+  void PrintCommandParameters(std::ostream &os, const Command &cmd, uint32_t indentation);
+
+  const std::vector<Command> &GetCommands() const { return commands_; }
+  std::vector<Command> &GetCommands() { return commands_; }
+
+{%- for platform in registry.platforms.values() -%}
+{% if platform.macro != '' %}#ifdef {{ platform.macro }} {% endif %}
+{% for cmd_name, cmd in platform.commands.items() -%}
+{% if vulkan.contained_in_groups(cmd, ['all_cb_commands'])%}
+  void TrackPre{{cmd_name[2:]}}({{vulkan.command_parameters_prototype(cmd)}});
+  void TrackPost{{cmd_name[2:]}}({{vulkan.command_parameters_prototype(cmd)}});
+{% endif %}
+{%- endfor %}
+{% if platform.macro != '' %}#endif // {{ platform.macro }}{% endif %}
+{%- endfor %}
+
+ private:
+  std::vector<Command> commands_;
+  CommandPrinter printer_;
+  CommandRecorder recorder_;
+};
+#endif // COMMAND_TRACKER_HEADER
