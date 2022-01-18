@@ -1,0 +1,76 @@
+{# Generate layer manifest
+
+Parameters:
+prefix                  name used to prefix layer specfic entry points
+file_format_version     layer version
+name                    layer name: VK_LAYER_GOOGLE_...
+type                    layer type: INSTANCE, DEVICE, or GLOBAL
+library_path            layer library path
+implementation_version  layer implementation version
+enforced_api_version    enforced layer API version
+description             layer description
+env_var_prefix          prefix for enable / disable env variables
+instance_extensions     list of instance extensions the layer implements
+device_extensions       list of device extensions the layer implements
+
+#}
+{
+  "file_format_version": "{{file_format_version}}",
+  "layer": {
+    "name": "{{name}}",
+    "type": "{{type}}",
+    "library_path": "{{library_path}}",
+    {% if enforced_api_version -%}
+    "api_version": "{{ enforced_api_version }}",
+    {%- else -%}
+    "api_version": "{{ registry.vk_api_version_major }}.{{ registry.vk_api_version_minor }}.{{ registry.vk_api_version_patch }}",
+    {%- endif %}
+    "implementation_version": "{{implementation_version}}",
+    "description": "{{description}}",
+    "functions": {
+      "vkNegotiateLoaderLayerInterfaceVersion": "{{prefix}}_NegotiateLoaderLayerInterfaceVersion",
+      "vkGetInstanceProcAddr": "{{prefix}}_GetInstanceProcAddr",
+      "vkGetDeviceProcAddr": "{{prefix}}_GetDeviceProcAddr"
+    },
+    "enable_environment": {
+      "{{env_var_prefix}}_ENABLE": "1"
+    },
+    "disable_environment": {
+      "{{env_var_prefix}}_DISABLE_1": "1"
+    },
+    "instance_extensions": [
+      {%- if instance_extensions -%}
+      {% for instance_extension in instance_extensions -%}
+      {
+        "name": "{{instance_extension.name}}",
+        "spec_version": "{{instance_extension.version}}"
+      }
+      {%- if not loop.last -%}
+      ,
+      {% endif %}
+      {%- endfor %}
+      {%- endif %}
+    ],
+    "device_extensions": [
+      {%- if device_extensions -%}
+      {% for device_extension in device_extensions -%}
+      {
+        "name": "{{device_extension.name}}",
+        "spec_version": "{{device_extension.version}}",
+        "entrypoints": [
+          {% for entry_point in device_extension.entry_points -%}
+            "{{entry_point}}"
+          {%- if not loop.last -%}
+          ,
+          {% endif %}
+          {%- endfor %}
+        ]
+      }
+      {%- if not loop.last -%}
+      ,
+      {% endif %}
+      {%- endfor %}
+      {%- endif %}
+    ]
+  }
+}

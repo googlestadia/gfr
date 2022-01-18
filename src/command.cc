@@ -361,7 +361,8 @@ bool CommandBuffer::DumpCommand(const Command& command, std::ostream& os,
   size_t stream_pos_0 = os.tellp();
 
   tracker_.SetNameResolver(&device_->GetObjectInfoDB());
-  tracker_.PrintCommandParameters(os, command, indent.length() - 1);
+  tracker_.PrintCommandParameters(os, command,
+                                  static_cast<uint32_t>(indent.length() - 1));
 
   size_t stream_pos_1 = os.tellp();
   bool wrote_output = (stream_pos_0 != stream_pos_1);

@@ -1,0 +1,43 @@
+{# Generate base layer boilerplate
+
+Parameters:
+layer_prefix            name used to prefix layer specfic entry points
+copyright_notice        copyright notice
+
+-#}
+{{ copyright_notice }}
+
+#ifndef DISPATCH_H
+#define DISPATCH_H
+
+#include <vulkan/vulkan.h>
+#include <vulkan/vk_layer.h>
+
+namespace {{ layer_prefix }} {
+
+struct InstanceDispatchTable {
+{% for platform in registry.platforms.values() %}
+{% if platform.macro != '' %}#ifdef {{ platform.macro }} {% endif %}
+{% for cmd_name, cmd in platform.commands.items() if cmd.is_instance -%}
+    PFN_{{cmd_name}} {{cmd_name[2:]}};
+{% endfor %}
+{% if platform.macro != '' %}#endif // {{ platform.macro }}{% endif %}
+{% endfor %}
+};
+
+struct DeviceDispatchTable {
+{% for platform in registry.platforms.values() %}
+{% if platform.macro != '' %}#ifdef {{ platform.macro }} {% endif %}
+{% for cmd_name, cmd in platform.commands.items() if not cmd.is_instance -%}
+    PFN_{{cmd_name}} {{cmd_name[2:]}};
+{% endfor %}
+{% if platform.macro != '' %}#endif // {{ platform.macro }}{% endif %}
+{% endfor %}
+};
+
+void InitInstanceDispatchTable(VkInstance instance, PFN_vkGetInstanceProcAddr pa, InstanceDispatchTable *dt);
+void InitDeviceDispatchTable(VkDevice device, PFN_vkGetDeviceProcAddr pa, DeviceDispatchTable *dt);
+
+} // namespace {{ layer_prefix }}
+
+#endif // DISPATCH_H

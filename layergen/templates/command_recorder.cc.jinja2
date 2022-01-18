@@ -1,0 +1,102 @@
+{# 
+Parameters:
+copyright_notice        copyright notice
+-#}
+{{ copyright_notice }}
+{% import 'vulkan_macros.jinja2' as vulkan -%}
+
+// clang-format off
+#include <iomanip>
+#include <sstream>
+
+#include "command_common.h"
+#include "command_recorder.h"
+#include "object_name_db.h"
+
+{%- macro copy_type_member(p) -%}
+  {%- if p.type.name == 'string' -%}
+    ptr[i].{{ p.name }} = nullptr;
+    if (src[start_index + i].{{ p.name }}) {
+      ptr[i].{{ p.name }} = CopyArray<>(src[start_index + i].{{ p.name }}, 0, strlen(src[start_index + i].{{ p.name }}));
+    }
+  {%- elif isinstance(p.type, DynamicArray) or isinstance(p.type, Pointer)-%}
+    {%- if p.type.base_type.name == 'void' -%}
+      ptr[i].{{p.name}} = src[start_index + i].{{p.name}};
+    {%- else -%}
+      ptr[i].{{p.name}} = nullptr;
+      if (src[start_index + i].{{p.name}}) {
+        ptr[i].{{p.name}} = CopyArray<>(src[start_index + i].{{p.name}}, 0, 1);
+      }
+    {%- endif -%}
+  {%- elif isinstance(p.type, FixedArray)-%}
+    std::memcpy(ptr[i].{{p.name}}, src[start_index + i].{{p.name}}, sizeof(src[start_index + i].{{p.name}}));
+  {%- else -%}
+    ptr[i].{{p.name}} = src[start_index + i].{{p.name}};
+  {%- endif %}
+{%- endmacro %}
+
+// Declare CopyArray template functions. We need this declaration since the
+// templates call each other and we don't have control over the order of the
+// definitions.
+{% for platform in registry.platforms.values() %}
+{% if platform.macro != '' %}#ifdef {{ platform.macro }} {% endif %}
+{% for type in platform_structs[platform.name] %}
+template<>
+{{type.name}} *CommandRecorder::CopyArray<{{type.name}}>(const {{type.name}} *src, uint64_t start_index, uint64_t count);
+{% endfor %}
+{% if platform.macro != '' %}#endif // {{ platform.macro }}{% endif %}
+{% endfor %}
+
+// Define CopyArray template functions.
+{% for platform in registry.platforms.values() %}
+{% if platform.macro != '' %}#ifdef {{ platform.macro }} {% endif %}
+{% for type in platform_structs[platform.name] %}
+template<>
+{{type.name}} *CommandRecorder::CopyArray<{{type.name}}>(const {{type.name}} *src, uint64_t start_index, uint64_t count) {
+  auto ptr = reinterpret_cast<{{type.name}} *>(m_allocator.Alloc(sizeof({{type.name}}) * count));
+  for (uint64_t i = 0; i < count; ++i) {
+  {%- if isinstance(type, Struct) and type.is_union -%}
+    {{ copy_type_member(type.members[0]) }}
+  {%- else -%}
+    {%- for p in type.members %}
+      {{ copy_type_member(p) }}
+    {%- endfor %}
+  {%- endif %}
+  }
+  return ptr;
+}
+{% endfor %}
+{% if platform.macro != '' %}#endif // {{ platform.macro }}{% endif %}
+{% endfor %}
+
+// Define arguments recorder functions.
+{% for platform in registry.platforms.values() -%}
+{% if platform.macro != '' %}#ifdef {{ platform.macro }} {% endif %}
+{% for cmd_name, cmd in platform.commands.items() -%}
+{% if vulkan.contained_in_groups(cmd, ['all_cb_commands']) %}
+{{cmd_name[2:]}}Args *CommandRecorder::Record{{cmd_name[2:]}}({{vulkan.command_parameters_prototype(cmd)}}) {
+  auto *args = Alloc<{{cmd_name[2:]}}Args>();
+  {% for p in cmd.parameters -%}
+  {% if isinstance(p.type, FixedArray) -%}
+  for (uint32_t i = 0; i < {{ p.type.length }}; ++i) {
+    args->{{p.name}}[i] = {{p.name}}[i];
+  }
+  {% else -%}
+  args->{{p.name}} = {{p.name}};
+  {% if isinstance(p.type, Pointer) and p.type.base_type.name != 'void' -%}
+    if ({{p.name}}) {
+      args->{{p.name}} = CopyArray({{p.name}}, static_cast<uint64_t>(0U), static_cast<uint64_t>(1U));
+    }
+  {% elif isinstance(p.type, DynamicArray) and p.type.base_type.name != 'void' -%}
+    if ({{p.name}}) {
+      args->{{p.name}} = CopyArray({{p.name}}, static_cast<uint64_t>(0U), static_cast<uint64_t>({{ p.type.length_expr() }}));
+    }
+  {% endif %}
+  {%- endif %}
+  {%- endfor %}
+  return args;
+}
+{% endif %}
+{%- endfor %}
+{% if platform.macro != '' %}#endif // {{ platform.macro }}{% endif %}
+{%- endfor %}

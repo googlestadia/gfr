@@ -1,0 +1,46 @@
+{# 
+Parameters:
+copyright_notice        copyright notice
+-#}
+{{ copyright_notice }}
+{% import 'vulkan_macros.jinja2' as vulkan -%}
+
+// clang-format off
+#ifndef COMMAND_RECORDER_HEADER
+#define COMMAND_RECORDER_HEADER
+
+#include <cstring>
+#include <iostream>
+#include <vector>
+#include <vulkan/vulkan.h>
+
+#include "linear_allocator.h"
+#include "command_common.h"
+
+class CommandRecorder
+{
+  public:
+  void Reset() { m_allocator.Reset(); }
+
+{% for platform in registry.platforms.values() -%}
+{% if platform.macro != '' %}#ifdef {{ platform.macro }} {% endif %}
+{% for cmd_name, cmd in platform.commands.items() -%}
+{% if vulkan.contained_in_groups(cmd, ['all_cb_commands']) -%}
+  {{cmd_name[2:]}}Args *Record{{cmd_name[2:]}}({{vulkan.command_parameters_prototype(cmd)}});
+{% endif %}
+{%- endfor %}
+{% if platform.macro != '' %}#endif // {{ platform.macro }}{% endif %}
+{%- endfor %}
+
+  private:
+  template <typename T> T *Alloc() { return new(m_allocator.Alloc(sizeof(T))) T; }
+  template <typename T> T *CopyArray(const T *src, uint64_t start_index, uint64_t count) {
+    auto ptr = reinterpret_cast<T *>(m_allocator.Alloc(sizeof(T) * count));
+    std::memcpy(ptr, src, sizeof(T) * count);
+    return ptr;
+  }
+
+  LinearAllocator<> m_allocator;
+};
+
+#endif // COMMAND_RECORDER_HEADER

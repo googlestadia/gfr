@@ -1,0 +1,635 @@
+{#- Generate base layer boilerplate
+
+Parameters:
+layer_prefix                  name used to prefix layer specfic entry points
+modify_instance_create_info   function to call to get the modified instance create info
+modify_device_create_info     function to call to get the modified device create info
+intercept_groups              groups of commands to be intercepted
+intercept_pre_groups          groups of cammands to call a pre function
+intercept_post_groups         groups of cammands to call a post function
+intercept_commands            list of commands to be intercepted
+intercept_pre_commands        list of cammands to call a pre function
+intercept_post_commands       list of cammands to call a post function
+instance_extensions           instance extensions that the layer implements
+device_extensions             device extensions that the layer implements
+platform_macro                the macro define for the target platform
+copyright_notice              copyright notice
+
+-#}
+{{ copyright_notice }}
+{% import 'vulkan_macros.jinja2' as vulkan %}
+
+#include <array>
+#include <cassert>
+#include <memory>
+#include <mutex>
+#include <cstring>
+#include <unordered_map>
+#include <vulkan/vulkan.h>
+#include <vulkan/vk_layer.h>
+
+#include "layer_base.h"
+
+namespace {{ layer_prefix }} {
+
+constexpr VkLayerProperties layer_properties = { "{{ name }}", VK_MAKE_VERSION(1, 0, VK_HEADER_VERSION), {{ implementation_version }}, "{{ description }}" };
+
+namespace {
+// Generally we expect to get the same device and instance, so we keep them handy
+static thread_local InstanceData* last_used_instance_data = nullptr;
+static thread_local DeviceData* last_used_device_data = nullptr;
+
+std::mutex g_instance_mutex;
+std::unordered_map<uintptr_t, std::unique_ptr<InstanceData>> g_instance_data;
+
+std::mutex g_device_mutex;
+std::unordered_map<uintptr_t, std::unique_ptr<DeviceData>> g_device_data;
+}
+
+uintptr_t DataKey(const void *object) {
+   return (uintptr_t)(*(void **)object);
+}
+
+InstanceData* GetInstanceLayerData(uintptr_t key) {
+  if (last_used_instance_data && DataKey(last_used_instance_data->instance) == key) {
+    return last_used_instance_data;
+  }
+
+  std::lock_guard<std::mutex> lock(g_instance_mutex);
+  last_used_instance_data = g_instance_data[key].get();
+  return last_used_instance_data;
+}
+
+void FreeInstanceLayerData(uintptr_t key) {
+  std::lock_guard<std::mutex> lock(g_instance_mutex);
+  g_instance_data.erase(key);
+  last_used_instance_data = nullptr;
+}
+
+DeviceData* GetDeviceLayerData(uintptr_t key) {
+  if (last_used_device_data && DataKey(last_used_device_data->device) == key) {
+    return last_used_device_data;
+  }
+
+  std::lock_guard<std::mutex> lock(g_device_mutex);
+  last_used_device_data = g_device_data[key].get();
+  return last_used_device_data;
+}
+
+void FreeDeviceLayerData(uintptr_t key) {
+  std::lock_guard<std::mutex> lock(g_device_mutex);
+  g_device_data.erase(key);
+  last_used_device_data = nullptr;
+}
+
+VkStruct *FindOnChain(VkStruct *s, VkStructureType type) {
+  VkStruct *n = (VkStruct *)s->pNext;
+  while (n && n->sType != type) {
+    n = (VkStruct *)n->pNext;
+  }
+  return n;
+}
+
+VkLayerInstanceCreateInfo *GetLoaderInstanceInfo(const VkInstanceCreateInfo *create_info, VkLayerFunction func_type) {
+  VkStruct *n = (VkStruct *)create_info;
+  while ((n = FindOnChain(n, VK_STRUCTURE_TYPE_LOADER_INSTANCE_CREATE_INFO))) {
+    VkLayerInstanceCreateInfo *vci = (VkLayerInstanceCreateInfo *)n;
+    if (vci->function == func_type) {
+      return vci;
+    }
+  }
+  return nullptr;
+}
+
+VkLayerDeviceCreateInfo *GetLoaderDeviceInfo(const VkDeviceCreateInfo *create_info, VkLayerFunction func_type) {
+  VkStruct *n = (VkStruct *)create_info;
+  while ((n = FindOnChain(n, VK_STRUCTURE_TYPE_LOADER_DEVICE_CREATE_INFO))) {
+    VkLayerDeviceCreateInfo *vdi = (VkLayerDeviceCreateInfo *)n;
+    if (vdi->function == func_type) {
+      return vdi;
+    }
+  }
+  return nullptr;
+}
+
+VkResult SetInstanceLoaderData(VkInstance instance, void *obj)
+{
+  InstanceData *instance_data = GetInstanceLayerData(DataKey(instance));
+  return instance_data->pfn_set_instance_loader_data(instance, obj);
+}
+
+VkResult SetDeviceLoaderData(VkDevice device, void *obj)
+{
+  DeviceData *device_data = GetDeviceLayerData(DataKey(device));
+  return device_data->pfn_set_device_loader_data(device, obj);
+}
+
+{% if instance_extensions|length > 0 -%}
+static constexpr std::array<VkExtensionProperties, {{ instance_extensions|length }}> instance_extensions
+{
+  {
+{% for extension in instance_extensions -%}
+    { {{ extension.name|upper }}_EXTENSION_NAME, {{ extension.name|upper }}_SPEC_VERSION },
+{%- endfor %}
+  }
+};
+{%- endif %}
+
+{% if device_extensions|length > 0 -%}
+static constexpr std::array<VkExtensionProperties, {{ device_extensions|length }}> device_extensions
+{
+  {
+{% for extension in device_extensions -%}
+    { {{ extension.name|upper }}_EXTENSION_NAME, {{ extension.name|upper }}_SPEC_VERSION },
+{%- endfor %}
+  }
+};
+{%- endif %}
+
+// Intercept functions manage the dispatch table and call the implementation (layer specific)
+// function. These are the function pointers returned by vkGetXxxProcAddr.
+
+{% set custom_intercept_commands = [
+    'vkCreateInstance',
+    'vkDestroyInstance',
+    'vkCreateDevice',
+    'vkDestroyDevice',
+    'vkEnumerateInstanceLayerProperties',
+    'vkEnumerateDeviceLayerProperties',
+    'vkEnumerateInstanceExtensionProperties',
+    'vkEnumerateDeviceExtensionProperties',
+  ]
+%}
+
+{% for platform in registry.platforms.values() %}
+{% if platform.macro != '' %}#ifdef {{ platform.macro }} {% endif %}
+{% for cmd_name, cmd in platform.commands.items() if cmd_name not in custom_intercept_commands -%}
+{{cmd.return_type.name}} Intercept{{cmd_name[2:]}}({{ vulkan.command_parameters_prototype(cmd) }}) {
+{%- if cmd_name in intercept_pre_commands or vulkan.contained_in_groups(cmd, intercept_pre_groups)%}
+  InterceptPre{{cmd_name[2:]}}({{ vulkan.command_parameters(cmd) }});
+{% endif %}
+  {%- if cmd.is_instance %}
+  auto layer_data = GetInstanceLayerData(DataKey({{cmd.parameters[0].name}}));
+  {%- else %}
+  auto layer_data = GetDeviceLayerData(DataKey({{cmd.parameters[0].name}}));
+  {%- endif %}
+  PFN_{{cmd_name}} pfn = layer_data->dispatch_table.{{cmd_name[2:]}};
+  {% if cmd.return_type.name != 'void' %}
+    {{cmd.return_type.name}} result = {{ vulkan.get_default_return_value(cmd.return_type.name) }};
+  {% endif -%}
+  {%- if cmd_name in intercept_commands or vulkan.contained_in_groups(cmd, intercept_groups) -%}
+  if (pfn) {
+  {% if cmd.return_type.name != 'void' %}
+    result =
+  {% endif -%}
+  {{cmd_name[2:]}}(pfn, {{ vulkan.command_parameters(cmd) }});
+  }
+  {%- else -%}
+  if (pfn) {
+  {% if cmd.return_type.name != 'void' %}
+    result =
+  {% endif -%}
+    pfn({{ vulkan.command_parameters(cmd) }});
+  }
+  {%- endif %}
+  {%- if cmd_name in intercept_post_commands or vulkan.contained_in_groups(cmd, intercept_post_groups)%}
+    {% if cmd.return_type.name == 'void' %}
+      InterceptPost{{cmd_name[2:]}}({{ vulkan.command_parameters(cmd) }});
+    {% else %}
+      result = InterceptPost{{cmd_name[2:]}}({{ vulkan.command_parameters(cmd) }}, result);
+    {% endif %}
+  {% endif %}
+  {% if cmd.return_type.name != 'void' %}
+    return result;
+  {% endif -%}
+}
+
+{% endfor %}
+{% if platform.macro != '' %}#endif // {{ platform.macro }}{% endif %}
+{% endfor %}
+
+VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL PassInstanceProcDownTheChain(
+  VkInstance inst, const char* func) {
+  // Get the instance data.
+  auto id = GetInstanceLayerData(DataKey(inst));
+  // Pass down the instance proc address call through the chain.
+  return (PFN_vkVoidFunction)id->pfn_next_instance_proc_addr(inst, func);
+}
+
+VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL PassDeviceProcDownTheChain(
+  VkDevice dev, const char* func) {
+  // Get the device data.
+  auto dd = GetDeviceLayerData(DataKey(dev));
+  // Pass down the device proc address call through the chain.
+  return (PFN_vkVoidFunction)dd->pfn_next_device_proc_addr(dev, func);
+}
+
+/*****************************************************************************/
+/*                         Custom Intercept Functions                        */
+/*****************************************************************************/
+
+VKAPI_ATTR VkResult VKAPI_CALL InterceptCreateInstance(const VkInstanceCreateInfo* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkInstance* pInstance) {
+  // Find the create info
+  VkLayerInstanceCreateInfo *layer_create_info = GetLoaderInstanceInfo(pCreateInfo, VK_LAYER_LINK_INFO);
+  if (layer_create_info == NULL)
+  {
+    // No loader instance create info
+    return VK_ERROR_INITIALIZATION_FAILED;
+  }
+
+  PFN_vkGetInstanceProcAddr pfn_get_instance_proc_addr = layer_create_info->u.pLayerInfo->pfnNextGetInstanceProcAddr;
+  PFN_vkCreateInstance pfn_create_instance = (PFN_vkCreateInstance)pfn_get_instance_proc_addr(NULL, "vkCreateInstance");
+  if (pfn_create_instance == NULL) return VK_ERROR_INITIALIZATION_FAILED;
+
+  // Move chain on for the next layer.
+  layer_create_info->u.pLayerInfo = layer_create_info->u.pLayerInfo->pNext;
+
+  {% if 'vkCreateInstance' in intercept_pre_commands or 'all_vulkan_commands' in intercept_pre_groups -%}
+    InterceptPreCreateInstance(pCreateInfo, pAllocator, pInstance);
+  {% endif %}
+
+  {% if modify_instance_create_info|length == 0 %}
+  const VkInstanceCreateInfo *pFinalCreateInfo = pCreateInfo;
+  {% else %}
+  const VkInstanceCreateInfo *pFinalCreateInfo = {{ modify_instance_create_info }}(pCreateInfo);
+  {% endif %}
+
+  {%- if 'vkCreateInstance' in intercept_commands or 'all_vulkan_commands' in intercept_groups %}
+  auto result = CreateInstance(pfn_create_instance, pFinalCreateInfo, pAllocator, pInstance);
+  {%- else %}
+  auto result = pfn_create_instance(pFinalCreateInfo, pAllocator, pInstance);
+  {%- endif %}
+  if (VK_SUCCESS != result)
+  {
+    return result;
+  }
+
+  auto id = std::make_unique<InstanceData>();
+  id->instance = *pInstance;
+  auto chain_info = GetLoaderInstanceInfo(pFinalCreateInfo, VK_LOADER_DATA_CALLBACK);
+  id->pfn_set_instance_loader_data = chain_info->u.pfnSetInstanceLoaderData;
+  id->pfn_next_instance_proc_addr = pfn_get_instance_proc_addr;
+  InitInstanceDispatchTable(*pInstance, pfn_get_instance_proc_addr, &id->dispatch_table);
+
+  {
+    std::lock_guard<std::mutex> lock(g_instance_mutex);
+    g_instance_data[DataKey(*pInstance)] = std::move(id);
+  }
+
+  {% if 'vkCreateInstance' in intercept_post_commands or 'all_vulkan_commands' in intercept_post_groups -%}
+    result = InterceptPostCreateInstance(pFinalCreateInfo, pAllocator, pInstance, result);
+  {% endif %}
+  return result;
+}
+
+VKAPI_ATTR void VKAPI_CALL InterceptDestroyInstance(VkInstance instance, const VkAllocationCallbacks *pAllocator) {
+  {% if 'vkDestoryInstance' in intercept_pre_commands or 'all_vulkan_commands' in intercept_pre_groups -%}
+  InterceptPreDestoryInstance(instance, pAllocator);
+  {% endif %}
+  auto instance_key = DataKey(instance);
+  InstanceData *instance_data = GetInstanceLayerData(instance_key);
+  auto pfn_destroy_instance = instance_data->dispatch_table.DestroyInstance;
+  {%- if 'vkDestoryInstance' in intercept_commands or 'all_vulkan_commands' in intercept_groups %}
+  DestroyInstance(pfn_destroy_instance, instance, pAllocator);
+  {%- else %}
+  pfn_destroy_instance(instance, pAllocator);
+  {%- endif %}
+
+  {% if 'vkDestoryInstance' in intercept_post_commands or 'all_vulkan_commands' in intercept_pre_groups -%}
+  InterceptPostDestoryInstance(instance, pAllocator);
+  {% endif %}
+  FreeInstanceLayerData(instance_key);
+}
+
+VkResult InterceptCreateDevice(VkPhysicalDevice gpu, const VkDeviceCreateInfo *pCreateInfo, const VkAllocationCallbacks *pAllocator, VkDevice *pDevice) {
+  {% if 'vkCreateDevice' in intercept_pre_commands or 'all_vulkan_commands' in intercept_pre_groups -%}
+    InterceptPreCreateDevice(gpu, pCreateInfo, pAllocator, pDevice);
+  {% endif %}
+
+  VkLayerDeviceCreateInfo *layer_create_info = GetLoaderDeviceInfo(pCreateInfo, VK_LAYER_LINK_INFO);
+
+  // Get the instance data.
+  auto instance_data = GetInstanceLayerData(DataKey(gpu));
+
+  // Get the proc addr pointers for this layer and update the chain for the next layer.
+  PFN_vkGetInstanceProcAddr pfn_next_instance_proc_addr = layer_create_info->u.pLayerInfo->pfnNextGetInstanceProcAddr;
+  PFN_vkGetDeviceProcAddr pfn_next_device_proc_addr = layer_create_info->u.pLayerInfo->pfnNextGetDeviceProcAddr;
+  PFN_vkCreateDevice pfn_create_device = (PFN_vkCreateDevice)pfn_next_instance_proc_addr(instance_data->instance, "vkCreateDevice");
+  layer_create_info->u.pLayerInfo = layer_create_info->u.pLayerInfo->pNext;
+
+  {% if modify_device_create_info|length == 0 %}
+  const VkDeviceCreateInfo *pFinalCreateInfo = pCreateInfo;
+  {% else %}
+  const VkDeviceCreateInfo *pFinalCreateInfo = {{ modify_device_create_info }}(gpu, pCreateInfo);
+  {% endif %}
+
+  {%- if 'vkCreateDevice' in intercept_commands or 'all_vulkan_commands' in intercept_groups %}
+  VkResult result = CreateDevice(pfn_create_device, gpu, pFinalCreateInfo, pAllocator, pDevice);
+  {%- else %}
+  VkResult result = pfn_create_device(gpu, pFinalCreateInfo, pAllocator, pDevice);
+  {%- endif %}
+  if (VK_SUCCESS != result)
+  {
+    return result;
+  }
+
+  auto dd = std::make_unique<DeviceData>();
+  dd->device = *pDevice;
+  auto chain_info = GetLoaderDeviceInfo(pFinalCreateInfo, VK_LOADER_DATA_CALLBACK);
+  dd->pfn_set_device_loader_data = chain_info->u.pfnSetDeviceLoaderData;
+  dd->pfn_next_device_proc_addr = pfn_next_device_proc_addr;
+  InitDeviceDispatchTable(*pDevice, pfn_next_device_proc_addr, &dd->dispatch_table);
+  {
+    std::lock_guard<std::mutex> lock(g_device_mutex);
+    g_device_data[DataKey(*pDevice)] = std::move(dd);
+  }
+
+  {% if 'vkCreateDevice' in intercept_post_commands or 'all_vulkan_commands' in intercept_post_groups -%}
+    result = InterceptPostCreateDevice(gpu, pFinalCreateInfo, pAllocator, pDevice, result);
+  {% endif %}
+  return result;
+}
+
+VKAPI_ATTR void VKAPI_CALL InterceptDestroyDevice(VkDevice device, const VkAllocationCallbacks *pAllocator) {
+  {% if 'vkDestoryDevice' in intercept_pre_commands or 'all_vulkan_commands' in intercept_pre_groups -%}
+  InterceptPreDestoryDevice(device, pAllocator);
+  {%- endif %}
+  auto device_key = DataKey(device);
+  DeviceData *device_data = GetDeviceLayerData(device_key);
+  auto pfn_destroy_device = device_data->dispatch_table.DestroyDevice;
+  {%- if 'vkDestoryDevice' in intercept_commands or 'all_vulkan_commands' in intercept_groups %}
+  DestroyDevice(pfn_destroy_device, device, pAllocator);
+  {%- else %}
+  pfn_destroy_device(device, pAllocator);
+  {%- endif %}
+
+  {% if 'vkDestoryDevice' in intercept_post_commands or 'all_vulkan_commands' in intercept_pre_groups -%}
+  InterceptPostDestoryDevice(device, pAllocator);
+  {% endif %}
+  FreeDeviceLayerData(device_key);
+}
+
+VkResult InterceptEnumerateInstanceLayerProperties(
+    uint32_t* pPropertyCount, VkLayerProperties* pProperties) {
+  {% if 'vkEnumerateInstanceLayerProperties' in intercept_pre_commands or 'all_vulkan_commands' in intercept_pre_groups-%}
+    InterceptPreEnumerateInstanceLayerProperties(pPropertyCount, pProperties);
+  {% endif %}
+
+  if (nullptr == pProperties) {
+    *pPropertyCount = 1;
+    return VK_SUCCESS;
+  }
+  if (*pPropertyCount < 1) {
+    return VK_INCOMPLETE;
+  }
+  *pProperties = layer_properties;
+
+  VkResult result = VK_SUCCESS;
+
+  {% if 'vkEnumerateInstanceLayerProperties' in intercept_post_commands or 'all_vulkan_commands' in intercept_post_groups-%}
+    result = InterceptPostEnumerateInstanceLayerProperties(pPropertyCount, pProperties, result);
+  {% endif %}
+  return result;
+}
+
+VkResult InterceptEnumerateInstanceExtensionProperties(
+    char* pLayerName, uint32_t* pPropertyCount,
+    VkExtensionProperties* pProperties) {
+  {% if 'vkEnumerateInstanceExtensionProperties' in intercept_pre_commands or 'all_vulkan_commands' in intercept_pre_groups -%}
+    InterceptPreEnumerateInstanceExtensionProperties(pLayerName, pPropertyCount, pProperties);
+  {% endif %}
+
+  bool layer_requested = (nullptr == pLayerName || strcmp(pLayerName, "{{ name }}"));
+  if (!layer_requested) {
+    return VK_ERROR_LAYER_NOT_PRESENT;
+  }
+  if (nullptr == pProperties) {
+    *pPropertyCount += {{ instance_extensions|length }};
+    return VK_SUCCESS;
+  }
+  else if (*pPropertyCount > 0)
+  {
+    *pPropertyCount = {{ instance_extensions|length }};
+{% if instance_extensions|length > 0 -%}
+    memcpy(pProperties, instance_extensions.data(), instance_extensions.size() * sizeof(VkExtensionProperties) );
+{%- else -%}
+    pProperties = nullptr;
+{% endif -%}
+  }
+  VkResult result = VK_SUCCESS;
+
+  {% if 'vkEnumerateInstanceExtensionProperties' in intercept_post_commands or 'all_vulkan_commands' in intercept_post_groups-%}
+    result = InterceptPostEnumerateInstanceExtensionProperties(pLayerName, pPropertyCount, pProperties, result);
+  {% endif %}
+  return result;
+}
+
+VkResult InterceptEnumerateDeviceLayerProperties(
+    VkPhysicalDevice physicalDevice, uint32_t* pPropertyCount,
+    VkLayerProperties* pProperties) {
+  {% if 'vkEnumerateDeviceLayerProperties' in intercept_pre_commands or 'all_vulkan_commands' in intercept_pre_groups -%}
+    InterceptPreEnumerateDeviceLayerProperties(physicalDevice, pPropertyCount, pProperties);
+  {% endif %}
+
+  if (nullptr == pProperties) {
+    *pPropertyCount = 1;
+    return VK_SUCCESS;
+  }
+
+  if (*pPropertyCount < 1) {
+    return VK_INCOMPLETE;
+  }
+
+  *pProperties = layer_properties;
+  VkResult result = VK_SUCCESS;
+
+  {% if 'vkEnumerateDeviceLayerProperties' in intercept_post_commands or 'all_vulkan_commands' in intercept_post_groups -%}
+    result = InterceptPostEnumerateDeviceLayerProperties(physicalDevice, pPropertyCount, pProperties, result);
+  {% endif %}
+  return result;
+}
+
+VkResult InterceptEnumerateDeviceExtensionProperties(
+    VkPhysicalDevice physicalDevice, char* pLayerName, uint32_t* pPropertyCount,
+    VkExtensionProperties* pProperties) {
+  {% if 'vkEnumerateDeviceExtensionProperties' in intercept_pre_commands or 'all_vulkan_commands' in intercept_pre_groups -%}
+  InterceptPreEnumerateDeviceExtensionProperties(physicalDevice, pLayerName, pPropertyCount, pProperties);
+  {% endif %}
+
+  {% if device_extensions|length == 0 -%}
+  InstanceData* instance_data = GetInstanceLayerData(DataKey(physicalDevice));
+  VkResult result =
+    instance_data->dispatch_table.EnumerateDeviceExtensionProperties(
+      physicalDevice, pLayerName, pPropertyCount, pProperties);
+  {%- else -%}
+  // we want to append our extensions, removing duplicates.
+  InstanceData* instance_data = GetInstanceLayerData(DataKey(physicalDevice));
+
+  uint32_t num_other_extensions = 0;
+  VkResult result =
+      instance_data->dispatch_table.EnumerateDeviceExtensionProperties(
+          physicalDevice, nullptr, &num_other_extensions, nullptr);
+  if (result != VK_SUCCESS) {
+    return result;
+  }
+
+  // call down to get other device properties
+  std::vector<VkExtensionProperties> extensions(num_other_extensions);
+  result = instance_data->dispatch_table.EnumerateDeviceExtensionProperties(
+      physicalDevice, pLayerName, &num_other_extensions, &extensions[0]);
+
+  // add our extensions if we have any and requested
+  bool layer_requested = (nullptr == pLayerName || strcmp(pLayerName, layer_properties.layerName));
+
+  if (result == VK_SUCCESS && layer_requested) {
+    // not just our layer, we expose all our extensions
+    uint32_t max_extensions = *pPropertyCount;
+
+    // set and copy base extensions
+    *pPropertyCount = num_other_extensions;
+
+    // find our unique extensions that need to be added
+    uint32_t num_additional_extensions = 0;
+    auto num_device_extensions = device_extensions.size();
+    std::vector<const VkExtensionProperties*> additional_extensions(num_device_extensions);
+
+    for (size_t i = 0; i < num_device_extensions; ++i) {
+      bool is_unique_extension = true;
+
+      for (size_t j = 0; j < num_other_extensions; ++j) {
+        if (0 == strcmp(extensions[j].extensionName,
+                        device_extensions[i].extensionName)) {
+          is_unique_extension = false;
+          break;
+        }
+      }
+
+      if (is_unique_extension) {
+        additional_extensions[num_additional_extensions++] = &device_extensions[i];
+      }
+    }
+
+    // null properties, just count total extensions
+    if (nullptr == pProperties) {
+      *pPropertyCount += num_additional_extensions;
+    } else {
+      uint32_t numExtensions = std::min(num_other_extensions, max_extensions);
+
+      memcpy(pProperties, &extensions[0],
+            numExtensions * sizeof(VkExtensionProperties));
+
+      for (size_t i = 0; i < num_additional_extensions && numExtensions < max_extensions; ++i) {
+        pProperties[numExtensions++] = *additional_extensions[i];
+      }
+
+      *pPropertyCount = numExtensions;
+
+      // not enough space for all extensions
+      if (num_other_extensions + num_additional_extensions > max_extensions) {
+        result = VK_INCOMPLETE;
+      }
+    }
+  }
+  {%- endif %}
+
+  {% if 'vkEnumerateDeviceExtensionProperties' in intercept_post_commands or 'all_vulkan_commands' in intercept_post_groups -%}
+  result = InterceptPostEnumerateDeviceExtensionProperties(physicalDevice, pLayerName, pPropertyCount, pProperties, result);
+  {% endif %}
+  return result;
+}
+
+} // namespace {{ layer_prefix }}
+
+extern "C" DLL_EXPORT VK_LAYER_EXPORT VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL
+{{ layer_prefix }}_GetInstanceProcAddr(VkInstance inst, const char* func) {
+{% for platform in registry.platforms.values() %}
+{% if platform.macro != '' %}#ifdef {{ platform.macro }} {% endif %}
+{% for cmd_name, cmd in platform.commands.items() if cmd.is_instance -%}
+  if (0 == strcmp(func, "{{cmd_name}}")) return (PFN_vkVoidFunction){{layer_prefix}}::Intercept{{cmd_name[2:]}};
+{% endfor %}
+{% if platform.macro != '' %}#endif // {{ platform.macro }}{% endif %}
+{% endfor %}
+
+{% if instance_extensions|length > 0 -%}
+  // List of Vulkan functions of the implemented instance extensions
+  static const std::vector<std::string> instance_ext_func_names {
+  {% for instance_extension in instance_extensions -%}
+    {% for platform in registry.platforms.values() %}
+      {% if platform.macro != '' %}#ifdef {{ platform.macro }} {% endif %}
+      {% for cmd_name, cmd in platform.commands.items() -%}
+        {% for cmd_extension in cmd.extensions -%}
+          {% if instance_extension.name == cmd_extension.name -%}
+            "{{ cmd_name }}",
+          {%- endif%}
+        {%- endfor %}
+      {%- endfor %}
+      {% if platform.macro != '' %}#endif // {{ platform.macro }}{% endif %}
+    {% endfor %}
+  {% endfor %}
+  };
+  // Check if the layer implements the function in an instance extension.
+  if(std::find(instance_ext_func_names.begin(), instance_ext_func_names.end(), func) != instance_ext_func_names.end()) {
+    return nullptr;
+  }
+{%- endif %}
+
+  // If the function was not found, just pass it down the chain to support
+  // unregistered extensions, such as vkSwapchainCallbackEXT.
+  return (PFN_vkVoidFunction){{layer_prefix}}::PassInstanceProcDownTheChain(inst, func);
+} // NOLINT(readability/fn_size)
+
+extern "C" DLL_EXPORT VK_LAYER_EXPORT VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL
+{{ layer_prefix }}_GetDeviceProcAddr(VkDevice dev, const char* func) {
+{% for platform in registry.platforms.values() %}
+{% if platform.macro != '' %}#ifdef {{ platform.macro }} {% endif %}
+{% for cmd_name, cmd in platform.commands.items() if not cmd.is_instance -%}
+  if (0 == strcmp(func, "{{cmd_name}}")) return (PFN_vkVoidFunction){{layer_prefix}}::Intercept{{cmd_name[2:]}};
+{% endfor %}
+{% if platform.macro != '' %}#endif // {{ platform.macro }}{% endif %}
+{% endfor %}
+
+{% if device_extensions|length > 0 -%}
+  // List of Vulkan functions of the implemented device extensions
+  static const std::vector<std::string> device_ext_func_names {
+  {% for device_extension in device_extensions -%}
+    {% for platform in registry.platforms.values() %}
+      {% if platform.macro != '' %}#ifdef {{ platform.macro }} {% endif %}
+      {% for cmd_name, cmd in platform.commands.items() -%}
+        {% for cmd_extension in cmd.extensions -%}
+          {% if device_extension.name == cmd_extension.name -%}
+            "{{ cmd_name }}",
+          {%- endif%}
+        {%- endfor %}
+      {%- endfor %}
+      {% if platform.macro != '' %}#endif // {{ platform.macro }}{% endif %}
+    {% endfor %}
+  {% endfor %}
+  };
+  // Check if the layer implements the function in a device extension.
+  if(std::find(device_ext_func_names.begin(), device_ext_func_names.end(), func) != device_ext_func_names.end()) {
+    return nullptr;
+  }
+{%- endif %}
+
+  // If the function was not found, just pass it down the chain to support
+  // unregistered extensions, such as vkSwapchainCallbackEXT.
+  return (PFN_vkVoidFunction){{layer_prefix}}::PassDeviceProcDownTheChain(dev, func);
+} // NOLINT(readability/fn_size)
+
+extern "C" DLL_EXPORT VK_LAYER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL
+{{ layer_prefix }}_NegotiateLoaderLayerInterfaceVersion(
+    VkNegotiateLayerInterface* pVersionStruct) {
+  assert(pVersionStruct != NULL);
+  assert(pVersionStruct->sType == LAYER_NEGOTIATE_INTERFACE_STRUCT);
+  // Fill in the function pointers if our version is at least capable of having
+  // the structure contain them.
+  if (pVersionStruct->loaderLayerInterfaceVersion >= 2) {
+    pVersionStruct->pfnGetInstanceProcAddr = &{{ layer_prefix }}_GetInstanceProcAddr;
+    pVersionStruct->pfnGetDeviceProcAddr = &{{ layer_prefix }}_GetDeviceProcAddr;
+    pVersionStruct->pfnGetPhysicalDeviceProcAddr = nullptr;
+  }
+  if (pVersionStruct->loaderLayerInterfaceVersion > CURRENT_LOADER_LAYER_INTERFACE_VERSION) {
+    pVersionStruct->loaderLayerInterfaceVersion = CURRENT_LOADER_LAYER_INTERFACE_VERSION;
+  }
+  return VK_SUCCESS;
+}

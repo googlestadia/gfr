@@ -1,0 +1,113 @@
+{# 
+Parameters:
+copyright_notice        copyright notice
+-#}
+{{ copyright_notice }}
+{% import 'vulkan_macros.jinja2' as vulkan -%}
+
+// clang-format off
+#ifndef COMMAND_PRINTER_HEADER
+#define COMMAND_PRINTER_HEADER
+
+#include <iostream>
+#include <vulkan/vulkan.h>
+
+#include "command_common.h"
+#include "object_name_db.h"
+
+struct VkStruct {
+    VkStructureType sType;
+    void *pNext;
+};
+
+class ScopedOstream : public std::streambuf
+{
+public:
+    explicit ScopedOstream(std::ostream &os, int indent = 4):
+        os_(&os),
+        sb_(os_->rdbuf()),
+        line_start_(true),
+        indent_(indent)
+    {
+        os_->rdbuf(this);
+    }
+
+    virtual ~ScopedOstream()
+    {
+        os_->rdbuf(sb_);
+    }
+
+protected:
+    virtual int overflow(int ch) {
+        if (line_start_ && ch != '\n'){
+            for (int i = 0; i < indent_; ++i) {
+                sb_->sputc(' ');
+            }
+        }
+
+        line_start_ = '\n' == ch;
+        return sb_->sputc(ch);
+    }
+
+private:
+    std::ostream *os_;
+    std::streambuf *sb_;
+    bool line_start_;
+    int indent_;
+};
+
+// Declare generic struct printer.
+std::ostream & PrintVkStruct(std::ostream & os, const VkStruct *pStruct);
+
+// Declare pNext chain printer.
+std::ostream & PrintNextPtr(std::ostream & os, const void *pNext);
+
+// Declare enum to string functions.
+{% for enum in enums -%}
+const char *{{enum.name}}ToString({{enum.name}} e);
+{% endfor %}
+
+// Declare ostream operators for enums.
+{% for enum in enums -%}
+std::ostream & operator << (std::ostream & os, const {{enum.name}} &t);
+{% endfor %}
+
+{# Set #}
+{% set custom_structure_printers = ['VkWriteDescriptorSet'] %}
+
+// Declare all ostream operators.
+{% for platform in registry.platforms.values() %}
+{% if platform.macro != '' %}#ifdef {{ platform.macro }} {% endif %}
+{% for type in platform_structs[platform.name] -%}
+{% if type.name not in custom_structure_printers -%}
+std::ostream & operator << (std::ostream & os, const {{type.name}} &t);
+{%- endif %}
+{% endfor %}
+{% if platform.macro != '' %}#endif // {{ platform.macro }}{% endif %}
+{% endfor %}
+
+{#- Custom printers #}
+{#-  VkWriteDescriptorSet uses a custom print function due to how the descriptor
+    type interacts with the pImageInfo/pBufferInfo/pTexelBufferView arrays.
+ -#}
+std::ostream &operator<<(std::ostream &os, const VkWriteDescriptorSet &t);
+
+
+// Declare print functions.
+
+class CommandPrinter {
+ public:
+  void SetNameResolver(const ObjectInfoDB *name_resolver);
+
+{%- for platform in registry.platforms.values() %}
+{% if platform.macro != '' %}#ifdef {{ platform.macro }} {% endif %}
+{% for cmd_name, cmd in platform.commands.items() -%}
+{% if vulkan.contained_in_groups(cmd, ['all_cb_commands']) %}
+  void Print{{cmd_name[2:]}}Args(std::ostream & os, const {{cmd_name[2:]}}Args &args);
+{%- endif %}
+{%- endfor %}
+{% if platform.macro != '' %}#endif // {{ platform.macro }}{% endif %}
+{% endfor %}
+};
+
+#endif //COMMAND_PRINTER_HEADER

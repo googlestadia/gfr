@@ -1,0 +1,72 @@
+{# 
+Parameters:
+copyright_notice        copyright notice
+-#}
+{{ copyright_notice }}
+{% import 'vulkan_macros.jinja2' as vulkan -%}
+
+// clang-format off
+#include <vulkan/vulkan.h>
+#include <cassert>
+
+#include "command_common.h"
+#include "command_printer.h"
+#include "command_tracker.h"
+
+void CommandTracker::Reset()
+{
+  commands_.clear();
+  recorder_.Reset();
+}
+
+void CommandTracker::SetNameResolver(const ObjectInfoDB *name_resolver)
+{
+  printer_.SetNameResolver(name_resolver);
+}
+
+void CommandTracker::PrintCommandParameters(std::ostream &os, const Command &cmd, uint32_t indentation)
+{
+  ScopedOstream sos(os, indentation);
+  switch (cmd.type)
+  {
+    case Command::Type::kUnknown:
+      os << "";
+      break;
+{% for platform in registry.platforms.values() -%}
+{% if platform.macro != '' %}#ifdef {{ platform.macro }} {% endif %}
+{% for cmd_name, cmd in platform.commands.items() -%}
+{% if vulkan.contained_in_groups(cmd, ['all_cb_commands']) %}
+    case Command::Type::k{{cmd_name[2:]}}:
+      if (cmd.parameters) {
+        auto args = reinterpret_cast<{{cmd_name[2:]}}Args *>(cmd.parameters);
+        printer_.Print{{cmd_name[2:]}}Args(os, *args);
+      }
+      break;
+{% endif %}
+{%- endfor %}
+{% if platform.macro != '' %}#endif // {{ platform.macro }}{% endif %}
+{%- endfor %}
+  };
+}
+
+{% for platform in registry.platforms.values() -%}
+{% if platform.macro != '' %}#ifdef {{ platform.macro }} {% endif %}
+{% for cmd_name, cmd in platform.commands.items() -%}
+{% if vulkan.contained_in_groups(cmd, ['all_cb_commands']) %}
+void CommandTracker::TrackPre{{cmd_name[2:]}}({{vulkan.command_parameters_prototype(cmd)}})
+{
+  Command cmd;
+  cmd.type = Command::Type::k{{cmd_name[2:]}};
+  cmd.id = static_cast<uint32_t>(commands_.size()) + 1;
+  cmd.parameters = recorder_.Record{{cmd_name[2:]}}({{vulkan.command_parameters(cmd)}});
+  commands_.push_back(cmd);
+}
+
+void CommandTracker::TrackPost{{cmd_name[2:]}}({{vulkan.command_parameters_prototype(cmd)}})
+{
+  assert(commands_.back().type == Command::Type::k{{cmd_name[2:]}});
+}
+{% endif %}
+{%- endfor %}
+{% if platform.macro != '' %}#endif // {{ platform.macro }}{% endif %}
+{%- endfor %}

@@ -635,9 +635,11 @@ void GfrContext::DumpReportPrologue(std::ostream& os, const Device* device) {
   os << "#-                    GRAPHICS FLIGHT RECORDER                  -\n";
   os << "#----------------------------------------------------------------\n";
 
+#ifdef __linux__
   if (gpuhang_event_id_) {
     os << "# internal_use_gpu_hang_event_id " << gpuhang_event_id_ << "\n\n";
   }
+#endif
 
   auto now = std::chrono::system_clock::now();
   auto in_time_t = std::chrono::system_clock::to_time_t(now);
